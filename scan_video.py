@@ -33,7 +33,10 @@ def main():
     target_fps = parse_fps(fps_config)
     video_source_dir = config.get("video_source_dir", "Sample/videos")
     reference_image_path = config.get("reference_image", "topcon_ui_001.png")
-    output_dir = config.get("output_dir", "MatchedScreens")
+    output_dir = "firstFrame"
+    json_dir = "firstFrame_JSON"
+    if not os.path.exists(json_dir):
+        os.makedirs(json_dir)
     match_threshold = config.get("match_threshold", 0.8)
 
     # 2. Pick first video
@@ -149,6 +152,54 @@ def main():
             output_filename = os.path.join(output_dir, f"{video_basename}_{int(frame_sec)}.png")
             cv2.imwrite(output_filename, frame)
             print(f"\nFirst matching frame saved: {output_filename}")
+
+            # --- Run extract_roi0 and extract_roi1 on matched frame ---
+            from extract_roi0 import extract_roi0
+            from extract_roi1 import extract_roi1
+            roi0_result = extract_roi0(frame)
+            roi0_img = roi0_result['roi0']
+            roi0_bbox = roi0_result['bbox']
+            # Save ROI-0
+            roi0_dir = 'ROI_0'
+            if not os.path.exists(roi0_dir):
+                os.makedirs(roi0_dir)
+            roi0_filename = os.path.join(roi0_dir, f"roi0_{video_basename}_{int(frame_sec)}.png")
+            cv2.imwrite(roi0_filename, roi0_img)
+            print(f"ROI-0 saved to {roi0_filename}")
+
+            roi1_result = extract_roi1(roi0_img)
+            roi1_img = roi1_result['roi1']
+            roi1_bboxes = roi1_result['bboxes']
+            # Save ROI-1
+            roi1_dir = 'ROI_1'
+            if not os.path.exists(roi1_dir):
+                os.makedirs(roi1_dir)
+            roi1_filename = os.path.join(roi1_dir, f"roi1_{video_basename}_{int(frame_sec)}.png")
+            cv2.imwrite(roi1_filename, roi1_img)
+            print(f"ROI-1 saved to {roi1_filename}")
+
+            # Save bounding boxes to file
+            bbox_filename = os.path.join(roi1_dir, f"roi1_bboxes_{video_basename}_{int(frame_sec)}.txt")
+            with open(bbox_filename, 'w') as f:
+                for bbox in roi1_bboxes:
+                    f.write(f'{bbox}\n')
+            print(f"ROI-1 cell bounding boxes saved to {bbox_filename}")
+
+            # --- Overlay ROI-1 grid on matched image ---
+            overlay = frame.copy()
+            for bbox in roi1_bboxes:
+                x1, y1, x2, y2 = bbox
+                cv2.rectangle(overlay, (x1, y1), (x2, y2), (0, 0, 255), 2)
+            overlay_filename = os.path.join(output_dir, f"{video_basename}_{int(frame_sec)}_overlay.png")
+            cv2.imwrite(overlay_filename, overlay)
+            print(f"Overlay with ROI-1 grid saved to {overlay_filename}")
+
+            # Save coordinates to JSON
+            json_path = os.path.join(json_dir, f"{video_basename}_{int(frame_sec)}.json")
+            with open(json_path, 'w') as jf:
+                import json
+                json.dump({'bboxes': roi1_bboxes}, jf, indent=2)
+            print(f"Bounding box coordinates saved to {json_path}")
             break
 
         current_frame_idx += step_frames
