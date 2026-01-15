@@ -77,6 +77,7 @@ for cnt in contours:
         max_area = area
         table_rect = (x, y, w, h)
 
+
 if table_rect is None:
     raise Exception('No 3x5 table-like rectangle found in ROI-0 top half.')
 
@@ -87,9 +88,68 @@ roi1_path = os.path.join(output_dir, f'roi1_{now}.png')
 cv2.imwrite(roi1_path, roi1)
 print(f'ROI-1 (table) saved to {roi1_path}')
 
-# Save visualization with grid overlay
-vis = roi0_top_half.copy()
-cv2.rectangle(vis, (x, y), (x+w, y+h), (0, 255, 0), 3)
-contour_vis_path = os.path.join(output_dir, f'roi1_grid_{now}.png')
-cv2.imwrite(contour_vis_path, vis)
-print(f'ROI-1 grid visualization saved to {contour_vis_path}')
+
+
+# --- Robust grid detection using Hough Line Transform ---
+vis_grid = roi1.copy()
+gray_roi1 = cv2.cvtColor(roi1, cv2.COLOR_BGR2GRAY)
+edges = cv2.Canny(gray_roi1, 50, 150, apertureSize=3)
+lines = cv2.HoughLinesP(edges, 1, np.pi/180, threshold=80, minLineLength=30, maxLineGap=10)
+
+verticals = []
+horizontals = []
+height, width = vis_grid.shape[:2]
+if lines is not None:
+    for line in lines:
+        x1, y1, x2, y2 = line[0]
+        if abs(x1 - x2) < 10:  # vertical
+            verticals.append((x1, y1, x2, y2))
+        elif abs(y1 - y2) < 10:  # horizontal
+            horizontals.append((x1, y1, x2, y2))
+
+    # Cluster verticals and horizontals
+    from sklearn.cluster import KMeans
+    if len(verticals) >= 4:
+        v_coords = np.array([v[0] for v in verticals] + [v[2] for v in verticals]).reshape(-1, 1)
+        kmeans_v = KMeans(n_clusters=4, n_init=10).fit(v_coords)
+        col_peaks = sorted([int(c[0]) for c in kmeans_v.cluster_centers_])
+    else:
+        col_peaks = np.linspace(0, width, 4, dtype=int)
+    if len(horizontals) >= 6:
+        h_coords = np.array([h[1] for h in horizontals] + [h[3] for h in horizontals]).reshape(-1, 1)
+        kmeans_h = KMeans(n_clusters=6, n_init=10).fit(h_coords)
+        row_peaks = sorted([int(c[0]) for c in kmeans_h.cluster_centers_])
+    else:
+        row_peaks = np.linspace(0, height, 6, dtype=int)
+else:
+    col_peaks = np.linspace(0, width, 4, dtype=int)
+    row_peaks = np.linspace(0, height, 6, dtype=int)
+
+# Draw vertical lines
+for px in col_peaks:
+    cv2.line(vis_grid, (px, 0), (px, height), (0, 0, 255), 2)
+# Draw horizontal lines
+for py in row_peaks:
+    cv2.line(vis_grid, (0, py), (width, py), (0, 0, 255), 2)
+
+# Save bounding boxes for each cell
+bboxes = []
+for i in range(5):
+    for j in range(3):
+        x1 = col_peaks[j]
+        x2 = col_peaks[j+1]
+        y1 = row_peaks[i]
+        y2 = row_peaks[i+1]
+        bboxes.append((x1, y1, x2, y2))
+        cv2.rectangle(vis_grid, (x1, y1), (x2, y2), (0, 255, 0), 1)
+
+roi1_path = os.path.join(output_dir, f'roi1_{now}.png')
+cv2.imwrite(roi1_path, vis_grid)
+print(f'ROI-1 with grid lines saved to {roi1_path}')
+
+# Save bounding boxes to file
+bbox_path = os.path.join(output_dir, f'roi1_bboxes_{now}.txt')
+with open(bbox_path, 'w') as f:
+    for bbox in bboxes:
+        f.write(f'{bbox}\n')
+print(f'ROI-1 cell bounding boxes saved to {bbox_path}')
