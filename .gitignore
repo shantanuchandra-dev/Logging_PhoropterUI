@@ -1,0 +1,8 @@
+# Ignore all video files
+Sample/videos/
+Sample/videos/
+ROI_Menu
+ROI_0
+ROI_1
+MatchedScreens
+pipeline_output

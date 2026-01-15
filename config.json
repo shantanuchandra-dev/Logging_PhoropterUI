@@ -1,0 +1,7 @@
+{
+    "fps": "1/2",
+    "video_source_dir": "Sample/videos",
+    "reference_image": "topcon_ui_001.png",
+    "output_dir": "MatchedScreens",
+    "match_threshold": 0.4
+}
