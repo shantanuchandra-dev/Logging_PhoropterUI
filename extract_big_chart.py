@@ -11,55 +11,82 @@ import json
 from pathlib import Path
 
 def find_roi7_pane(img, color_hint=None):
-    """Detect the big chart pane by finding the most prominent black rectangular border."""
+    """Detect the big chart pane by merging adjacent rectangular parts."""
     height, width = img.shape[:2]
-    # Search right half, avoiding the very top/bottom and central SPH table
+    
+    # 1. Search zone
     search_x = int(width * 0.58) 
-    search_y1 = int(height * 0.15) 
+    search_y1 = int(height * 0.15)
     search_y2 = int(height * 0.95)
     right_zone = img[search_y1:search_y2, search_x:]
     
     gray = cv2.cvtColor(right_zone, cv2.COLOR_BGR2GRAY)
     blurred = cv2.GaussianBlur(gray, (5, 5), 0)
-    
-    # 1. Detect edges to find the black border lines
     edges = cv2.Canny(blurred, 30, 100)
+    edges = cv2.morphologyEx(edges, cv2.MORPH_CLOSE, np.ones((5, 5), np.uint8))
     
-    # 2. Find rectangular contours
+    # 2. Find all significant rectangular candidates
     cnts, _ = cv2.findContours(edges, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     
-    candidates = []
+    rects = []
     for c in cnts:
         area = cv2.contourArea(c)
-        if area < (width * height * 0.03): continue
+        if area < (width * height * 0.015): continue
         
-        # Approximate to find rectangles
         peri = cv2.arcLength(c, True)
         approx = cv2.approxPolyDP(c, 0.02 * peri, True)
-        
-        if len(approx) == 4:
+        if len(approx) >= 4:
             x, y, w, h = cv2.boundingRect(approx)
-            aspect = w / h
-            # Typical chart pane aspect ratio
-            if 0.6 < aspect < 2.0:
-                # Color check: does the interior match the color_hint?
-                mask = np.zeros(gray.shape, np.uint8)
-                cv2.drawContours(mask, [approx], -1, 255, -1)
-                mean_int = cv2.mean(gray, mask=mask)[0]
-                
-                score = area
-                if color_hint == 'white' and mean_int > 200: score *= 2
-                elif color_hint == 'black' and mean_int < 60: score *= 2
-                elif color_hint and ((color_hint == 'white' and mean_int < 150) or (color_hint == 'black' and mean_int > 150)):
-                    continue # Color mismatch
-                
-                # Favor candidates further to the right to avoid SPH table
-                right_bias = (x + w) / right_zone.shape[1]
-                candidates.append((score * right_bias, [x + search_x, y + search_y1, w, h]))
-                
+            if 0.3 < (w/h) < 3.0:
+                rects.append([x, y, w, h])
+
+    if not rects: return None
+    
+    # 3. Merge vertically stacked rects (for two-tone charts)
+    rects.sort(key=lambda b: b[1]) # Sort by Y
+    merged = []
+    for r in rects:
+        if not merged:
+            merged.append(r)
+            continue
+        
+        last = merged[-1]
+        # If this rect is just below the last one and has VERY similar width/X
+        y_gap = r[1] - (last[1] + last[3])
+        x_diff = abs(r[0] - last[0])
+        w_diff = abs(r[2] - last[2])
+        
+        # Slightly more generous alignment for different scales
+        if y_gap < 25 and x_diff < 10 and w_diff < 10:
+            # Merge
+            new_r = [
+                min(last[0], r[0]),
+                last[1],
+                max(last[2], r[2]),
+                (r[1] + r[3]) - last[1]
+            ]
+            merged[-1] = new_r
+        else:
+            merged.append(r)
+            
+    # 4. Pick the best merged candidate (rightmost large one)
+    candidates = []
+    for m in merged:
+        mx, my, mw, mh = m
+        area = mw * mh
+        # Filter for typical chart sizes
+        if area < (width * height * 0.03): continue
+        if area > (width * height * 0.15): continue
+        
+        rightness = (mx + mw/2) / (width - search_x)
+        score = area * rightness
+        candidates.append((score, [mx + search_x, my + search_y1, mw, mh]))
+        
     if candidates:
         candidates.sort(key=lambda x: x[0], reverse=True)
         return candidates[0][1]
+        
+    return None
         
     # Fallback to simple projection if no rectangle found
     _, mask = cv2.threshold(gray, 235 if color_hint == 'white' else 35, 255, 
@@ -137,6 +164,11 @@ def extract_roi7(img_path, output_dir):
     
     viz_path = output_dir / f"viz_roi7_{safe_name}.png"
     cv2.imwrite(str(viz_path), viz)
+    
+    # Debug edges
+    # edges_path = output_dir / f"debug_edges_{safe_name}.png"
+    # cv2.imwrite(str(edges_path), find_roi7_pane.debug_edges)
+    
     print(f"✓ {img_path.name}: ROI-7 extracted at {roi7_bbox}, correlated with ROI-6 idx {chart_info.get('roi6_selected_index')}")
 
 if __name__ == "__main__":
