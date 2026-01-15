@@ -50,34 +50,46 @@ top_half_path = os.path.join(output_dir, f'roi0_top_half_{now}.png')
 cv2.imwrite(top_half_path, roi0_top_half)
 print(f'Cropped ROI-0 top half saved to {top_half_path}')
 
-# Find the largest rectangular contour in the cropped top half
+
+# --- Improved 3x5 Table Detection ---
 gray = cv2.cvtColor(roi0_top_half, cv2.COLOR_BGR2GRAY)
-blur = cv2.GaussianBlur(gray, (5, 5), 0)
-edges = cv2.Canny(blur, 50, 150)
-contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+thresh = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY_INV, 15, 10)
 
+# Morphological operations to find horizontal and vertical lines
+kernel_h = cv2.getStructuringElement(cv2.MORPH_RECT, (25, 1))
+kernel_v = cv2.getStructuringElement(cv2.MORPH_RECT, (1, 25))
+horizontal = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel_h, iterations=2)
+vertical = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel_v, iterations=2)
+
+# Combine lines to get grid intersections
+grid = cv2.add(horizontal, vertical)
+contours, _ = cv2.findContours(grid, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+# Find the largest rectangle that could be a table
 max_area = 0
-table_contour = None
+table_rect = None
 for cnt in contours:
-    approx = cv2.approxPolyDP(cnt, 0.02 * cv2.arcLength(cnt, True), True)
-    area = cv2.contourArea(cnt)
-    if len(approx) == 4 and area > max_area:
+    x, y, w, h = cv2.boundingRect(cnt)
+    area = w * h
+    aspect = w / float(h)
+    # Heuristic: Table is wide, not too thin, and large
+    if area > max_area and 1.5 < aspect < 3.5 and w > 100 and h > 50:
         max_area = area
-        table_contour = approx
+        table_rect = (x, y, w, h)
 
-if table_contour is None:
-    raise Exception('No large rectangular contour found in ROI-0 top half.')
+if table_rect is None:
+    raise Exception('No 3x5 table-like rectangle found in ROI-0 top half.')
 
-# Get bounding rect and crop the table
-x, y, w, h = cv2.boundingRect(table_contour)
+# Crop the detected table
+x, y, w, h = table_rect
 roi1 = roi0_top_half[y:y+h, x:x+w]
 roi1_path = os.path.join(output_dir, f'roi1_{now}.png')
 cv2.imwrite(roi1_path, roi1)
 print(f'ROI-1 (table) saved to {roi1_path}')
 
-# Save visualization with contour drawn
+# Save visualization with grid overlay
 vis = roi0_top_half.copy()
-cv2.drawContours(vis, [table_contour], -1, (0, 255, 0), 3)
-contour_vis_path = os.path.join(output_dir, f'roi1_contour_{now}.png')
+cv2.rectangle(vis, (x, y), (x+w, y+h), (0, 255, 0), 3)
+contour_vis_path = os.path.join(output_dir, f'roi1_grid_{now}.png')
 cv2.imwrite(contour_vis_path, vis)
-print(f'ROI-1 contour visualization saved to {contour_vis_path}')
+print(f'ROI-1 grid visualization saved to {contour_vis_path}')
