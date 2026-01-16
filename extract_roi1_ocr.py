@@ -16,9 +16,76 @@ def extract_roi1_ocr(img, bboxes):
         ['R_Add', 'ADD_Anchor', 'L_Add'],
         ['R_blank', 'blank_anchor', 'L_blank']
     ]
-    for row in range(4):
+    
+    # Filter bboxes if we have more than 15 cells
+    n_cols = 3
+    n_expected = 15
+    if len(bboxes) > n_expected:
+        # Group by rows and find starting row
+        n_rows_detected = len(bboxes) // n_cols
+        rows = []
+        for i in range(n_rows_detected):
+            row_bboxes = bboxes[i * n_cols:(i + 1) * n_cols]
+            rows.append(row_bboxes)
+        
+        # Find starting row where 2nd cell has 'S'
+        start_row_idx = None
+        for i, row_bboxes in enumerate(rows):
+            if len(row_bboxes) >= 2:
+                x1, y1, x2, y2 = row_bboxes[1]
+                cell_img = img[y1:y2, x1:x2]
+                gray = cv2.cvtColor(cell_img, cv2.COLOR_BGR2GRAY)
+                _, bin_img = cv2.threshold(gray, 180, 255, cv2.THRESH_BINARY)
+                text = pytesseract.image_to_string(bin_img, config='--oem 3 --psm 10 -c tessedit_char_whitelist=S')
+                text = text.strip().upper()
+                if 'S' in text:
+                    start_row_idx = i
+                    break
+        
+        # If no 'S' found, skip rows with 'R' in 1st or 'L' in 3rd cell
+        if start_row_idx is None:
+            for i, row_bboxes in enumerate(rows):
+                if len(row_bboxes) >= 3:
+                    # Check 1st cell for 'R'
+                    x1, y1, x2, y2 = row_bboxes[0]
+                    cell_img = img[y1:y2, x1:x2]
+                    gray = cv2.cvtColor(cell_img, cv2.COLOR_BGR2GRAY)
+                    _, bin_img = cv2.threshold(gray, 180, 255, cv2.THRESH_BINARY)
+                    text1 = pytesseract.image_to_string(bin_img, config='--oem 3 --psm 10 -c tessedit_char_whitelist=R')
+                    text1 = text1.strip().upper()
+                    
+                    # Check 3rd cell for 'L'
+                    x1, y1, x2, y2 = row_bboxes[2]
+                    cell_img = img[y1:y2, x1:x2]
+                    gray = cv2.cvtColor(cell_img, cv2.COLOR_BGR2GRAY)
+                    _, bin_img = cv2.threshold(gray, 180, 255, cv2.THRESH_BINARY)
+                    text3 = pytesseract.image_to_string(bin_img, config='--oem 3 --psm 10 -c tessedit_char_whitelist=L')
+                    text3 = text3.strip().upper()
+                    
+                    if 'R' in text1 or 'L' in text3:
+                        continue
+                    else:
+                        start_row_idx = i
+                        break
+        
+        if start_row_idx is None:
+            start_row_idx = 0
+        
+        # Take exactly 5 rows
+        filtered_rows = rows[start_row_idx:start_row_idx + 5]
+        bboxes = []
+        for row_bboxes in filtered_rows:
+            if len(row_bboxes) == n_cols:
+                bboxes.extend(row_bboxes)
+        
+        print(f'Filtered bboxes for OCR: {len(bboxes)} cells (started from row {start_row_idx})')
+    
+    for row in range(5):  # Process all 5 rows including blank
         for col in range(3):
             idx = row * 3 + col
+            if idx >= len(bboxes):
+                results[cell_labels[row][col]] = None
+                continue
             x1, y1, x2, y2 = bboxes[idx]
             cell_img = img[y1:y2, x1:x2]
             gray = cv2.cvtColor(cell_img, cv2.COLOR_BGR2GRAY)
@@ -124,8 +191,11 @@ if __name__ == '__main__':
         'R_Add', 'ADD_Anchor', 'L_Add'
     ]:
         print(f'{label}: {results[label]}')
-    now = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
-    output_path = os.path.join(roi1_dir, f'ROI1_OCR_{now}.json')
+    now = datetime.datetime.now().strftime('%d%m_%H%M%S')
+    # Get prefix from roi1_path
+    base = os.path.splitext(os.path.basename(roi1_path))[0]
+    prefix = base[:4]
+    output_path = os.path.join(roi1_dir, f'{prefix}_{now}_ocr.json')
     with open(output_path, 'w') as f:
         json.dump(results, f, indent=2)
     print(f'Cell values saved to {output_path}')
