@@ -6,6 +6,7 @@ Extract ROI-5 Chart tabs region from bottom half images
 import cv2
 import numpy as np
 from pathlib import Path
+import json
 
 def extract_chart_tabs(input_path, output_dir):
     """
@@ -23,9 +24,15 @@ def extract_chart_tabs(input_path, output_dir):
     # --- Dynamic Detection Logic ---
     template_path = Path("ROI_5/chart_template.png")
     if not template_path.exists():
-        print("Warning: Template not found. Using fallback coordinates.")
-        y_start, y_end, x_start, x_end = 120, 175, 10, 490
-        boundaries = [0, 96, 192, 288, 384, 480]
+        print("Warning: Template not found. Using dynamic relative coordinates.")
+        h, w = img.shape[:2]
+        y_start = int(h * 0.22)
+        y_end = int(h * 0.31)
+        x_start = int(w * 0.175)
+        x_end = int(w * 0.47)
+        tab_width = (x_end - x_start) / 5
+        # Adjust for wider Tab1 to avoid overlap
+        boundaries = [x_start, x_start + 120, x_start + 120 + 88, x_start + 120 + 176, x_start + 120 + 264, x_end]
     else:
         template = cv2.imread(str(template_path))
         search_template = template
@@ -35,66 +42,33 @@ def extract_chart_tabs(input_path, output_dir):
         
         tw, th = search_template.shape[1], search_template.shape[0]
         res = cv2.matchTemplate(img, search_template, cv2.TM_CCOEFF_NORMED)
-        loc = np.where(res >= 0.6)
+        loc = np.where(res >= 0.3)
         matches = list(zip(*loc[::-1]))
         
         if not matches:
              print("Warning: No Chart labels detected. Using fallback.")
-             y_start, y_end, x_start, x_end = 120, 175, 10, 490
-             boundaries = [0, 96, 192, 288, 384, 480]
+             y_start, y_end, x_start, x_end = 0, 50, 0, 500
+             boundaries = [0, 100, 200, 300, 400, 500]
         else:
             # Group matches into 5 tab anchors
-            # Sort by X and group points that are close together
-            matches = sorted(matches, key=lambda p: p[0])
-            anchors = []
-            if matches:
-                curr_group = [matches[0]]
-                for i in range(1, len(matches)):
-                    if matches[i][0] - curr_group[-1][0] < tw * 0.5:
-                        curr_group.append(matches[i])
-                    else:
-                        # Find centroid of group
-                        anchors.append(np.mean(curr_group, axis=0))
-                        curr_group = [matches[i]]
-                anchors.append(np.mean(curr_group, axis=0))
+            y_coords = [pt[1] for pt in matches]
+            y_level = max(set(y_coords), key=y_coords.count)
+            min_x = min(pt[0] for pt in matches)
+            max_x = max(pt[0] for pt in matches)
             
-            # We expect 5 anchors. If we find more/less, we try to filter/extrapolate
-            anchors = sorted(anchors, key=lambda a: a[0])
-            if len(anchors) > 5:
-                # Keep top 5 by Y-consistency or just take the main 5
-                y_level = max(set([int(a[1]) for a in anchors]), key=[int(a[1]) for a in anchors].count)
-                anchors = [a for a in anchors if abs(a[1] - y_level) < 10][:5]
+            y_start, y_end = y_level, y_level + th  # Use template height
+            x_start, x_end = min_x, max_x + tw  # No extra padding
             
-            if len(anchors) < 2:
-                 y_start, y_end, x_start, x_end = 120, 175, 10, 490
-                 boundaries = [0, 96, 192, 288, 384, 480]
-            else:
-                y_level = int(np.mean([a[1] for a in anchors]))
-                
-                # Use spacing to define boundaries
-                # Midpoints between anchors
-                midpoints = []
-                avg_spacing = np.mean([anchors[i+1][0] - anchors[i][0] for i in range(len(anchors)-1)])
-                
-                for i in range(len(anchors) - 1):
-                    midpoints.append(int((anchors[i][0] + anchors[i+1][0]) / 2 + tw/2))
-                
-                # Define total range
-                x_start = max(0, int(anchors[0][0] - avg_spacing * 0.4))
-                x_end = min(width, int(anchors[-1][0] + tw + avg_spacing * 0.4))
-                y_start = max(0, y_level - 5)
-                y_end = min(height, y_level + th + 5)
-                
-                # Convert midpoints to relative coordinates for the strip
-                rel_midpoints = [int(m - x_start) for m in midpoints]
-                boundaries = [0] + rel_midpoints + [x_end - x_start]
-
+            # Calculate boundaries for 5 tabs
+            tab_width = (x_end - x_start) / 5
+            boundaries = [int(x_start + i * tab_width) for i in range(6)]
+    
     # Boundary safety check
     y_start = min(max(0, y_start), height - 1)
     y_end = min(max(y_start + 1, y_end), height)
     x_start = min(max(0, x_start), width - 1)
     x_end = min(max(x_start + 1, x_end), width)
-
+    
     print(f"Extraction region: y={y_start}-{y_end}, x={x_start}-{x_end}")
     chart_tabs = img[y_start:y_end, x_start:x_end]
     
@@ -118,8 +92,8 @@ def visualize_tab_blocks(full_img, coords, output_dir, timestamp, boundaries):
     viz = full_img.copy()
     
     for i in range(len(boundaries) - 1):
-        tx1 = x1 + boundaries[i]
-        tx2 = x1 + boundaries[i+1]
+        tx1 = boundaries[i]
+        tx2 = boundaries[i+1]
         
         # Draw box for this tab (Cyan)
         cv2.rectangle(viz, (tx1, y1), (tx2, y2), (255, 255, 0), 2)
@@ -140,12 +114,13 @@ def detect_selected_tab(chart_tabs_img, output_path, boundaries):
     print("\n  Analyzing tabs:")
     for i in range(len(boundaries) - 1):
         # Get region for this tab
-        bx1 = boundaries[i]
-        bx2 = boundaries[i+1]
+        bx1 = boundaries[i] - boundaries[0]  # Relative to crop
+        bx2 = boundaries[i+1] - boundaries[0]
         tab_region = chart_tabs_img[:, bx1:bx2]
         
-        if tab_region.size == 0: continue
-
+        if tab_region.size == 0:
+            continue
+        
         # Convert to HSV to detect yellow/orange color
         hsv = cv2.cvtColor(tab_region, cv2.COLOR_BGR2HSV)
         
@@ -169,10 +144,17 @@ def detect_selected_tab(chart_tabs_img, output_path, boundaries):
         # Save result as text file
         result_file = str(output_path).replace('.png', '_selected.txt')
         with open(result_file, 'w') as f:
-            f.write(f"selected_chart_tab: Chart{selected_index + 1}\n")
-            f.write(f"index: {selected_index}\n")
-            f.write(f"confidence: {max_yellow_score:.3f}\n")
-        print(f"  ✓ Saved selection to: {result_file}")
+            f.write(f"selected_chart_tab: Chart{selected_index + 1}\nindex: {selected_index}\nconfidence: {max_yellow_score:.3f}")
+        
+        # Save result as JSON file
+        json_file = str(output_path).replace('.png', '_selected.json')
+        with open(json_file, 'w') as f:
+            json.dump({
+                "selected_chart_tab": f"Chart{selected_index + 1}",
+                "index": selected_index,
+                "confidence": round(max_yellow_score, 3)
+            }, f, indent=2)
+        print(f"  ✓ Saved JSON to: {json_file}")
     
     # Optional: Try OCR on the tabs
     try_ocr_tabs(chart_tabs_img)
@@ -188,8 +170,8 @@ def try_ocr_tabs(chart_tabs_img):
         
         if results:
             print("\n  OCR Results:")
-            for (bbox, text, prob) in results:
-                print(f"    '{text}' (confidence: {prob:.2f})")
+            for (bbox, text, confidence) in results:
+                print(f"    '{text}' (confidence: {confidence:.2f})")
     except ImportError:
         print("\n  OCR skipped (easyocr not installed)")
     except Exception as e:
