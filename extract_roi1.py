@@ -1,49 +1,279 @@
-
 import cv2
 import numpy as np
+import os
+import datetime
 
-def extract_roi1(img, roi_menu_img=None):
-    # Optionally crop out ROI_Menu if provided
-    if roi_menu_img is not None:
-        roi_menu_y2 = roi_menu_img.shape[0]
-        img_cropped = img[roi_menu_y2:, :]
-    else:
-        img_cropped = img
 
-    h_full, w_full = img_cropped.shape[:2]
-    roi0_top_half = img_cropped[:h_full//2, :]
+def draw_and_save_grid_visualization(roi1_img, col_peaks, row_peaks, bboxes, output_dir='ROI_1', basename='roi1'):
+    """
+    Draws the grid and bounding boxes on the table image and saves the visualization.
+    Returns the visualization image path.
+    """
+    vis_img = roi1_img.copy()
+    height, width = vis_img.shape[:2]
+    # Draw vertical lines
+    for px in col_peaks:
+        cv2.line(vis_img, (px, 0), (px, height), (0, 0, 255), 2)
+    # Draw horizontal lines
+    for py in row_peaks:
+        cv2.line(vis_img, (0, py), (width, py), (0, 0, 255), 2)
+    # Draw bounding boxes and cell numbers in top left
+    cell_num = 1
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    font_scale = min(height, width) / 600.0
+    thickness = max(1, int(min(height, width) / 300))
+    margin = int(5 * font_scale)
+    for bbox in bboxes:
+        x1, y1, x2, y2 = bbox
+        cv2.rectangle(vis_img, (x1, y1), (x2, y2), (0, 255, 0), 1)
+        # Write cell number in the top left of the cell
+        cv2.putText(vis_img, str(cell_num), (x1 + margin, y1 + int(20 * font_scale)), font, font_scale, (255, 0, 0), thickness, cv2.LINE_AA)
+        cell_num += 1
+    now = datetime.datetime.now().strftime('%d%m_%H%M%S')
+    prefix = basename[:4]
+    vis_path = os.path.join(output_dir, f'{prefix}_{now}_grid.png')
+    cv2.imwrite(vis_path, vis_img)
+    print(f'ROI-1 with grid lines saved to {vis_path}')
+    return vis_path
+def filter_bboxes_by_content(roi1_img, bboxes, n_cols=3):
+    """
+    Filters bboxes to get exactly 15 cells (5 rows x 3 columns) by:
+    1. Skipping rows where 1st cell has 'R' or 3rd cell has 'L' (header rows)
+    2. Starting from the row where 2nd cell has 'S'
+    3. Taking the next 5 valid rows
+    Returns filtered bboxes (should be exactly 15 cells).
+    """
+    import pytesseract
+    n_total = len(bboxes)
+    n_rows_detected = n_total // n_cols
+    
+    # Group bboxes by rows
+    rows = []
+    for i in range(n_rows_detected):
+        row_bboxes = bboxes[i * n_cols:(i + 1) * n_cols]
+        rows.append(row_bboxes)
+    
+    # Find the starting row (where 2nd cell has 'S')
+    start_row_idx = None
+    for i, row_bboxes in enumerate(rows):
+        if len(row_bboxes) >= 2:
+            # Check 2nd cell (index 1) for 'S'
+            x1, y1, x2, y2 = row_bboxes[1]
+            cell_img = roi1_img[y1:y2, x1:x2]
+            gray = cv2.cvtColor(cell_img, cv2.COLOR_BGR2GRAY)
+            _, bin_img = cv2.threshold(gray, 180, 255, cv2.THRESH_BINARY)
+            text = pytesseract.image_to_string(bin_img, config='--oem 3 --psm 10 -c tessedit_char_whitelist=S')
+            text = text.strip().upper()
+            if 'S' in text:
+                start_row_idx = i
+                break
+    
+    # If no 'S' found, try to skip header rows and use first valid row
+    if start_row_idx is None:
+        for i, row_bboxes in enumerate(rows):
+            if len(row_bboxes) >= 3:
+                # Check 1st cell for 'R'
+                x1, y1, x2, y2 = row_bboxes[0]
+                cell_img = roi1_img[y1:y2, x1:x2]
+                gray = cv2.cvtColor(cell_img, cv2.COLOR_BGR2GRAY)
+                _, bin_img = cv2.threshold(gray, 180, 255, cv2.THRESH_BINARY)
+                text1 = pytesseract.image_to_string(bin_img, config='--oem 3 --psm 10 -c tessedit_char_whitelist=R')
+                text1 = text1.strip().upper()
+                
+                # Check 3rd cell for 'L'
+                x1, y1, x2, y2 = row_bboxes[2]
+                cell_img = roi1_img[y1:y2, x1:x2]
+                gray = cv2.cvtColor(cell_img, cv2.COLOR_BGR2GRAY)
+                _, bin_img = cv2.threshold(gray, 180, 255, cv2.THRESH_BINARY)
+                text3 = pytesseract.image_to_string(bin_img, config='--oem 3 --psm 10 -c tessedit_char_whitelist=L')
+                text3 = text3.strip().upper()
+                
+                # If this row has 'R' in 1st or 'L' in 3rd, skip it
+                if 'R' in text1 or 'L' in text3:
+                    continue
+                else:
+                    start_row_idx = i
+                    break
+    
+    # If still no start row found, use first row
+    if start_row_idx is None:
+        start_row_idx = 0
+    
+    # Take exactly 5 rows starting from start_row_idx
+    filtered_rows = rows[start_row_idx:start_row_idx + 5]
+    filtered_bboxes = []
+    for row_bboxes in filtered_rows:
+        if len(row_bboxes) == n_cols:
+            filtered_bboxes.extend(row_bboxes)
+    
+    print(f'Filtered bboxes: {len(bboxes)} -> {len(filtered_bboxes)} (started from row {start_row_idx})')
+    return filtered_bboxes
 
-    # --- Improved 3x5 Table Detection ---
-    gray = cv2.cvtColor(roi0_top_half, cv2.COLOR_BGR2GRAY)
-    thresh = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY_INV, 15, 10)
-    kernel_h = cv2.getStructuringElement(cv2.MORPH_RECT, (25, 1))
-    kernel_v = cv2.getStructuringElement(cv2.MORPH_RECT, (1, 25))
-    horizontal = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel_h, iterations=2)
-    vertical = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel_v, iterations=2)
-    grid = cv2.add(horizontal, vertical)
-    contours, _ = cv2.findContours(grid, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    max_area = 0
-    table_rect = None
-    for cnt in contours:
-        x, y, w, h = cv2.boundingRect(cnt)
-        area = w * h
-        aspect = w / float(h)
-        if area > max_area and 1.5 < aspect < 3.5 and w > 100 and h > 50:
-            max_area = area
-            table_rect = (x, y, w, h)
-    if table_rect is None:
-        raise Exception('No 3x5 table-like rectangle found in ROI-0 top half.')
+def calculate_and_save_bboxes(col_peaks, row_peaks, roi1_img=None, output_dir='ROI_1', basename='roi1'):
+    """
+    Calculates bounding boxes for each cell in the grid and saves them to a text file.
+    If roi1_img is provided, filters bboxes to get exactly 15 cells by skipping header rows.
+    Returns the list of bounding boxes and the file path.
+    """
+    bboxes = []
+    for i in range(len(row_peaks)-1):
+        for j in range(len(col_peaks)-1):
+            x1 = col_peaks[j]
+            x2 = col_peaks[j+1]
+            y1 = row_peaks[i]
+            y2 = row_peaks[i+1]
+            bboxes.append((x1, y1, x2, y2))
+    
+    # Filter bboxes if image is provided and we have more than 15 cells
+    if roi1_img is not None and len(bboxes) > 15:
+        bboxes = filter_bboxes_by_content(roi1_img, bboxes, n_cols=len(col_peaks)-1)
+    
+    now = datetime.datetime.now().strftime('%d%m_%H%M%S')
+    prefix = basename[:4]
+    bbox_path = os.path.join(output_dir, f'{prefix}_{now}_bboxes.txt')
+    with open(bbox_path, 'w') as f:
+        for bbox in bboxes:
+            f.write(f'{bbox}\n')
+    print(f'ROI-1 cell bounding boxes saved to {bbox_path}')
+    return bboxes, bbox_path
+def detect_grid_lines_hough(roi1_img, n_cols=3, n_rows=5):
+    """
+    Detects grid lines in the ROI-1 table image using Hough Line Transform.
+    Returns column and row positions (peaks) for grid lines.
+    """
+    gray = cv2.cvtColor(roi1_img, cv2.COLOR_BGR2GRAY)
+    # Adaptive threshold to binarize
+    bin_img = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY_INV, 15, 10)
+    # Morphological operations to enhance lines
+    kernel_h = cv2.getStructuringElement(cv2.MORPH_RECT, (roi1_img.shape[1]//12, 1))
+    kernel_v = cv2.getStructuringElement(cv2.MORPH_RECT, (1, roi1_img.shape[0]//12))
+    morph_h = cv2.morphologyEx(bin_img, cv2.MORPH_OPEN, kernel_h)
+    morph_v = cv2.morphologyEx(bin_img, cv2.MORPH_OPEN, kernel_v)
+    # Save intermediate images
+    now = datetime.datetime.now().strftime('%d%m_%H%M%S')
+    os.makedirs('ROI_1', exist_ok=True)
+    # Always get prefix from caller's 'basename' or 'prefix' local variable
+    import inspect
+    prefix = 'roi1'
+    frame = inspect.currentframe().f_back
+    if 'basename' in frame.f_locals:
+        prefix = str(frame.f_locals['basename'])[:4]
+    elif 'prefix' in frame.f_locals:
+        prefix = str(frame.f_locals['prefix'])[:4]
+    cv2.imwrite(f'ROI_1/{prefix}_{now}_bin.png', bin_img)
+    cv2.imwrite(f'ROI_1/{prefix}_{now}_hlines.png', morph_h)
+    cv2.imwrite(f'ROI_1/{prefix}_{now}_vlines.png', morph_v)
+    # Projection profiles for line detection
+    h_proj = np.sum(morph_h, axis=1)
+    v_proj = np.sum(morph_v, axis=0)
+    # Find peaks in projection profiles
+    from scipy.signal import find_peaks
+    h_peaks, _ = find_peaks(h_proj, height=np.max(h_proj)*0.5, distance=roi1_img.shape[0]//10)
+    v_peaks, _ = find_peaks(v_proj, height=np.max(v_proj)*0.5, distance=roi1_img.shape[1]//10)
+    # Do NOT remove border lines; keep all detected peaks
+    height, width = roi1_img.shape[:2]
+    # h_peaks and v_peaks now include border lines if detected
+    # Sort and ensure width > height for cells
+    h_peaks = sorted(h_peaks)
+    v_peaks = sorted(v_peaks)
+    # Overlay detected lines for visualization
+    overlay = roi1_img.copy()
+    for py in h_peaks:
+        cv2.line(overlay, (0, py), (width, py), (0, 255, 255), 2)
+    for px in v_peaks:
+        cv2.line(overlay, (px, 0), (px, height), (255, 255, 0), 2)
+    cv2.imwrite(f'ROI_1/{prefix}_{now}_grid_overlay.png', overlay)
+    print(f'Intermediate images saved: bin, hlines, vlines, grid overlay')
+    # Return peaks as grid lines
+    return v_peaks, h_peaks
+def extract_and_save_table_region(cropped_img, table_rect, output_dir='ROI_1', basename='roi1'):
+    """
+    Extracts the table region (ROI-1) from the cropped image and saves it as an image.
+    Returns the ROI-1 image and its path.
+    """
     x, y, w, h = table_rect
-    roi1 = roi0_top_half[y:y+h, x:x+w]
-
-    # --- Robust grid detection using Hough Line Transform ---
-    vis_grid = roi1.copy()
-    gray_roi1 = cv2.cvtColor(roi1, cv2.COLOR_BGR2GRAY)
-    edges = cv2.Canny(gray_roi1, 50, 150, apertureSize=3)
-    lines = cv2.HoughLinesP(edges, 1, np.pi/180, threshold=80, minLineLength=30, maxLineGap=10)
+    # Add 5 pixels to the right and bottom
+    roi1 = cropped_img[y:y+h+5, x:x+w+5]
+    # Further crop from the top until the first complete end-to-end horizontal line is found
+    # Use adaptive threshold and morphology to find hlines
+    gray = cv2.cvtColor(roi1, cv2.COLOR_BGR2GRAY)
+    bin_img = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY_INV, 15, 10)
+    kernel_h = cv2.getStructuringElement(cv2.MORPH_RECT, (roi1.shape[1]//12, 1))
+    morph_h = cv2.morphologyEx(bin_img, cv2.MORPH_OPEN, kernel_h)
+    # Scan rows for a complete horizontal line (all white pixels)
+    found_top = 0
+    for i in range(morph_h.shape[0]):
+        if np.sum(morph_h[i, :] > 200) > 0.95 * morph_h.shape[1]:
+            found_top = i
+            break
+    # Crop from found_top if a line is found and it's not too far down
+    if found_top > 0 and found_top < roi1.shape[0]//3:
+        roi1 = roi1[found_top:, :]
+    now = datetime.datetime.now().strftime('%d%m_%H%M%S')
+    prefix = basename[:4]
+    roi1_path = os.path.join(output_dir, f'{prefix}_{now}_roi1.png')
+    cv2.imwrite(roi1_path, roi1)
+    print(f'ROI-1 (table) saved to {roi1_path}')
+    return roi1, roi1_path
+def detect_centered_table(cropped_img):
+    """
+    Detect a centered 3x5 table in the cropped image using contour filtering and heuristics.
+    Returns the bounding box (x, y, w, h) of the detected table region.
+    """
+    import pytesseract
+    h_img, w_img = cropped_img.shape[:2]
+    # Focus search on central region (60% width, 80% height)
+    cx, cy = w_img // 2, h_img // 2
+    search_w, search_h = int(w_img * 0.6), int(h_img * 0.8)
+    x0, y0 = cx - search_w // 2, cy - search_h // 2
+    central_crop = cropped_img[y0:y0+search_h, x0:x0+search_w]
+    # OCR to find S, C, A, ADD, Blank in the central column
+    ocr_config = '--psm 6'
+    ocr_result = pytesseract.image_to_data(central_crop, config=ocr_config, output_type=pytesseract.Output.DICT)
+    # Find all row label positions and heights
+    row_labels = ['S', 'C', 'A', 'ADD', '']
+    found_rows = []
+    for i, text in enumerate(ocr_result['text']):
+        t = text.strip().upper()
+        if t in {'S', 'C', 'A', 'ADD'} or t == '':
+            found_rows.append((t, ocr_result['left'][i], ocr_result['top'][i], ocr_result['width'][i], ocr_result['height'][i]))
+    # Try to order by y (top)
+    found_rows = sorted(found_rows, key=lambda x: x[2])
+    # Try to match the sequence S, C, A, ADD, Blank (allow missing Blank)
+    sequence = ['S', 'C', 'A', 'ADD']
+    matched = []
+    for label in sequence:
+        for row in found_rows:
+            if row[0] == label:
+                matched.append(row)
+                break
+    # If at least S, C, A, ADD found in order, use their heights
+    if len(matched) == 4:
+        # Use the first row's height as canonical row height
+        row_height = matched[0][4]
+        # Use the y of S as the top
+        y_start = matched[0][2]
+        # Use the x and width of the leftmost label as the left
+        x_left = min([row[1] for row in matched])
+        x_right = max([row[1] + row[3] for row in matched])
+        # Expand horizontally to cover the table (add padding)
+        pad_x = int(search_w * 0.15)
+        x1 = max(x0 + x_left - pad_x, 0)
+        x2 = min(x0 + x_right + pad_x, w_img)
+        # Table is 5 rows (S, C, A, ADD, Blank)
+        n_rows = 5
+        y1 = max(y0 + y_start, 0)
+        y2 = min(y1 + n_rows * row_height, h_img)
+        w = x2 - x1
+        h = y2 - y1
+        return (x1, y1, w, h)
+    # Fallback: use previous grid/contour heuristics
+    gray = cv2.cvtColor(central_crop, cv2.COLOR_BGR2GRAY)
+    thresh = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 15, 10)
+    edges = cv2.Canny(thresh, 50, 150, apertureSize=3)
+    lines = cv2.HoughLinesP(edges, 1, np.pi/180, threshold=100, minLineLength=central_crop.shape[1]//6, maxLineGap=15)
     verticals = []
     horizontals = []
-    height, width = vis_grid.shape[:2]
     if lines is not None:
         for line in lines:
             x1, y1, x2, y2 = line[0]
@@ -52,220 +282,95 @@ def extract_roi1(img, roi_menu_img=None):
             elif abs(y1 - y2) < 10:
                 horizontals.append((x1, y1, x2, y2))
         from sklearn.cluster import KMeans
-        if len(verticals) >= 4:
+        if len(verticals) >= 4 and len(horizontals) >= 6:
             v_coords = np.array([v[0] for v in verticals] + [v[2] for v in verticals]).reshape(-1, 1)
             kmeans_v = KMeans(n_clusters=4, n_init=10).fit(v_coords)
             col_peaks = sorted([int(c[0]) for c in kmeans_v.cluster_centers_])
-        else:
-            col_peaks = np.linspace(0, width, 4, dtype=int)
-        if len(horizontals) >= 6:
             h_coords = np.array([h[1] for h in horizontals] + [h[3] for h in horizontals]).reshape(-1, 1)
             kmeans_h = KMeans(n_clusters=6, n_init=10).fit(h_coords)
             row_peaks = sorted([int(c[0]) for c in kmeans_h.cluster_centers_])
+            # Use the outermost grid lines to define the table region
+            x1, x2 = x0 + col_peaks[0], x0 + col_peaks[-1]
+            y1, y2 = y0 + row_peaks[0], y0 + row_peaks[-1]
+            w, h = x2 - x1, y2 - y1
+            return (x1, y1, w, h)
+    # Final fallback: use central region as table
+    return (x0, y0, search_w, search_h)
+def crop_and_subtract_menu(img_path, roi_menu_path=None, output_dir='ROI_1'):
+    """
+    Crop the input image in half, subtract the height of ROI_Menu, and save to ROI_1 folder.
+    Returns the cropped image for further processing.
+    """
+    img = cv2.imread(img_path)
+    if img is None:
+        raise FileNotFoundError(f'Could not load {img_path}')
+    roi_menu_y2 = 0
+    if roi_menu_path:
+        roi_menu_img = cv2.imread(roi_menu_path)
+        if roi_menu_img is not None:
+            roi_menu_y2 = roi_menu_img.shape[0]
         else:
-            row_peaks = np.linspace(0, height, 6, dtype=int)
-    else:
-        col_peaks = np.linspace(0, width, 4, dtype=int)
-        row_peaks = np.linspace(0, height, 6, dtype=int)
-    bboxes = []
-    for i in range(5):
-        for j in range(3):
-            x1 = col_peaks[j]
-            x2 = col_peaks[j+1]
-            y1 = row_peaks[i]
-            y2 = row_peaks[i+1]
-            bboxes.append((x1, y1, x2, y2))
-    return {'roi1': roi1, 'bboxes': bboxes}
+            print(f'Warning: Could not load ROI_Menu image: {roi_menu_path}')
+    # Subtract menu height and crop top half
+    img_cropped = img[roi_menu_y2:, :]
+    h_full, w_full = img_cropped.shape[:2]
+    cropped_half = img_cropped[:h_full//2, :]
+    os.makedirs(output_dir, exist_ok=True)
+    now = datetime.datetime.now().strftime('%d%m_%H%M%S')
+    basename = os.path.splitext(os.path.basename(img_path))[0]
+    prefix = basename[:4]
+    crop_path = os.path.join(output_dir, f'{prefix}_{now}_half.png')
+    cv2.imwrite(crop_path, cropped_half)
+    print(f'Cropped image saved to {crop_path}')
+    return cropped_half, crop_path
 
-# If run as a script, keep original behavior
+
 if __name__ == '__main__':
     import sys
-    import os
-    import datetime
     roi0_dir = 'ROI_0'
-    roi0_files = [f for f in os.listdir(roi0_dir) if f.startswith('roi0_') and f.endswith('.png') and 'box' not in f]
-    if not roi0_files:
-        raise FileNotFoundError('No ROI-0 images found in ROI_0 directory.')
-    roi0_files.sort()
-    roi0_path = os.path.join(roi0_dir, roi0_files[-1])
-    img = cv2.imread(roi0_path)
-    if img is None:
-        raise FileNotFoundError(f'Could not load {roi0_path}')
-    result = extract_roi1(img)
-    roi1 = result['roi1']
-    bboxes = result['bboxes']
+    roi_menu_dir = 'ROI_Menu'
     output_dir = 'ROI_1'
-    os.makedirs(output_dir, exist_ok=True)
-    now = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
-    roi1_path = os.path.join(output_dir, f'roi1_{now}.png')
-    cv2.imwrite(roi1_path, roi1)
-    print(f'ROI-1 (table) saved to {roi1_path}')
-    # Optionally, draw grid and save
-    vis_grid = roi1.copy()
-    height, width = vis_grid.shape[:2]
-    for bbox in bboxes:
-        x1, y1, x2, y2 = bbox
-        cv2.rectangle(vis_grid, (x1, y1), (x2, y2), (0, 255, 0), 1)
-    vis_path = os.path.join(output_dir, f'roi1_grid_{now}.png')
-    cv2.imwrite(vis_path, vis_grid)
-    print(f'ROI-1 with grid lines saved to {vis_path}')
-    bbox_path = os.path.join(output_dir, f'roi1_bboxes_{now}.txt')
-    with open(bbox_path, 'w') as f:
-        for bbox in bboxes:
-            f.write(f'{bbox}\n')
-    print(f'ROI-1 cell bounding boxes saved to {bbox_path}')
-import cv2
-import numpy as np
-import pytesseract
-import os
-import datetime
-
-
-# Path to the latest ROI-0 image (assume most recent file in ROI_0)
-roi0_dir = 'ROI_0'
-roi0_files = [f for f in os.listdir(roi0_dir) if f.startswith('roi0_') and f.endswith('.png') and 'box' not in f]
-if not roi0_files:
-    raise FileNotFoundError('No ROI-0 images found in ROI_0 directory.')
-roi0_files.sort()
-roi0_path = os.path.join(roi0_dir, roi0_files[-1])
-
-img = cv2.imread(roi0_path)
-if img is None:
-    raise FileNotFoundError(f'Could not load {roi0_path}')
-
-# --- Find ROI_Menu to crop it out completely and track offset ---
-roi_menu_dir = 'ROI_MENU'
-roi_menu_files = [f for f in os.listdir(roi_menu_dir) if f.startswith('roi_menu_') and f.endswith('.png')]
-roi_menu_files.sort()
-roi_menu_path = os.path.join(roi_menu_dir, roi_menu_files[-1]) if roi_menu_files else None
-roi_menu_y2 = 0
-if roi_menu_path:
-    menu_img = cv2.imread(roi_menu_path)
-    if menu_img is not None:
-        roi_menu_y2 = menu_img.shape[0]
-        # Crop out the menu from the image for processing, but keep offset for output
-        img_cropped = img[roi_menu_y2:, :]
+    
+    # Accept image file as command-line argument
+    if len(sys.argv) >= 2:
+        roi0_path = sys.argv[1]
+        if not os.path.isfile(roi0_path):
+            raise FileNotFoundError(f'Image file not found: {roi0_path}')
     else:
-        print('Warning: Could not load ROI_Menu image, not cropping menu.')
-        img_cropped = img
-else:
-    print('Warning: No ROI_Menu image found, not cropping menu.')
-    img_cropped = img
-
-
-
-# Crop ROI-0 to top half (minus ROI_Menu)
-h_full, w_full = img_cropped.shape[:2]
-roi0_top_half = img_cropped[:h_full//2, :]
-
-# Save the cropped top half image
-output_dir = 'ROI_1'
-os.makedirs(output_dir, exist_ok=True)
-now = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
-top_half_path = os.path.join(output_dir, f'roi0_top_half_{now}.png')
-cv2.imwrite(top_half_path, roi0_top_half)
-print(f'Cropped ROI-0 top half saved to {top_half_path}')
-
-
-# --- Improved 3x5 Table Detection ---
-gray = cv2.cvtColor(roi0_top_half, cv2.COLOR_BGR2GRAY)
-thresh = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY_INV, 15, 10)
-
-# Morphological operations to find horizontal and vertical lines
-kernel_h = cv2.getStructuringElement(cv2.MORPH_RECT, (25, 1))
-kernel_v = cv2.getStructuringElement(cv2.MORPH_RECT, (1, 25))
-horizontal = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel_h, iterations=2)
-vertical = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel_v, iterations=2)
-
-# Combine lines to get grid intersections
-grid = cv2.add(horizontal, vertical)
-contours, _ = cv2.findContours(grid, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
-# Find the largest rectangle that could be a table
-max_area = 0
-table_rect = None
-for cnt in contours:
-    x, y, w, h = cv2.boundingRect(cnt)
-    area = w * h
-    aspect = w / float(h)
-    # Heuristic: Table is wide, not too thin, and large
-    if area > max_area and 1.5 < aspect < 3.5 and w > 100 and h > 50:
-        max_area = area
-        table_rect = (x, y, w, h)
-
-
-if table_rect is None:
-    raise Exception('No 3x5 table-like rectangle found in ROI-0 top half.')
-
-# Crop the detected table
-x, y, w, h = table_rect
-roi1 = roi0_top_half[y:y+h, x:x+w]
-roi1_path = os.path.join(output_dir, f'roi1_{now}.png')
-cv2.imwrite(roi1_path, roi1)
-print(f'ROI-1 (table) saved to {roi1_path}')
-
-
-
-# --- Robust grid detection using Hough Line Transform ---
-vis_grid = roi1.copy()
-gray_roi1 = cv2.cvtColor(roi1, cv2.COLOR_BGR2GRAY)
-edges = cv2.Canny(gray_roi1, 50, 150, apertureSize=3)
-lines = cv2.HoughLinesP(edges, 1, np.pi/180, threshold=80, minLineLength=30, maxLineGap=10)
-
-verticals = []
-horizontals = []
-height, width = vis_grid.shape[:2]
-if lines is not None:
-    for line in lines:
-        x1, y1, x2, y2 = line[0]
-        if abs(x1 - x2) < 10:  # vertical
-            verticals.append((x1, y1, x2, y2))
-        elif abs(y1 - y2) < 10:  # horizontal
-            horizontals.append((x1, y1, x2, y2))
-
-    # Cluster verticals and horizontals
-    from sklearn.cluster import KMeans
-    if len(verticals) >= 4:
-        v_coords = np.array([v[0] for v in verticals] + [v[2] for v in verticals]).reshape(-1, 1)
-        kmeans_v = KMeans(n_clusters=4, n_init=10).fit(v_coords)
-        col_peaks = sorted([int(c[0]) for c in kmeans_v.cluster_centers_])
+        # Fallback: Find latest crop_ image in ROI_0
+        roi0_files = [f for f in os.listdir(roi0_dir) if f.startswith('crop_') and f.endswith('.png')]
+        roi0_files.sort()
+        roi0_path = os.path.join(roi0_dir, roi0_files[-1]) if roi0_files else None
+        if not roi0_path or not os.path.isfile(roi0_path):
+            raise FileNotFoundError('No crop_ ROI_0 image found. Please provide an image file as argument.')
+    
+    # Extract prefix from filename
+    basename = os.path.splitext(os.path.basename(roi0_path))[0]
+    # Remove 'crop_' prefix if present
+    if basename.startswith('crop_'):
+        prefix = basename.replace('crop_', '').split('_')[0]
     else:
-        col_peaks = np.linspace(0, width, 4, dtype=int)
-    if len(horizontals) >= 6:
-        h_coords = np.array([h[1] for h in horizontals] + [h[3] for h in horizontals]).reshape(-1, 1)
-        kmeans_h = KMeans(n_clusters=6, n_init=10).fit(h_coords)
-        row_peaks = sorted([int(c[0]) for c in kmeans_h.cluster_centers_])
-    else:
-        row_peaks = np.linspace(0, height, 6, dtype=int)
-else:
-    col_peaks = np.linspace(0, width, 4, dtype=int)
-    row_peaks = np.linspace(0, height, 6, dtype=int)
+        prefix = basename.split('_')[0]
+    
+    # Find corresponding ROI_Menu image (same prefix)
+    roi_menu_path = None
+    if os.path.isdir(roi_menu_dir):
+        roi_menu_files = [f for f in os.listdir(roi_menu_dir) if f.endswith('.png') and prefix in f]
+        roi_menu_files.sort()
+        roi_menu_path = os.path.join(roi_menu_dir, roi_menu_files[-1]) if roi_menu_files else None
 
-# Draw vertical lines
-for px in col_peaks:
-    cv2.line(vis_grid, (px, 0), (px, height), (0, 0, 255), 2)
-# Draw horizontal lines
-for py in row_peaks:
-    cv2.line(vis_grid, (0, py), (width, py), (0, 0, 255), 2)
-
-# Save bounding boxes for each cell
-bboxes = []
-for i in range(5):
-    for j in range(3):
-        x1 = col_peaks[j]
-        x2 = col_peaks[j+1]
-        y1 = row_peaks[i]
-        y2 = row_peaks[i+1]
-        bboxes.append((x1, y1, x2, y2))
-        cv2.rectangle(vis_grid, (x1, y1), (x2, y2), (0, 255, 0), 1)
-
-roi1_path = os.path.join(output_dir, f'roi1_{now}.png')
-cv2.imwrite(roi1_path, vis_grid)
-print(f'ROI-1 with grid lines saved to {roi1_path}')
-
-# Save bounding boxes to file
-bbox_path = os.path.join(output_dir, f'roi1_bboxes_{now}.txt')
-with open(bbox_path, 'w') as f:
-    for bbox in bboxes:
-        f.write(f'{bbox}\n')
-print(f'ROI-1 cell bounding boxes saved to {bbox_path}')
+    # Step 1: Crop and subtract menu
+    cropped_img, crop_path = crop_and_subtract_menu(roi0_path, roi_menu_path, output_dir)
+    # Step 2: Detect centered table
+    table_rect = detect_centered_table(cropped_img)
+    # Step 3: Extract and save table region
+    roi1_img, roi1_path = extract_and_save_table_region(cropped_img, table_rect, output_dir, basename=prefix)
+    # Step 4: Detect grid lines
+    col_peaks, row_peaks = detect_grid_lines_hough(roi1_img, n_cols=3, n_rows=5)
+    # Step 5: Calculate and save bounding boxes (with filtering if needed)
+    bboxes, bbox_path = calculate_and_save_bboxes(col_peaks, row_peaks, roi1_img, output_dir, basename=prefix)
+    # Step 6: Draw and save grid visualization
+    vis_path = draw_and_save_grid_visualization(roi1_img, col_peaks, row_peaks, bboxes, output_dir, basename=prefix)
+    print(f'Pipeline completed for {roi0_path}')
+    print(f'ROI1 image: {roi1_path}')
+    print(f'Bounding boxes: {bbox_path}')
