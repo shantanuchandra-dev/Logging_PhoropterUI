@@ -7,6 +7,7 @@ import datetime
 
 # Try to find tesseract
 tesseract_paths = [
+    
     r'C:\Program Files\Tesseract-OCR\tesseract.exe',
     r'C:\Users\chirayu.maru\AppData\Local\Tesseract-OCR\tesseract.exe',
     r'C:\Users\chirayu.maru\AppData\Local\Programs\Tesseract-OCR\tesseract.exe'

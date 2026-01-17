@@ -1,0 +1,14 @@
+# Ignore all video files
+Sample/videos/
+ROI_Menu/
+ROI_0*/
+ROI_1*/
+ROI_2*/
+pipeline_output/
+firstFrame/
+firstFrame_JSON/
+__pycache__/
+
+.DS_Store
+settings.json
+pipeline.py
