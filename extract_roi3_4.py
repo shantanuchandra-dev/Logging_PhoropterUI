@@ -6,7 +6,6 @@ import datetime
 
 def extract_roi3_4():
     # 1. Path to the latest ROI-0 image
-
     roi0_dir = 'ROI_0'
     roi0_files = [f for f in os.listdir(roi0_dir) if f.startswith('roi0_') and f.endswith('.png') and 'box' not in f]
     if not roi0_files:
@@ -20,8 +19,9 @@ def extract_roi3_4():
         print(f'Could not load {roi0_path}')
         return
 
-    # Resize to the required resolution for this logic
+    # User requested to force this resolution for ROI 3/4
     img = cv2.resize(img, (929, 823))
+
     h, w = img.shape[:2]
 
     # 2. Find Circles (Occluders)

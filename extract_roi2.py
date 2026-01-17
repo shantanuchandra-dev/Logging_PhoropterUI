@@ -4,13 +4,17 @@ import numpy as np
 import pytesseract
 import os
 import datetime
+import ssl
+ssl._create_default_https_context = ssl._create_unverified_context
 
 # Try to find tesseract
 tesseract_paths = [
     
     r'C:\Program Files\Tesseract-OCR\tesseract.exe',
     r'C:\Users\chirayu.maru\AppData\Local\Tesseract-OCR\tesseract.exe',
-    r'C:\Users\chirayu.maru\AppData\Local\Programs\Tesseract-OCR\tesseract.exe'
+    r'C:\Users\chirayu.maru\AppData\Local\Programs\Tesseract-OCR\tesseract.exe',
+    '/usr/local/bin/tesseract',
+    '/opt/homebrew/bin/tesseract'
 ]
 
 for path in tesseract_paths:
@@ -32,6 +36,9 @@ def extract_roi2():
     if img is None:
         print(f'Could not load {roi0_path}')
         return
+
+    # User requested to force this resolution for ROI 2
+    img = cv2.resize(img, (929, 823))
 
     h, w = img.shape[:2]
 
@@ -146,7 +153,18 @@ def extract_roi2():
     try:
         pd_text = pytesseract.image_to_string(roi_pd_box_bin, config=custom_config)
     except Exception as e:
-        pd_text = f"OCR Error: {e}"
+        print(f"Tesseract failed: {e}. Trying EasyOCR...")
+        try:
+            import easyocr
+            # Suppress easyocr loading output
+            import logging
+            logging.getLogger('easyocr').setLevel(logging.ERROR)
+            
+            reader = easyocr.Reader(['en'], gpu=False)
+            results = reader.readtext(roi_pd_box_bin, detail=0)
+            pd_text = " ".join(results) if results else ""
+        except Exception as e2:
+            pd_text = f"OCR Error: {e} | EasyOCR Error: {e2}"
 
     # 6. Save results
     output_dir = 'ROI_2'
