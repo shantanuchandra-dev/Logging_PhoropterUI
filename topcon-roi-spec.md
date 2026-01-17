@@ -121,6 +121,47 @@
   }
   ```
 
+
+## Automated ROI Extraction Pipeline
+
+### Overview
+
+The `pipeline.py` script automates the extraction of all available ROIs from a video file. It performs the following steps:
+
+1. **Video Input**: Accepts a video file as input.
+2. **Frame Extraction**: Uses `scan_video.py` to extract the first frame containing the medical UI (ROI-0 reference).
+3. **ROI-0 Extraction**: Crops the main application window using `extract_roi0.py`.
+4. **ROI Processing**: Sequentially processes ROI-0 with all available ROI extractors:
+  - `extract_roi_menu.py` (Menu bar)
+  - `extract_roi1.py` (S/C/A/ADD table)
+  - `extract_roi2_temp.py` (PD label/value)
+  - `extract_roi5.py` (Chart tabs)
+  - `extract_roi6.py` (Chart options grid)
+  - `extract_roi7.py` (Big chart pane)
+  - (Skips ROI-3, ROI-4, ROI-8 if code is not available)
+5. **Coordinate Mapping**: Each ROI script should output the coordinates of its region relative to ROI-0. The pipeline collects all these coordinates.
+6. **Output Compilation**: All ROI coordinates and output image paths are compiled into a single JSON file and a visualization image, both saved in the `roi_all/` folder.
+
+### GPU Usage
+
+The pipeline automatically detects if a GPU is available (e.g., via PyTorch, OpenCV, or EasyOCR) and will use GPU acceleration for processing if possible. This can significantly speed up OCR and image analysis tasks. If no GPU is available, processing will fall back to CPU.
+
+
+### Enhanced Pipeline: Periodic ROI Extraction and Data Logging
+
+After initial ROI detection and visualization on ROI-0, the pipeline continues to process the video as follows:
+
+1. **Periodic ROI-0 Detection**: Every N seconds (configurable, default: 10s), the pipeline searches for ROI-0 in the video stream using the latest known coordinates.
+2. **ROI Data Extraction**: For each detected ROI-0, all available ROI extractors are applied to fetch the relevant data.
+3. **CSV Logging**: Extracted data from each timepoint is appended to a CSV file, using a consistent naming convention (e.g., including video name, timestamp, frame index).
+4. **Error Handling and Fallback**:
+  - If the data acceptance range (e.g., confidence, value bounds) is broken for more than 5 times for more than 2 data points, the pipeline reverts to `scan_video.py` to find the next relevant frame.
+  - This loop continues until the entire video is processed, ensuring robust extraction even in the presence of UI changes or errors.
+
+This approach enables continuous, reliable extraction and logging of ROI data throughout the video, with automatic recovery from errors or UI disruptions.
+
+---
+
 ## Dynamic / real‑time behavior and screen filtering
 
 - Capture the window region for ROI‑0 continuously (e.g., 2–5 fps).

@@ -37,16 +37,18 @@ menu = img[0:menu_height, :]
 now = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
 output_dir = 'ROI_Menu'
 os.makedirs(output_dir, exist_ok=True)
-# Use input filename for output naming
+
+# Use only the first 4 characters of the input filename for output naming
 input_base = os.path.splitext(os.path.basename(roi0_path))[0]
-menu_path = os.path.join(output_dir, f'roi_menu_{input_base}_{now}.png')
+short_prefix = input_base[:4]
+menu_path = os.path.join(output_dir, f'{short_prefix}_{now}_menu.png')
 cv2.imwrite(menu_path, menu)
 print(f'Menu panel saved to {menu_path}')
 
 # OCR the Menu panel (optional)
 ocr_config = '--psm 6'
 txt = pytesseract.image_to_string(menu, config=ocr_config)
-ocr_txt_path = os.path.join(output_dir, f'roi_menu_ocr_{input_base}_{now}.txt')
+ocr_txt_path = os.path.join(output_dir, f'{short_prefix}_{now}_menu_ocr.txt')
 with open(ocr_txt_path, 'w') as f:
     f.write(txt)
 print(f'OCR result saved to {ocr_txt_path}')
