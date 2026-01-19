@@ -1,21 +1,159 @@
 #!/usr/bin/env python3
 """
 Extract ROI-6 Chart Options Grid
-1. Finds the Main Grid Anchor using shape detection (no template needed).
-2. Uses Edge Projections to detect the internal grid cells (thumbnails).
-3. Automatically adapts to 5x4 or 5x3 grids.
 """
 
 import cv2
 import numpy as np
 import json
 from pathlib import Path
+import os
+import datetime
 
-# --- Shared Logic from ROI-5 (The Anchor) ---
-def find_left_grid_anchor(img):
+
+def extract(roi0_img, save_debug=False, output_dir='ROI_6'):
     """
-    Finds the chart grid in the bottom-left area.
+    Extract chart options grid (ROI-6) from ROI-0 image.
+    
+    Args:
+        roi0_img: ROI-0 image (numpy array)
+        save_debug: Whether to save debug images
+        output_dir: Directory to save debug images
+    
+    Returns:
+        dict: {
+            'roi_id': 'ROI_6',
+            'bbox': [x, y, w, h],  # Overall grid bbox
+            'thumbnails': [[x, y, w, h], ...],  # List of thumbnail bboxes
+            'selected_index': int,  # Index of selected thumbnail (-1 if none)
+            'image_path': 'path/to/debug_image.png' (if save_debug=True)
+        }
     """
+    h_img, w_img = roi0_img.shape[:2]
+    
+    # 1. Find the Main Grid (ROI-6)
+    grid_rect = _find_left_grid_anchor(roi0_img)
+    
+    if not grid_rect:
+        return {
+            'roi_id': 'ROI_6',
+            'bbox': [],
+            'thumbnails': [],
+            'selected_index': -1,
+            'error': 'No grid anchor found'
+        }
+
+    gx, gy, gw, gh = grid_rect
+    roi_img = roi0_img[gy:gy+gh, gx:gx+gw]
+    
+    # 2. Detect Rows and Columns inside the ROI
+    gray = cv2.cvtColor(roi_img, cv2.COLOR_BGR2GRAY)
+    edges = cv2.Canny(gray, 50, 150)
+    
+    # Horizontal Projection (Rows) & Vertical Projection (Cols)
+    proj_h = np.sum(edges, axis=1)
+    proj_v = np.sum(edges, axis=0)
+    
+    # Hough Line Detection
+    lines = cv2.HoughLinesP(edges, 1, np.pi/180, threshold=50, minLineLength=50, maxLineGap=20)
+    h_lines = []
+    v_lines = []
+    if lines is not None:
+        for line in lines:
+            x1, y1, x2, y2 = line[0]
+            if abs(x2 - x1) > abs(y2 - y1):  # horizontal
+                h_lines.append((y1 + y2) / 2)
+            else:  # vertical
+                v_lines.append((x1 + x2) / 2)
+    
+    rows = _cluster_coords(h_lines, 25)
+    cols = _cluster_coords(v_lines, 20)
+    
+    # Fallback to projection if Hough sparse
+    if len(rows) < 2 or len(cols) < 2:
+        rows = _find_grid_dividers(proj_h, min_gap=20, threshold_ratio=0.15)
+        cols = _find_grid_dividers(proj_v, min_gap=20, threshold_ratio=0.15)
+    
+    row_coords = _find_grid_dividers(proj_h, min_gap=20, threshold_ratio=0.15)
+    col_coords = _find_grid_dividers(proj_v, min_gap=20, threshold_ratio=0.15)
+    
+    # Ensure start/end points cover the edges
+    if not row_coords or row_coords[0] > 10: row_coords = [0] + row_coords
+    if row_coords[-1] < gh - 10: row_coords.append(gh)
+    
+    if not col_coords or col_coords[0] > 10: col_coords = [0] + col_coords
+    if col_coords[-1] < gw - 10: col_coords.append(gw)
+    
+    # 3. Extract Thumbnails
+    thumbnail_boxes = []
+    
+    for r in range(len(row_coords) - 1):
+        for c in range(len(col_coords) - 1):
+            y1, y2 = row_coords[r], row_coords[r+1]
+            x1, x2 = col_coords[c], col_coords[c+1]
+            
+            w, h = x2 - x1, y2 - y1
+            
+            # Filter noise (too small to be a button)
+            if w < 30 or h < 30: continue
+            
+            abs_x = gx + x1
+            abs_y = gy + y1
+            
+            thumbnail_boxes.append([int(abs_x), int(abs_y), int(w), int(h)])
+
+    # 4. Detect Selection (Yellow Highlight)
+    selected_index = -1
+    max_yellow = 0
+    hsv_roi = cv2.cvtColor(roi_img, cv2.COLOR_BGR2HSV)
+    lower_yel = np.array([20, 100, 100])
+    upper_yel = np.array([40, 255, 255])
+    
+    for i, bbox in enumerate(thumbnail_boxes):
+        abs_x, abs_y, w, h = bbox
+        rx = abs_x - gx
+        ry = abs_y - gy
+        btn_roi = hsv_roi[ry:ry+h, rx:rx+w]
+        mask = cv2.inRange(btn_roi, lower_yel, upper_yel)
+        
+        score = np.sum(mask > 0) / (w * h) if (w * h) > 0 else 0
+        if score > max_yellow:
+            max_yellow = score
+            selected_index = i
+
+    result = {
+        'roi_id': 'ROI_6',
+        'bbox': [int(gx), int(gy), int(gw), int(gh)],
+        'thumbnails': thumbnail_boxes,
+        'selected_index': selected_index
+    }
+    
+    if save_debug:
+        os.makedirs(output_dir, exist_ok=True)
+        now = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+        
+        # Save Visualization
+        viz = roi0_img.copy()
+        cv2.rectangle(viz, (gx, gy), (gx+gw, gy+gh), (0, 0, 255), 2) # Main Grid (Red)
+        
+        for i, bbox in enumerate(thumbnail_boxes):
+            bx, by, bw, bh = bbox
+            color = (0, 0, 255) if i == selected_index else (255, 255, 0)  # Red if selected, cyan otherwise
+            thickness = 3 if i == selected_index else 1
+                
+            cv2.rectangle(viz, (bx, by), (bx+bw, by+bh), color, thickness)
+            cv2.putText(viz, str(i+1), (bx+5, by+15), cv2.FONT_HERSHEY_SIMPLEX, 0.4, color, 1)
+
+        viz_path = os.path.join(output_dir, f'viz_roi6_{now}.png')
+        cv2.imwrite(viz_path, viz)
+        
+        result['image_path'] = viz_path
+    
+    return result
+
+
+def _find_left_grid_anchor(img):
+    """Finds the chart grid in the bottom-left area."""
     h_img, w_img = img.shape[:2]
     
     # 1. STRICT ROI: Bottom area below tabs
@@ -50,8 +188,8 @@ def find_left_grid_anchor(img):
                 
     return best_grid
 
-# --- Grid Line Detection ---
-def find_grid_dividers(proj, min_gap=15, threshold_ratio=0.2):
+
+def _find_grid_dividers(proj, min_gap=15, threshold_ratio=0.2):
     """Finds peaks in edge projection to identify rows/cols."""
     if len(proj) == 0: return []
     limit = np.max(proj) * threshold_ratio
@@ -72,7 +210,8 @@ def find_grid_dividers(proj, min_gap=15, threshold_ratio=0.2):
     
     return clusters
 
-def cluster_coords(coords, min_dist=15):
+
+def _cluster_coords(coords, min_dist=15):
     if not coords: return []
     coords = sorted(coords)
     clusters = []
@@ -87,133 +226,6 @@ def cluster_coords(coords, min_dist=15):
     clusters.append(int(np.mean(curr)))
     return clusters
 
-def extract_roi6(img_path, output_dir):
-    img = cv2.imread(str(img_path))
-    if img is None: 
-        print(f"Skipping (Read Error): {img_path}")
-        return
-    
-    print(f"Processing: {img_path.name}")
-    
-    # 1. Find the Main Grid (ROI-6)
-    grid_rect = find_left_grid_anchor(img)
-    
-    if not grid_rect:
-        print("  ! No grid anchor found. Skipping.")
-        return
-
-    gx, gy, gw, gh = grid_rect
-    roi_img = img[gy:gy+gh, gx:gx+gw]
-    
-    # 2. Detect Rows and Columns inside the ROI
-    gray = cv2.cvtColor(roi_img, cv2.COLOR_BGR2GRAY)
-    edges = cv2.Canny(gray, 50, 150)
-    
-    # Horizontal Projection (Rows) & Vertical Projection (Cols)
-    proj_h = np.sum(edges, axis=1)
-    proj_v = np.sum(edges, axis=0)
-    
-    # Hough Line Detection
-    lines = cv2.HoughLinesP(edges, 1, np.pi/180, threshold=50, minLineLength=50, maxLineGap=20)
-    h_lines = []
-    v_lines = []
-    if lines is not None:
-        for line in lines:
-            x1, y1, x2, y2 = line[0]
-            if abs(x2 - x1) > abs(y2 - y1):  # horizontal
-                h_lines.append((y1 + y2) / 2)
-            else:  # vertical
-                v_lines.append((x1 + x2) / 2)
-    
-    rows = cluster_coords(h_lines, 25)
-    cols = cluster_coords(v_lines, 20)
-    
-    # Fallback to projection if Hough sparse
-    if len(rows) < 2 or len(cols) < 2:
-        print("  Using projection fallback")
-        rows = find_grid_dividers(proj_h, min_gap=15, threshold_ratio=0.2)
-        cols = find_grid_dividers(proj_v, min_gap=15, threshold_ratio=0.2)
-    
-    row_coords = find_grid_dividers(proj_h, min_gap=20, threshold_ratio=0.15)
-    col_coords = find_grid_dividers(proj_v, min_gap=20, threshold_ratio=0.15)
-    
-    # Ensure start/end points cover the edges
-    if not row_coords or row_coords[0] > 10: row_coords = [0] + row_coords
-    if row_coords[-1] < gh - 10: row_coords.append(gh)
-    
-    if not col_coords or col_coords[0] > 10: col_coords = [0] + col_coords
-    if col_coords[-1] < gw - 10: col_coords.append(gw)
-    
-    # 3. Extract Thumbnails
-    thumbnail_boxes = []
-    
-    for r in range(len(row_coords) - 1):
-        for c in range(len(col_coords) - 1):
-            y1, y2 = row_coords[r], row_coords[r+1]
-            x1, x2 = col_coords[c], col_coords[c+1]
-            
-            w, h = x2 - x1, y2 - y1
-            
-            # Filter noise (too small to be a button)
-            if w < 30 or h < 30: continue
-            
-            abs_x = gx + x1
-            abs_y = gy + y1
-            
-            thumbnail_boxes.append({
-                "bbox": [int(abs_x), int(abs_y), int(w), int(h)],
-                "rel_bbox": [int(x1), int(y1), int(w), int(h)]
-            })
-
-    # 4. Detect Selection (Yellow Highlight)
-    selected_index = -1
-    max_yellow = 0
-    hsv_roi = cv2.cvtColor(roi_img, cv2.COLOR_BGR2HSV)
-    lower_yel = np.array([20, 100, 100])
-    upper_yel = np.array([40, 255, 255])
-    
-    for i, item in enumerate(thumbnail_boxes):
-        rx, ry, rw, rh = item["rel_bbox"]
-        btn_roi = hsv_roi[ry:ry+rh, rx:rx+rw]
-        mask = cv2.inRange(btn_roi, lower_yel, upper_yel)
-        
-        score = np.sum(mask > 0) / (rw * rh)
-        if score > max_yellow:
-            max_yellow = score
-            selected_index = i
-
-    # 5. Save Results
-    safe_name = img_path.stem.replace('roi5_chart_tabs_', '') # Clean filename
-    output_data = {
-        "roi6_bbox": [int(gx), int(gy), int(gw), int(gh)],
-        "thumbnails": [t["bbox"] for t in thumbnail_boxes],
-        "selected_index": selected_index
-    }
-    
-    # Save JSON
-    json_path = output_dir / f"roi6_data_{safe_name}.json"
-    with open(json_path, 'w') as f:
-        json.dump(output_data, f, indent=2)
-        
-    # Save Visualization
-    viz = img.copy()
-    cv2.rectangle(viz, (gx, gy), (gx+gw, gy+gh), (0, 0, 255), 2) # Main Grid (Red)
-    
-    for i, item in enumerate(thumbnail_boxes):
-        bx, by, bw, bh = item["bbox"]
-        color = (255, 255, 0) # Cyan (Default)
-        thickness = 1
-        
-        if i == selected_index:
-            color = (0, 0, 255) # Red (Selected)
-            thickness = 3
-            
-        cv2.rectangle(viz, (bx, by), (bx+bw, by+bh), color, thickness)
-        cv2.putText(viz, str(i+1), (bx+5, by+15), cv2.FONT_HERSHEY_SIMPLEX, 0.4, color, 1)
-
-    viz_path = output_dir / f"viz_roi6_{safe_name}.png"
-    cv2.imwrite(str(viz_path), viz)
-    print(f"  ✓ Saved: {len(thumbnail_boxes)} thumbnails found. Selected: {selected_index+1}")
 
 if __name__ == "__main__":
     roi5_dir = Path("ROI_5")
@@ -233,4 +245,8 @@ if __name__ == "__main__":
         print("Please ensure 'roi0_bottom_half_test.png' (or similar) is in the ROI_5 folder.")
     else:
         for f in inputs:
-            extract_roi6(f, roi6_dir)
+            print(f"Processing: {f.name}")
+            img = cv2.imread(str(f))
+            if img is not None:
+                result = extract(img, save_debug=True)
+                print(f"  Result: {result}")

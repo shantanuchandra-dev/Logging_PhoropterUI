@@ -9,7 +9,6 @@ ssl._create_default_https_context = ssl._create_unverified_context
 
 # Try to find tesseract
 tesseract_paths = [
-    
     r'C:\Program Files\Tesseract-OCR\tesseract.exe',
     r'C:\Users\chirayu.maru\AppData\Local\Tesseract-OCR\tesseract.exe',
     r'C:\Users\chirayu.maru\AppData\Local\Programs\Tesseract-OCR\tesseract.exe',
@@ -22,27 +21,31 @@ for path in tesseract_paths:
         pytesseract.pytesseract.tesseract_cmd = path
         break
 
-def extract_roi2():
-    # 1. Path to the latest ROI-0 image
-    roi0_dir = 'ROI_0'
-    roi0_files = [f for f in os.listdir(roi0_dir) if f.startswith('roi0_') and f.endswith('.png') and 'box' not in f]
-    if not roi0_files:
-        print('No ROI-0 images found in ROI_0 directory.')
-        return
-    roi0_files.sort()
-    roi0_path = os.path.join(roi0_dir, roi0_files[-1])
 
-    img = cv2.imread(roi0_path)
-    if img is None:
-        print(f'Could not load {roi0_path}')
-        return
-
-    # User requested to force this resolution for ROI 2
-    img = cv2.resize(img, (929, 823))
-
+def extract(roi0_img, save_debug=False, output_dir='ROI_2'):
+    """
+    Extract PD (Pupillary Distance) value from ROI-0 image.
+    Finds the PD box between two occluder circles.
+    
+    Args:
+        roi0_img: ROI-0 image (numpy array)
+        save_debug: Whether to save debug images
+        output_dir: Directory to save debug images
+    
+    Returns:
+        dict: {
+            'roi_id': 'ROI_2',
+            'pd_value_bbox': [x, y, w, h],  # PD value box coordinates
+            'pd_value': str,  # Extracted PD value
+            'confidence': None,  # Not available with pytesseract
+            'image_path': 'path/to/debug_image.png' (if save_debug=True)
+        }
+    """
+    # Resize to expected resolution for ROI 2
+    img = cv2.resize(roi0_img, (929, 823))
     h, w = img.shape[:2]
 
-    # 2. Find Circles (Occluders)
+    # Find Circles (Occluders)
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     gray_blurred = cv2.GaussianBlur(gray, (9, 9), 2)
 
@@ -51,15 +54,25 @@ def extract_roi2():
                                param1=50, param2=35, minRadius=30, maxRadius=70)
 
     if circles is None:
-        print("No circles detected.")
-        return
+        return {
+            'roi_id': 'ROI_2',
+            'pd_value_bbox': [],
+            'pd_value': None,
+            'confidence': None,
+            'error': 'No circles detected'
+        }
 
     circles = np.uint16(np.around(circles))
     detected_circles = sorted(circles[0, :], key=lambda x: x[0])
     
     if len(detected_circles) < 2:
-        print(f"Found {len(detected_circles)} circles, need at least 2.")
-        return
+        return {
+            'roi_id': 'ROI_2',
+            'pd_value_bbox': [],
+            'pd_value': None,
+            'confidence': None,
+            'error': f'Found {len(detected_circles)} circles, need at least 2'
+        }
 
     # Find the two circles closest to the center vertically
     mid_y = h / 2
@@ -69,9 +82,7 @@ def extract_roi2():
     left_circle = left_right[0]
     right_circle = left_right[1]
 
-    print(f"Detected circles at: Left {left_circle[:2]}, Right {right_circle[:2]}")
-
-    # 3. Detect the rectangle between 2 circles
+    # Detect the rectangle between 2 circles
     x1, y1, r1 = left_circle
     x2, y2, r2 = right_circle
     
@@ -88,14 +99,13 @@ def extract_roi2():
     
     roi_pd_area = img[search_y1:search_y2, search_x1:search_x2]
     
-    # 4. Find the rectangle (PD box) using Hough Lines
+    # Find the rectangle (PD box) using Hough Lines
     pd_gray = cv2.cvtColor(roi_pd_area, cv2.COLOR_BGR2GRAY)
     pd_edges = cv2.Canny(pd_gray, 50, 150)
     
     # Use HoughLinesP to find box edges
     lines = cv2.HoughLinesP(pd_edges, 1, np.pi/180, threshold=40, minLineLength=30, maxLineGap=10)
     
-    vis_hough = roi_pd_area.copy()
     horizontal_lines = []
     vertical_lines = []
     
@@ -104,10 +114,8 @@ def extract_roi2():
             lx1, ly1, lx2, ly2 = line[0]
             # Check if horizontal or vertical
             if abs(ly1 - ly2) < 5:
-                cv2.line(vis_hough, (lx1, ly1), (lx2, ly2), (255, 0, 0), 2)
                 horizontal_lines.append(ly1)
             elif abs(lx1 - lx2) < 5:
-                cv2.line(vis_hough, (lx1, ly1), (lx2, ly2), (0, 255, 0), 2)
                 vertical_lines.append(lx1)
 
     # Use horizontal and vertical lines to define the box
@@ -126,22 +134,26 @@ def extract_roi2():
         for cnt in contours:
             bx, by, bw, bh = cv2.boundingRect(cnt)
             area = bw * bh
-            aspect = bw / float(bh)
+            aspect = bw / float(bh) if bh > 0 else 0
             if 1.0 < aspect < 2.5 and 50 < bw < 200 and 30 < bh < 120:
                 if area > max_area:
                     max_area = area
                     pd_box = (bx, by, bw, bh)
 
     if pd_box is None:
-        print("PD box rectangle not found.")
-        return
+        return {
+            'roi_id': 'ROI_2',
+            'pd_value_bbox': [],
+            'pd_value': None,
+            'confidence': None,
+            'error': 'PD box rectangle not found'
+        }
 
     bx, by, bw, bh = pd_box
     roi_pd_box = roi_pd_area[by:by+bh, bx:bx+bw]
     
-    # 5. Extract PD value - refine by taking only the bottom part of the box
+    # Extract PD value - refine by taking only the bottom part of the box
     # The PD label is usually at the top, value at the bottom.
-    # We can split the box vertically.
     roi_pd_value_crop = roi_pd_box[int(bh*0.4):, :] # Take bottom 60%
     
     # Preprocess for OCR
@@ -150,10 +162,11 @@ def extract_roi2():
     _, roi_pd_box_bin = cv2.threshold(roi_pd_box_res, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
 
     custom_config = r'--oem 3 --psm 7 -c tessedit_char_whitelist=0123456789.'
+    pd_text = None
+    
     try:
-        pd_text = pytesseract.image_to_string(roi_pd_box_bin, config=custom_config)
+        pd_text = pytesseract.image_to_string(roi_pd_box_bin, config=custom_config).strip()
     except Exception as e:
-        print(f"Tesseract failed: {e}. Trying EasyOCR...")
         try:
             import easyocr
             # Suppress easyocr loading output
@@ -162,36 +175,58 @@ def extract_roi2():
             
             reader = easyocr.Reader(['en'], gpu=False)
             results = reader.readtext(roi_pd_box_bin, detail=0)
-            pd_text = " ".join(results) if results else ""
+            pd_text = " ".join(results).strip() if results else None
         except Exception as e2:
-            pd_text = f"OCR Error: {e} | EasyOCR Error: {e2}"
+            pd_text = None
 
-    # 6. Save results
-    output_dir = 'ROI_2'
-    os.makedirs(output_dir, exist_ok=True)
-    now = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
-    
-    # Save the PD crop (the value part)
-    result_path = os.path.join(output_dir, f'roi2_PD_{now}.png')
-    cv2.imwrite(result_path, roi_pd_value_crop)
-    
-    # Save Hough visualization
-    hough_path = os.path.join(output_dir, f'roi2_hough_{now}.png')
-    cv2.imwrite(hough_path, vis_hough)
-    
-    # Save visualization on the full image
-    vis_full = img.copy()
-    cv2.circle(vis_full, (left_circle[0], left_circle[1]), left_circle[2], (255, 0, 0), 2)
-    cv2.circle(vis_full, (right_circle[0], right_circle[1]), right_circle[2], (255, 0, 0), 2)
+    # Calculate absolute coordinates
     full_bx = search_x1 + bx
     full_by = search_y1 + by
-    cv2.rectangle(vis_full, (full_bx, full_by), (full_bx + bw, full_by + bh), (0, 255, 0), 2)
     
-    vis_path = os.path.join(output_dir, f'roi2_PD_vis_{now}.png')
-    cv2.imwrite(vis_path, vis_full)
+    result = {
+        'roi_id': 'ROI_2',
+        'pd_value_bbox': [int(full_bx), int(full_by), int(bw), int(bh)],
+        'pd_value': pd_text,
+        'confidence': None
+    }
     
-    print(f"Results saved to {output_dir}")
-    print(f"Detected PD: {pd_text.strip()}")
+    if save_debug:
+        os.makedirs(output_dir, exist_ok=True)
+        now = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+        
+        # Save the PD crop (the value part)
+        result_path = os.path.join(output_dir, f'roi2_PD_{now}.png')
+        cv2.imwrite(result_path, roi_pd_value_crop)
+        
+        # Save visualization on the full image
+        vis_full = img.copy()
+        cv2.circle(vis_full, (left_circle[0], left_circle[1]), left_circle[2], (255, 0, 0), 2)
+        cv2.circle(vis_full, (right_circle[0], right_circle[1]), right_circle[2], (255, 0, 0), 2)
+        cv2.rectangle(vis_full, (full_bx, full_by), (full_bx + bw, full_by + bh), (0, 255, 0), 2)
+        
+        vis_path = os.path.join(output_dir, f'roi2_PD_vis_{now}.png')
+        cv2.imwrite(vis_path, vis_full)
+        
+        result['image_path'] = result_path
+    
+    return result
+
 
 if __name__ == "__main__":
-    extract_roi2()
+    # Fallback to loading from ROI_0 directory
+    roi0_dir = 'ROI_0'
+    roi0_files = [f for f in os.listdir(roi0_dir) if f.startswith('roi0_') and f.endswith('.png') and 'box' not in f]
+    if not roi0_files:
+        print('No ROI-0 images found in ROI_0 directory.')
+        exit(1)
+    roi0_files.sort()
+    roi0_path = os.path.join(roi0_dir, roi0_files[-1])
+
+    img = cv2.imread(roi0_path)
+    if img is None:
+        print(f'Could not load {roi0_path}')
+        exit(1)
+
+    # Call the extract function with debug saving enabled
+    result = extract(img, save_debug=True)
+    print(f'PD extraction result: {result}')

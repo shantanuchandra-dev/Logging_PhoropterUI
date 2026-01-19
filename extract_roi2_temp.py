@@ -3,7 +3,7 @@ import numpy as np
 import pytesseract
 import os
 import datetime
-import easyocr
+import easyocr  # Note: EasyOCR is configured to use CPU (gpu=False) for compatibility
 import re
 
 def extract_roi2_pd(img):

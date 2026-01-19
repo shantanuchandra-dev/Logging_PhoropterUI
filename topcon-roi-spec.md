@@ -135,6 +135,7 @@ The `pipeline.py` script automates the extraction of all available ROIs from a v
   - `extract_roi_menu.py` (Menu bar)
   - `extract_roi1.py` (S/C/A/ADD table)
   - `extract_roi2_temp.py` (PD label/value)
+  - `extract_roi3_4.py` (Occluder)
   - `extract_roi5.py` (Chart tabs)
   - `extract_roi6.py` (Chart options grid)
   - `extract_roi7.py` (Big chart pane)
