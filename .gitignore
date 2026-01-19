@@ -4,13 +4,6 @@ ROI_Menu/
 ROI_0*/
 ROI_1*/
 ROI_2*/
-ROI_3/
-ROI_4/
-ROI_5/
-ROI_6/
-ROI_7/
-ROI_8/
-MatchedScreens/
 pipeline_output/
 firstFrame/
 firstFrame_JSON/
@@ -18,3 +11,4 @@ __pycache__/
 
 .DS_Store
 settings.json
+pipeline.py
