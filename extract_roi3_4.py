@@ -86,17 +86,35 @@ def extract(roi0_img, save_debug=False, output_dir='ROI_3', filename=None):
     roi4 = img[ry-rr:ry+rr, rx-rr:rx+rr]
     state4 = classify_state(roi4)
     
+    # Scale coordinates back to original image resolution
+    orig_h, orig_w = roi0_img.shape[:2]
+    scale_x = orig_w / 929.0
+    scale_y = orig_h / 823.0
+    scale_avg = (scale_x + scale_y) / 2.0
+    
+    # Left Occluder (ROI-3) - rescale
+    lx_abs = int((lx - lr) * scale_x)
+    ly_abs = int((ly - lr) * scale_y)
+    lw_abs = int((2 * lr) * scale_x)
+    lh_abs = int((2 * lr) * scale_y)
+    
+    # Right Occluder (ROI-4) - rescale
+    rx_abs = int((rx - rr) * scale_x)
+    ry_abs = int((ry - rr) * scale_y)
+    rw_abs = int((2 * rr) * scale_x)
+    rh_abs = int((2 * rr) * scale_y)
+
     result = {
         'roi_id': 'ROI_3_4',
         'bboxes': [
             {
                 'label': 'left_occluder',
-                'box': [int(lx - lr), int(ly - lr), int(2 * lr), int(2 * lr)],  # x, y, w, h
+                'box': [lx_abs, ly_abs, lw_abs, lh_abs],  # x, y, w, h
                 'state': state3
             },
             {
                 'label': 'right_occluder',
-                'box': [int(rx - rr), int(ry - rr), int(2 * rr), int(2 * rr)],
+                'box': [rx_abs, ry_abs, rw_abs, rh_abs],
                 'state': state4
             }
         ]

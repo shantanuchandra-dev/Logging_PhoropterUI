@@ -5,48 +5,81 @@ import datetime
 
 def extract_roi7_from_roi0(roi0_img, debug=False):
     """
-    Detects the acuity chart (ROI7) in the lower right region of ROI0.
-    Returns the bounding box coordinates (x, y, w, h) and the labeled image.
+    Detects the acuity chart (ROI7) in the bottom-right region of ROI0.
+    Uses morphological blob merging to isolate the slightly landscape chart area.
     """
     h, w = roi0_img.shape[:2]
-    y_start = int(0.6 * h)
-    x_start = int(0.6 * w)
-    search_area = roi0_img[y_start:, x_start:]
+    # Tightened search region: Focus more precisely on the chart area
+    y_start = int(0.65 * h)
+    y_end = int(0.93 * h)
+    x_start = int(0.62 * w)
+    x_end = int(0.90 * w)
+    search_area = roi0_img[y_start:y_end, x_start:x_end]
 
     # Preprocess
     gray = cv2.cvtColor(search_area, cv2.COLOR_BGR2GRAY)
     blur = cv2.GaussianBlur(gray, (5, 5), 0)
-    edges = cv2.Canny(blur, 50, 150)
+    
+    # Use adaptive thresholding to get better separation of text on background
+    thresh = cv2.adaptiveThreshold(blur, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, 
+                                   cv2.THRESH_BINARY_INV, 11, 2)
+    
+    # Morphological closing to merge letters into a single block
+    kernel_h = cv2.getStructuringElement(cv2.MORPH_RECT, (40, 10))
+    kernel_v = cv2.getStructuringElement(cv2.MORPH_RECT, (10, 40))
+    
+    closed = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel_h)
+    closed = cv2.morphologyEx(closed, cv2.MORPH_CLOSE, kernel_v)
 
-    # Find contours
-    contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    rectangles = []
+    # Find contours on the merged blobs
+    contours, _ = cv2.findContours(closed, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    
+    candidates = []
     for cnt in contours:
-        approx = cv2.approxPolyDP(cnt, 0.02 * cv2.arcLength(cnt, True), True)
-        if len(approx) == 4 and cv2.isContourConvex(approx):
-            x, y, rw, rh = cv2.boundingRect(approx)
-            area = rw * rh
+        area = cv2.contourArea(cnt)
+        if area > 8000:
+            x, y, rw, rh = cv2.boundingRect(cnt)
             aspect = rw / rh if rh > 0 else 0
-            # Heuristic: reasonable size and aspect ratio
-            if area > 1000 and 0.5 < aspect < 2.5:
-                rectangles.append((x, y, rw, rh, area, approx))
+            
+            # Preference for slightly landscape (w > h just slightly)
+            # Ideal aspect around 1.2 - 1.3
+            ideal_aspect = 1.25
+            aspect_score = 1.0 / (1.0 + abs(ideal_aspect - aspect))
+            
+            # Final score prioritizing area and ideal proportion
+            score = area * (aspect_score ** 2)
+            
+            candidates.append({
+                'bbox': (x, y, rw, rh),
+                'area': area,
+                'aspect': aspect,
+                'aspect_score': aspect_score,
+                'score': score
+            })
 
-    if not rectangles:
+    if not candidates:
         if debug:
-            print("No rectangles found in ROI7 search area.")
+            print("No suitable chart blobs found in ROI7 search area.")
         return None, roi0_img
 
-    # Pick the largest rectangle
-    rectangles.sort(key=lambda x: x[4], reverse=True)
-    x, y, rw, rh, _, approx = rectangles[0]
+    # Pick the best candidate (biggest rectangle with preferred proportion)
+    candidates.sort(key=lambda x: x['score'], reverse=True)
+    best = candidates[0]
+    x, y, rw, rh = best['bbox']
+    
     # Adjust coordinates to original ROI0
     x_abs = x + x_start
     y_abs = y + y_start
+    
     labeled_img = roi0_img.copy()
     cv2.rectangle(labeled_img, (x_abs, y_abs), (x_abs+rw, y_abs+rh), (0, 255, 0), 2)
-    cv2.putText(labeled_img, 'ROI7', (x_abs, y_abs-10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0,255,0), 2)
+    label_text = f'ROI7 (asp={best["aspect"]:.2f})'
+    cv2.putText(labeled_img, label_text, (x_abs, y_abs-10), 
+                cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+    
     if debug:
-        print(f"ROI7 found at: x={x_abs}, y={y_abs}, w={rw}, h={rh}")
+        print(f"ROI7 found at: x={x_abs}, y={y_abs}, w={rw}, h={rh}, aspect={best['aspect']:.2f}, score={best['score']:.0f}")
+        
     return (x_abs, y_abs, rw, rh), labeled_img
 
 

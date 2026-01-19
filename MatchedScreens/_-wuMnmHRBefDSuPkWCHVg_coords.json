@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-01-20T02:56:26.705004",
+  "timestamp": "2026-01-20T03:42:40.994436",
   "rois": {
     "menu": {
       "roi_id": "ROI_Menu",
@@ -105,21 +105,21 @@
           404
         ]
       ],
-      "roi1_image": "ROI_1/_2001_025627_roi1.png",
-      "overlay_image": "ROI_1/_2001_025628_roi1_cells_on_roi0.png",
-      "bbox_file": "ROI_1/_2001_025628_roi1_cells_on_roi0_bboxes.txt"
+      "roi1_image": "ROI_1/_2001_034242_roi1.png",
+      "overlay_image": "ROI_1/_2001_034242_roi1_cells_on_roi0.png",
+      "bbox_file": "ROI_1/_2001_034242_roi1_cells_on_roi0_bboxes.txt"
     },
     "roi2": {
       "roi_id": "ROI_2",
       "pd_value_bbox": [
-        418,
-        386,
-        91,
-        66
+        472,
+        463,
+        102,
+        44
       ],
       "pd_value": "58.5",
       "confidence": null,
-      "image_path": "ROI_2/_-wu_2001_025628_pd_debug.png"
+      "image_path": "ROI_2/_-wu_2001_034242_pd_debug.png"
     },
     "roi3_4": {
       "roi_id": "ROI_3_4",
@@ -127,27 +127,27 @@
         {
           "label": "left_occluder",
           "box": [
-            321,
-            390,
-            64,
-            64
+            362,
+            438,
+            72,
+            71
           ],
           "state": "filled/active (blue)"
         },
         {
           "label": "right_occluder",
           "box": [
-            541,
-            385,
-            74,
-            74
+            611,
+            432,
+            83,
+            83
           ],
           "state": "filled/active (blue)"
         }
       ],
       "image_paths": [
-        "ROI_3/_-wu_2001_025628_roi3.png",
-        "ROI_4/_-wu_2001_025628_roi4.png"
+        "ROI_3/_-wu_2001_034242_roi3.png",
+        "ROI_4/_-wu_2001_034242_roi4.png"
       ]
     },
     "roi5": {
@@ -178,7 +178,7 @@
         ]
       ],
       "selected_index": -1,
-      "image_path": "ROI_6/_-wu_2001_025628_grid_debug.png"
+      "image_path": "ROI_6/_-wu_2001_034243_grid_debug.png"
     },
     "roi7": {
       "roi_id": "ROI7",
@@ -188,7 +188,7 @@
         48,
         47
       ],
-      "debug_image": "ROI_7/_-wu_2001_025628_labeled_roi7.png"
+      "debug_image": "ROI_7/_-wu_2001_034243_labeled_roi7.png"
     }
   },
   "frame_id": 2300,

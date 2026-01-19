@@ -6,6 +6,7 @@ firstFrame/
 firstFrame_JSON/
 __pycache__/
     
+temp/
 settings.json
 pipeline_SC.py
 .DS_Store
