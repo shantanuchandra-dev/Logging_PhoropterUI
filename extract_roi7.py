@@ -12,14 +12,15 @@ import os
 import datetime
 
 
-def extract(roi0_img, roi6_data=None, save_debug=False, output_dir='ROI_7'):
+def extract(roi0_img, roi6_data=None, save_debug=False, filename=None, output_dir='ROI_7'):
     """
-    Extract big chart pane (ROI-7) from ROI-0 image.
+    Extract big chart pane (ROI-7) from ROI-0 image array.
     
     Args:
-        roi0_img: ROI-0 image (numpy array)
+        roi0_img: ROI-0 image as numpy array
         roi6_data: Optional ROI-6 data dict for color hint
         save_debug: Whether to save debug images
+        filename: Original filename for debug output naming
         output_dir: Directory to save debug images
     
     Returns:
@@ -34,16 +35,16 @@ def extract(roi0_img, roi6_data=None, save_debug=False, output_dir='ROI_7'):
             'image_path': 'path/to/debug_image.png' (if save_debug=True)
         }
     """
+    if roi0_img is None:
+        raise ValueError('Input image (roi0_img) is None')
     # 1. Get color hint from ROI-6 if available
     color_hint = None
     chart_info = {"identity": "Unknown", "matches_roi6": False}
-    
     if roi6_data:
         color_hint = _get_color_hint(roi0_img, roi6_data)
         chart_info["roi6_selected_index"] = roi6_data.get("selected_index", -1)
         chart_info["matches_roi6"] = True
         chart_info["color_hint"] = color_hint
-    
     # 2. Detection with Hint
     roi7_bbox = _find_roi7_pane(roi0_img, color_hint)
     if not roi7_bbox:
@@ -53,34 +54,31 @@ def extract(roi0_img, roi6_data=None, save_debug=False, output_dir='ROI_7'):
             'chart_info': chart_info,
             'error': f'Could not detect ROI-7 pane (hint={color_hint})'
         }
-        
     x, y, w, h = roi7_bbox
     roi7_crop = roi0_img[y:y+h, x:x+w]
-    
     result = {
         'roi_id': 'ROI_7',
         'bbox': [int(x), int(y), int(w), int(h)],
         'chart_info': chart_info
     }
-    
     if save_debug:
         os.makedirs(output_dir, exist_ok=True)
-        now = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
-        
+        now = datetime.datetime.now().strftime('%d%m_%H%M%S')
+        if filename is not None:
+            input_base = os.path.splitext(os.path.basename(filename))[0]
+            prefix = input_base[:4]
+        else:
+            prefix = 'img'
         # Save crop
-        crop_path = os.path.join(output_dir, f'roi7_chart_{now}.png')
+        crop_path = os.path.join(output_dir, f'{prefix}_{now}_roi7_debug.png')
         cv2.imwrite(crop_path, roi7_crop)
-        
         # Save Viz
         viz = roi0_img.copy()
         cv2.rectangle(viz, (x, y), (x+w, y+h), (0, 255, 0), 3)
         cv2.putText(viz, "ROI-7 BIG CHART", (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
-        
-        viz_path = os.path.join(output_dir, f'viz_roi7_{now}.png')
+        viz_path = os.path.join(output_dir, f'{prefix}_{now}_viz.png')
         cv2.imwrite(viz_path, viz)
-        
         result['image_path'] = crop_path
-    
     return result
 
 
@@ -204,5 +202,5 @@ if __name__ == "__main__":
                 with open(roi6_json_path, 'r') as f:
                     roi6_data = json.load(f)
             
-            result = extract(img, roi6_data=roi6_data, save_debug=True)
+            result = extract(str(img_file), roi6_data=roi6_data, save_debug=True)
             print(f"  Result: {result}")

@@ -1,4 +1,3 @@
-
 import cv2
 import numpy as np
 import pytesseract
@@ -22,16 +21,14 @@ for path in tesseract_paths:
         break
 
 
-def extract(roi0_img, save_debug=False, output_dir='ROI_2'):
+def extract(roi0_img, save_debug=False, output_dir='ROI_2', filename=None):
     """
-    Extract PD (Pupillary Distance) value from ROI-0 image.
+    Extract PD (Pupillary Distance) value from ROI-0 image array.
     Finds the PD box between two occluder circles.
-    
     Args:
         roi0_img: ROI-0 image (numpy array)
         save_debug: Whether to save debug images
         output_dir: Directory to save debug images
-    
     Returns:
         dict: {
             'roi_id': 'ROI_2',
@@ -41,6 +38,14 @@ def extract(roi0_img, save_debug=False, output_dir='ROI_2'):
             'image_path': 'path/to/debug_image.png' (if save_debug=True)
         }
     """
+    if roi0_img is None:
+        raise ValueError('Input image is None')
+    # Use filename for debug output naming if provided
+    if filename:
+        input_base = os.path.splitext(os.path.basename(filename))[0]
+        prefix = input_base[:4]
+    else:
+        prefix = 'roi0'
     # Resize to expected resolution for ROI 2
     img = cv2.resize(roi0_img, (929, 823))
     h, w = img.shape[:2]
@@ -192,21 +197,17 @@ def extract(roi0_img, save_debug=False, output_dir='ROI_2'):
     
     if save_debug:
         os.makedirs(output_dir, exist_ok=True)
-        now = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
-        
+        now = datetime.datetime.now().strftime('%d%m_%H%M%S')
         # Save the PD crop (the value part)
-        result_path = os.path.join(output_dir, f'roi2_PD_{now}.png')
+        result_path = os.path.join(output_dir, f'{prefix}_{now}_pd_debug.png')
         cv2.imwrite(result_path, roi_pd_value_crop)
-        
         # Save visualization on the full image
         vis_full = img.copy()
         cv2.circle(vis_full, (left_circle[0], left_circle[1]), left_circle[2], (255, 0, 0), 2)
         cv2.circle(vis_full, (right_circle[0], right_circle[1]), right_circle[2], (255, 0, 0), 2)
         cv2.rectangle(vis_full, (full_bx, full_by), (full_bx + bw, full_by + bh), (0, 255, 0), 2)
-        
-        vis_path = os.path.join(output_dir, f'roi2_PD_vis_{now}.png')
+        vis_path = os.path.join(output_dir, f'{prefix}_{now}_pd_vis.png')
         cv2.imwrite(vis_path, vis_full)
-        
         result['image_path'] = result_path
     
     return result
@@ -215,18 +216,18 @@ def extract(roi0_img, save_debug=False, output_dir='ROI_2'):
 if __name__ == "__main__":
     # Fallback to loading from ROI_0 directory
     roi0_dir = 'ROI_0'
-    roi0_files = [f for f in os.listdir(roi0_dir) if f.startswith('roi0_') and f.endswith('.png') and 'box' not in f]
+    roi0_files = [f for f in os.listdir(roi0_dir) if f.endswith('.png') and 'box' not in f]
     if not roi0_files:
         print('No ROI-0 images found in ROI_0 directory.')
         exit(1)
     roi0_files.sort()
     roi0_path = os.path.join(roi0_dir, roi0_files[-1])
-
     img = cv2.imread(roi0_path)
     if img is None:
         print(f'Could not load {roi0_path}')
         exit(1)
-
+    # Attach filename for debug naming
+    img.filename = roi0_path
     # Call the extract function with debug saving enabled
     result = extract(img, save_debug=True)
     print(f'PD extraction result: {result}')

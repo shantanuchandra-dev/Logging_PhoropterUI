@@ -3,19 +3,21 @@
 Extract ROI-5 Chart tabs region from bottom half images
 """
 
+
 import cv2
 import numpy as np
 from pathlib import Path
 import json
 import os
+import datetime
 
 
-def extract(roi0_img, save_debug=False, output_dir='ROI_5'):
+def extract(roi0_img, save_debug=False, output_dir='ROI_5', filename=None):
     """
-    Extract chart tabs (ROI-5) from ROI-0 image.
+    Extract chart tabs (ROI-5) from ROI-0 image path.
     
     Args:
-        roi0_img: ROI-0 image (numpy array)
+        roi0_path: Path to ROI-0 image
         save_debug: Whether to save debug images
         output_dir: Directory to save debug images
     
@@ -29,6 +31,14 @@ def extract(roi0_img, save_debug=False, output_dir='ROI_5'):
             'image_path': 'path/to/debug_image.png' (if save_debug=True)
         }
     """
+    if roi0_img is None:
+        raise ValueError('Input image is None')
+    # Use filename for debug output naming if provided
+    if filename:
+        input_base = os.path.splitext(os.path.basename(filename))[0]
+        prefix = input_base[:4]
+    else:
+        prefix = 'roi0'
     height, width = roi0_img.shape[:2]
     
     # --- Dynamic Detection Logic ---
@@ -117,13 +127,10 @@ def extract(roi0_img, save_debug=False, output_dir='ROI_5'):
     
     if save_debug:
         os.makedirs(output_dir, exist_ok=True)
-        import datetime
-        now = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
-        
+        now = datetime.datetime.now().strftime('%d%m_%H%M%S')
         # Save chart tabs image
-        tabs_path = os.path.join(output_dir, f'roi5_chart_tabs_{now}.png')
+        tabs_path = os.path.join(output_dir, f'{prefix}_{now}_tabs.png')
         cv2.imwrite(tabs_path, chart_tabs)
-        
         # Save visualization with boxes
         viz = roi0_img.copy()
         for i in range(len(boundaries) - 1):
@@ -133,10 +140,8 @@ def extract(roi0_img, save_debug=False, output_dir='ROI_5'):
             thickness = 3 if i == selected_index else 2
             cv2.rectangle(viz, (tx1, y_start), (tx2, y_end), color, thickness)
             cv2.putText(viz, f"C{i+1}", (tx1 + 5, y_start + 15), cv2.FONT_HERSHEY_SIMPLEX, 0.4, color, 1)
-        
-        viz_path = os.path.join(output_dir, f'viz_roi5_{now}.png')
+        viz_path = os.path.join(output_dir, f'{prefix}_{now}_viz.png')
         cv2.imwrite(viz_path, viz)
-        
         result['image_path'] = tabs_path
     
     return result
@@ -161,7 +166,7 @@ if __name__ == "__main__":
         print(f"Processing: {img_file.name}")
         img = cv2.imread(str(img_file))
         if img is not None:
-            result = extract(img, save_debug=True)
+            result = extract(str(img_file), save_debug=True)
             print(f"  Result: {result}")
         print("-" * 30)
     

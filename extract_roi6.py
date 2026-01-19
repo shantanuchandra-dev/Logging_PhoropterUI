@@ -11,13 +11,14 @@ import os
 import datetime
 
 
-def extract(roi0_img, save_debug=False, output_dir='ROI_6'):
+def extract(roi0_img, save_debug=False, filename=None, output_dir='ROI_6'):
     """
-    Extract chart options grid (ROI-6) from ROI-0 image.
+    Extract chart options grid (ROI-6) from ROI-0 image array.
     
     Args:
-        roi0_img: ROI-0 image (numpy array)
+        roi0_img: ROI-0 image as numpy array
         save_debug: Whether to save debug images
+        filename: Original filename for debug output naming
         output_dir: Directory to save debug images
     
     Returns:
@@ -29,6 +30,8 @@ def extract(roi0_img, save_debug=False, output_dir='ROI_6'):
             'image_path': 'path/to/debug_image.png' (if save_debug=True)
         }
     """
+    if roi0_img is None:
+        raise ValueError('Input image (roi0_img) is None')
     h_img, w_img = roi0_img.shape[:2]
     
     # 1. Find the Main Grid (ROI-6)
@@ -130,25 +133,24 @@ def extract(roi0_img, save_debug=False, output_dir='ROI_6'):
     
     if save_debug:
         os.makedirs(output_dir, exist_ok=True)
-        now = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
-        
+        now = datetime.datetime.now().strftime('%d%m_%H%M%S')
+        if filename is not None:
+            input_base = os.path.splitext(os.path.basename(filename))[0]
+            prefix = input_base[:4]
+        else:
+            prefix = 'img'
         # Save Visualization
         viz = roi0_img.copy()
         cv2.rectangle(viz, (gx, gy), (gx+gw, gy+gh), (0, 0, 255), 2) # Main Grid (Red)
-        
         for i, bbox in enumerate(thumbnail_boxes):
             bx, by, bw, bh = bbox
             color = (0, 0, 255) if i == selected_index else (255, 255, 0)  # Red if selected, cyan otherwise
             thickness = 3 if i == selected_index else 1
-                
             cv2.rectangle(viz, (bx, by), (bx+bw, by+bh), color, thickness)
             cv2.putText(viz, str(i+1), (bx+5, by+15), cv2.FONT_HERSHEY_SIMPLEX, 0.4, color, 1)
-
-        viz_path = os.path.join(output_dir, f'viz_roi6_{now}.png')
+        viz_path = os.path.join(output_dir, f'{prefix}_{now}_grid_debug.png')
         cv2.imwrite(viz_path, viz)
-        
         result['image_path'] = viz_path
-    
     return result
 
 
@@ -248,5 +250,5 @@ if __name__ == "__main__":
             print(f"Processing: {f.name}")
             img = cv2.imread(str(f))
             if img is not None:
-                result = extract(img, save_debug=True)
+                result = extract(str(f), save_debug=True)
                 print(f"  Result: {result}")
