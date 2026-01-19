@@ -25,16 +25,8 @@ def extract(roi0_img, save_debug=False, filename=None, output_dir='ROI_6'):
         dict: {
             'roi_id': 'ROI_6',
             'bbox': [x, y, w, h],  # Overall grid bbox
-            'thumbnails': [[x, y, w, h], ...],  # List of thumbnail bboxes
-            'selected_index': int,  # Index of selected thumbnail (-1 if none)
-            'image_path': 'path/to/debug_image.png' (if save_debug=True)
         }
     """
-    if roi0_img is None:
-        raise ValueError('Input image (roi0_img) is None')
-    h_img, w_img = roi0_img.shape[:2]
-    
-    # 1. Find the Main Grid (ROI-6)
     grid_rect = _find_left_grid_anchor(roi0_img)
     
     if not grid_rect:
@@ -130,7 +122,6 @@ def extract(roi0_img, save_debug=False, filename=None, output_dir='ROI_6'):
         'thumbnails': thumbnail_boxes,
         'selected_index': selected_index
     }
-    
     if save_debug:
         os.makedirs(output_dir, exist_ok=True)
         now = datetime.datetime.now().strftime('%d%m_%H%M%S')
@@ -138,7 +129,7 @@ def extract(roi0_img, save_debug=False, filename=None, output_dir='ROI_6'):
             input_base = os.path.splitext(os.path.basename(filename))[0]
             prefix = input_base[:4]
         else:
-            prefix = 'img'
+            prefix = 'roi6'
         # Save Visualization
         viz = roi0_img.copy()
         cv2.rectangle(viz, (gx, gy), (gx+gw, gy+gh), (0, 0, 255), 2) # Main Grid (Red)
@@ -155,7 +146,7 @@ def extract(roi0_img, save_debug=False, filename=None, output_dir='ROI_6'):
 
 
 def _find_left_grid_anchor(img):
-    """Finds the chart grid in the bottom-left area."""
+    # Finds the chart grid in the bottom-left area.
     h_img, w_img = img.shape[:2]
     
     # 1. STRICT ROI: Bottom area below tabs
@@ -192,7 +183,7 @@ def _find_left_grid_anchor(img):
 
 
 def _find_grid_dividers(proj, min_gap=15, threshold_ratio=0.2):
-    """Finds peaks in edge projection to identify rows/cols."""
+    # Finds peaks in edge projection to identify rows/cols.
     if len(proj) == 0: return []
     limit = np.max(proj) * threshold_ratio
     

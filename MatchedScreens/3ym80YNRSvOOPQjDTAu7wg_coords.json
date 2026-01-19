@@ -1,0 +1,176 @@
+{
+  "timestamp": "2026-01-19T23:58:11.572791",
+  "rois": {
+    "menu": {
+      "roi_id": "ROI_Menu",
+      "bbox": [
+        0,
+        0,
+        876,
+        80
+      ],
+      "ocr_text": "\u201cURE TOPCON CV-5000eC - xo\nFile Course Examination Reference Data DataSet Tools View Step Help\nSB&worHenrvnwrempees4\n"
+    },
+    "roi1": {
+      "roi_id": "ROI_1",
+      "bbox": [
+        87,
+        118,
+        701,
+        286
+      ],
+      "data": {
+        "R_Sph": null,
+        "S_Anchor": "",
+        "L_Sph": null,
+        "R_Cyl": null,
+        "C_Anchor": "",
+        "L_Cyl": null,
+        "R_Axis": null,
+        "A_Anchor": "",
+        "L_Axis": null,
+        "R_Add": null,
+        "ADD_Anchor": null,
+        "L_Add": null,
+        "R_blank": "\u2014\u2014",
+        "blank_anchor": "\u2014",
+        "L_blank": "\u2014"
+      },
+      "image_path": "ROI_1/3ym8_1901_235816_viz_roi1.png"
+    },
+    "roi2": {
+      "roi_id": "ROI_2",
+      "pd_value_bbox": [
+        418,
+        391,
+        91,
+        79
+      ],
+      "pd_value": "",
+      "confidence": null,
+      "image_path": "ROI_2/3ym8_1901_235816_pd_debug.png"
+    },
+    "roi3_4": {
+      "roi_id": "ROI_3_4",
+      "bboxes": [
+        {
+          "label": "left_occluder",
+          "box": [
+            322,
+            409,
+            62,
+            62
+          ],
+          "state": "filled/active (blue)"
+        },
+        {
+          "label": "right_occluder",
+          "box": [
+            547,
+            409,
+            62,
+            62
+          ],
+          "state": "filled/active (blue)"
+        }
+      ],
+      "image_paths": [
+        "ROI_3/3ym8_1901_235816_roi3.png",
+        "ROI_4/3ym8_1901_235816_roi4.png"
+      ]
+    },
+    "roi5": {
+      "selected_tab": 0,
+      "bboxes": [
+        {
+          "label": 1,
+          "x": 0,
+          "y": 545,
+          "w": 92,
+          "h": 40,
+          "rel_x": 0,
+          "rel_y": 0
+        },
+        {
+          "label": 2,
+          "x": 92,
+          "y": 545,
+          "w": 92,
+          "h": 40,
+          "rel_x": 92,
+          "rel_y": 0
+        },
+        {
+          "label": 3,
+          "x": 185,
+          "y": 545,
+          "w": 92,
+          "h": 40,
+          "rel_x": 185,
+          "rel_y": 0
+        },
+        {
+          "label": 4,
+          "x": 278,
+          "y": 545,
+          "w": 92,
+          "h": 40,
+          "rel_x": 278,
+          "rel_y": 0
+        },
+        {
+          "label": 5,
+          "x": 371,
+          "y": 545,
+          "w": 92,
+          "h": 40,
+          "rel_x": 371,
+          "rel_y": 0
+        }
+      ],
+      "viz_path": "ROI_5/3ym8_1901_235816_final_contours.png"
+    },
+    "roi6": {
+      "roi_id": "ROI_6",
+      "bbox": [
+        -2,
+        280,
+        880,
+        530
+      ],
+      "thumbnails": [
+        [
+          -2,
+          305,
+          880,
+          62
+        ],
+        [
+          -2,
+          367,
+          880,
+          60
+        ],
+        [
+          -2,
+          427,
+          880,
+          219
+        ],
+        [
+          -2,
+          646,
+          880,
+          164
+        ]
+      ],
+      "selected_index": 0,
+      "image_path": "ROI_6/3ym8_1901_235816_grid_debug.png"
+    },
+    "roi7": {
+      "error": "extract() got an unexpected keyword argument 'roi6_data'"
+    }
+  },
+  "frame_id": 350,
+  "time_seconds": 14.0
+}

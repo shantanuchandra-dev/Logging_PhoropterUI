@@ -3,7 +3,7 @@ import numpy as np
 import datetime
 import os
 
-def extract_roi0(img):
+def extract_roi0(img, filename=None, save_dir='ROI_0', save=False):
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     blur = cv2.GaussianBlur(gray, (5, 5), 0)
     edges = cv2.Canny(blur, 50, 150)
@@ -20,14 +20,26 @@ def extract_roi0(img):
         raise Exception('ROI-0 (main window) not found.')
     x, y, w, h = cv2.boundingRect(roi_contour)
     roi0 = img[y:y+h, x:x+w]
+    # Save ROI-0 and bounding box visualization if requested
+    if save:
+        os.makedirs(save_dir, exist_ok=True)
+        if filename:
+            base_name = os.path.splitext(os.path.basename(filename))[0]
+        else:
+            now = datetime.datetime.now().strftime('%d%m_%H%M%S')
+            base_name = f'roi0_{now}'
+        output_path = os.path.join(save_dir, f'{base_name}.png')
+        cv2.imwrite(output_path, roi0)
+        vis = img.copy()
+        cv2.rectangle(vis, (x, y), (x+w, y+h), (0, 255, 0), 3)
+        vis_path = os.path.join(save_dir, f'{base_name}_box.png')
+        cv2.imwrite(vis_path, vis)
     return {'roi0': roi0, 'bbox': (x, y, w, h)}
 
 
 # If run as a script, keep original behavior
 if __name__ == '__main__':
-    # Only process the first matched frame from MatchedScreens (or firstFrame)
     import glob
-    import os
     matched_dir = 'firstFrame'
     matched_files = sorted(glob.glob(os.path.join(matched_dir, '*.png')))
     if not matched_files:
@@ -38,17 +50,5 @@ if __name__ == '__main__':
     img = cv2.imread(input_path)
     if img is None:
         raise FileNotFoundError(f'Image not found: {input_path}')
-    result = extract_roi0(img)
-    roi0 = result['roi0']
-    x, y, w, h = result['bbox']
-    output_dir = 'ROI_0'
-    os.makedirs(output_dir, exist_ok=True)
-    base_name = os.path.splitext(os.path.basename(input_path))[0]
-    output_path = os.path.join(output_dir, f'{base_name}.png')
-    cv2.imwrite(output_path, roi0)
-    print(f'ROI-0 saved to {output_path}')
-    vis = img.copy()
-    cv2.rectangle(vis, (x, y), (x+w, y+h), (0, 255, 0), 3)
-    vis_path = os.path.join(output_dir, f'{base_name}_box.png')
-    cv2.imwrite(vis_path, vis)
-    print(f'ROI-0 bounding box visualization saved to {vis_path}')
+    result = extract_roi0(img, filename=input_path, save_dir='ROI_0', save=True)
+    print(f'ROI-0 and bounding box saved for {input_path}')
