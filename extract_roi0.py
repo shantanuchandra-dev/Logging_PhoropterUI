@@ -44,7 +44,7 @@ if __name__ == '__main__':
     output_dir = 'ROI_0'
     os.makedirs(output_dir, exist_ok=True)
     base_name = os.path.splitext(os.path.basename(input_path))[0]
-    output_path = os.path.join(output_dir, f'crop_{base_name}.png')
+    output_path = os.path.join(output_dir, f'{base_name}.png')
     cv2.imwrite(output_path, roi0)
     print(f'ROI-0 saved to {output_path}')
     vis = img.copy()

@@ -10,6 +10,7 @@ import glob
 import sys
 import datetime
 from pathlib import Path
+from extract_roi0 import extract_roi0
 
 def load_config(config_path="config.json"):
     if not os.path.exists(config_path):
@@ -36,6 +37,7 @@ def find_first_ui_frame(video_path, config):
     match_threshold = config.get("match_threshold", 0.8)
     fps_config = config.get("fps", "1")
     target_fps = parse_fps(fps_config)
+    output_dir = config.get("output_dir", "MatchedScreens")
     
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
@@ -58,6 +60,9 @@ def find_first_ui_frame(video_path, config):
     current_frame_idx = 0.0
     
     os.makedirs("firstFrame", exist_ok=True)
+    os.makedirs("temp", exist_ok=True)
+    
+    processed_count = 0
     
     while True:
         frame_id_to_grab = int(current_frame_idx)
@@ -83,38 +88,74 @@ def find_first_ui_frame(video_path, config):
         res = cv2.matchTemplate(process_frame, process_template, cv2.TM_CCOEFF_NORMED)
         _, max_val, _, _ = cv2.minMaxLoc(res)
         
+        # Debug: Save first 20 processed frames to temp and print score
+        if processed_count < 20:
+            debug_frame = frame.copy()
+            cv2.putText(debug_frame, f"Score: {max_val*100:.2f}%", (50, 50), 
+                        cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+            cv2.line(debug_frame, (0, frame_h//2), (frame_w, frame_h//2), (0, 0, 255), 2)
+            temp_filename = os.path.join("temp", f"temp_{processed_count}_{frame_id_to_grab}.png")
+            cv2.imwrite(temp_filename, debug_frame)
+            print(f"Debug: Frame {frame_id_to_grab} (t={frame_sec:.2f}s), Score: {max_val*100:.2f}%")
+            processed_count += 1
+
         if max_val >= match_threshold:
-            # Match found!
-            now_str = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-            video_basename = os.path.splitext(os.path.basename(video_path))[0]
-            output_filename = os.path.join("firstFrame", f"{video_basename}_{now_str}_t{int(frame_sec)}s.png")
-            cv2.imwrite(output_filename, frame)
-            print(f"\n✓ UI locked on! First frame saved to: {output_filename}")
-            cap.release()
-            return frame, frame_sec, frame_id_to_grab
+            try:
+                roi0_result = extract_roi0(frame)
+                roi0 = roi0_result['roi0']
+                roi0_area = roi0.shape[0] * roi0.shape[1]
+                frame_area = frame.shape[0] * frame.shape[1]
+                area_ratio = roi0_area / frame_area
+                print(f"ROI0 area ratio: {area_ratio:.3f}")
+                
+                # Broaden the range slightly if needed, or keep upstream's strict 0.40-0.55
+                if 0.40 <= area_ratio <= 0.55:
+                    now_str = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+                    video_basename = os.path.splitext(os.path.basename(video_path))[0]
+                    # Save to both firstFrame and MatchedScreens as expected by different parts
+                    output_filename = os.path.join("firstFrame", f"{video_basename}_{now_str}_t{int(frame_sec)}s.png")
+                    cv2.imwrite(output_filename, frame)
+                    print(f"\n✓ UI locked on! First frame saved to: {output_filename}")
+                    cap.release()
+                    return frame, frame_sec, frame_id_to_grab
+                else:
+                    print(f"ROI0 area ratio {area_ratio:.3f} out of range [0.40, 0.55], discarding frame.")
+            except Exception as e:
+                print(f"ROI0 extraction failed: {e}")
 
         current_frame_idx += step_frames
         
     cap.release()
     return None, None, None
 
-def main():
+def extract(video_path):
+    # This maintains CLI compatibility if used standalone
     config = load_config()
-    video_source_dir = config.get("video_source_dir", "Sample/videos")
-    video_files = [f for f in glob.glob(os.path.join(video_source_dir, "*")) 
-                   if os.path.isfile(f) and not f.lower().endswith('.ds_store')]
-    
-    if not video_files:
-        print(f"No videos found in {video_source_dir}")
-        return
-    
-    video_path = video_files[0]
-    print(f"Scanning video: {video_path}")
+    print(f"Processing video: {video_path}")
     frame, sec, idx = find_first_ui_frame(video_path, config)
     if frame is not None:
         print(f"Success! UI found at {sec:.2f}s (Frame {idx})")
     else:
         print("UI not found in video.")
+
+def main():
+    video_path = None
+    if len(sys.argv) > 1:
+        video_path = sys.argv[1]
+        if not os.path.isfile(video_path):
+            print(f"Error: Provided video file '{video_path}' does not exist.")
+            return
+    else:
+        config = load_config()
+        video_source_dir = config.get("video_source_dir", "Sample/videos")
+        video_files = glob.glob(os.path.join(video_source_dir, "*"))
+        video_files = [f for f in video_files if os.path.isfile(f) and not f.lower().endswith('.ds_store')]
+        if not video_files:
+            print(f"No videos found in {video_source_dir}")
+            return
+        video_path = video_files[0]
+    
+    extract(video_path)
 
 if __name__ == "__main__":
     main()
