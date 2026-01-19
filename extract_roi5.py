@@ -243,7 +243,7 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         roi0_path = sys.argv[1]
     else:
-        roi0_path = "ROI_0/1201.png"
+        roi0_path = "ROI_0/3ym80YNRSvOOPQjDTAu7wg_14.png"
     img = cv2.imread(roi0_path)
     if img is None:
         print(f"Could not load {roi0_path}")
