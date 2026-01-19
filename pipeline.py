@@ -389,6 +389,16 @@ def main():
             ref_data['time_seconds'] = first_time_sec
 
             # Overwrite coords.json if it exists
+            # Ensure only the PD value bbox is stored for ROI-2
+            if 'roi2' in ref_data['rois']:
+                roi2 = ref_data['rois']['roi2']
+                ref_data['rois']['roi2'] = {
+                    'roi_id': roi2.get('roi_id', 'ROI_2'),
+                    'pd_value_bbox': roi2.get('pd_value_bbox', []),
+                    'pd_value': roi2.get('pd_value', None),
+                    'confidence': roi2.get('confidence', None),
+                    'image_path': roi2.get('image_path', None)
+                }
             ref_path = os.path.join(config['output_dir'], f"{video_basename}_coords.json")
             with open(ref_path, 'w') as f:
                 json.dump(ref_data, f, indent=2)
@@ -412,27 +422,75 @@ def main():
         sampling_interval_frames = int(video_fps * config['sampling_interval_seconds'])
         all_results = [ref_data]
         append_to_csv(video_csv_path, ref_data)
-        
+
+        # Store previous extracted values for change detection
+        def extract_csv_row(frame_data):
+            """Extracts the row dict as written to CSV for value comparison."""
+            rois = frame_data.get('rois', {})
+            table = rois.get('table', {}).get('data', {})
+            pd_val = rois.get('pd', {}).get('pd_value', '')
+            chart_num = rois.get('chart_tabs', {}).get('selected_tab', -1)
+            if chart_num != -1:
+                chart_num += 1
+            occ_state = "Unknown"
+            if 'occluders' in rois and 'bboxes' in rois['occluders']:
+                occs = rois['occluders']['bboxes']
+                left_active = False
+                right_active = False
+                for occ in occs:
+                    state = occ.get('state', '').lower()
+                    is_active = "(blue)" in state
+                    if occ.get('label') == 'left_occluder':
+                        left_active = is_active
+                    elif occ.get('label') == 'right_occluder':
+                        right_active = is_active
+                if left_active and right_active:
+                    occ_state = "BINO"
+                elif not left_active and not right_active:
+                    occ_state = "Both_Occluded"
+                elif not left_active:
+                    occ_state = "Left_Occluded"
+                elif not right_active:
+                    occ_state = "Right_Occluded"
+            chart_display = rois.get('big_chart', {}).get('chart_info', '')
+            row = {
+                'R_SPH': table.get('R_Sph', ''),
+                'R_CYL': table.get('R_Cyl', ''),
+                'R_AXIS': table.get('R_Axis', ''),
+                'R_ADD': table.get('R_Add', ''),
+                'L_SPH': table.get('L_Sph', ''),
+                'L_CYL': table.get('L_Cyl', ''),
+                'L_AXIS': table.get('L_Axis', ''),
+                'L_ADD': table.get('L_Add', ''),
+                'PD': pd_val,
+                'Chart_Number': chart_num,
+                'Occluder_State': occ_state,
+                'Chart_Display': chart_display
+            }
+            return row
+
+        prev_row = extract_csv_row(ref_data)
+
         # Start processing from first_frame_idx
         frame_count = first_frame_idx
         cap.set(cv2.CAP_PROP_POS_FRAMES, frame_count)
-        
+
         extraction_count = 1
-        
+
         while True:
             ret, frame = cap.read()
             if not ret:
                 break
-            
+
             frame_count += 1
             time_seconds = frame_count / video_fps
-            
+
             # Periodic sampling
             if frame_count % sampling_interval_frames != 0:
                 continue
-                
+
             print(f"\r→ Frame {frame_count} / {total_frames} (t={time_seconds:.2f}s)", end="")
-            
+
             try:
                 # Check UI presence still
                 is_present, _ = verify_ui_present(frame, cv2.imread(config['reference_image']), config['match_threshold'])
@@ -454,17 +512,21 @@ def main():
                 current_roi_data['frame_id'] = frame_count
                 current_roi_data['time_seconds'] = time_seconds
 
-                # Save results
-                all_results.append(current_roi_data)
-                append_to_csv(video_csv_path, current_roi_data)
+                # Extract row for value comparison
+                curr_row = extract_csv_row(current_roi_data)
 
-                extraction_count += 1
+                # Only log if any value has changed
+                if curr_row != prev_row:
+                    all_results.append(current_roi_data)
+                    append_to_csv(video_csv_path, current_roi_data)
+                    prev_row = curr_row
+                    extraction_count += 1
 
             except Exception:
                 continue
 
         cap.release()
-        
+
         # Save final JSON
         with open(video_json_path, 'w') as f:
             json.dump(all_results, f, indent=2)

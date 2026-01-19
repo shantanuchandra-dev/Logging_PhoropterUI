@@ -157,9 +157,46 @@ def extract(roi0_img, save_debug=False, output_dir='ROI_2', filename=None):
     bx, by, bw, bh = pd_box
     roi_pd_box = roi_pd_area[by:by+bh, bx:bx+bw]
     
-    # Extract PD value - refine by taking only the bottom part of the box
+    # Extract PD value - refine by detecting the exact bounding box of the digits
     # The PD label is usually at the top, value at the bottom.
-    roi_pd_value_crop = roi_pd_box[int(bh*0.4):, :] # Take bottom 60%
+    
+    # Preprocess for finding digits within the box
+    roi_pd_box_gray_full = cv2.cvtColor(roi_pd_box, cv2.COLOR_BGR2GRAY)
+    _, roi_pd_box_bin_inv = cv2.threshold(roi_pd_box_gray_full, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+    
+    # Find contours within the PD box to isolate digits
+    digit_contours, _ = cv2.findContours(roi_pd_box_bin_inv, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    
+    val_x1, val_y1, val_x2, val_y2 = bw, bh, 0, 0
+    found_digits = False
+    
+    for cnt in digit_contours:
+        dx, dy, dw, dh = cv2.boundingRect(cnt)
+        # Filter digits: usually in the lower 70% and within reasonable size ranges
+        if dy > bh * 0.3 and 2 < dw < bw * 0.5 and 5 < dh < bh:
+            val_x1 = min(val_x1, dx)
+            val_y1 = min(val_y1, dy)
+            val_x2 = max(val_x2, dx + dw)
+            val_y2 = max(val_y2, dy + dh)
+            found_digits = True
+            
+    if found_digits:
+        # Add a 2px buffer
+        buffer = 2
+        val_x1 = max(0, val_x1 - buffer)
+        val_y1 = max(0, val_y1 - buffer)
+        val_x2 = min(bw, val_x2 + buffer)
+        val_y2 = min(bh, val_y2 + buffer)
+        
+        val_bx, val_by, val_bw, val_bh = val_x1, val_y1, val_x2 - val_x1, val_y2 - val_y1
+        roi_pd_value_crop = roi_pd_box[val_by:val_by+val_bh, val_bx:val_bx+val_bw]
+    else:
+        # Fallback to bottom 60% if no digits detected reliably
+        val_by = int(bh * 0.4)
+        val_bh = bh - val_by
+        val_bx = 0
+        val_bw = bw
+        roi_pd_value_crop = roi_pd_box[val_by:, :]
     
     # Preprocess for OCR
     roi_pd_box_gray = cv2.cvtColor(roi_pd_value_crop, cv2.COLOR_BGR2GRAY)
@@ -184,13 +221,23 @@ def extract(roi0_img, save_debug=False, output_dir='ROI_2', filename=None):
         except Exception as e2:
             pd_text = None
 
-    # Calculate absolute coordinates
-    full_bx = search_x1 + bx
-    full_by = search_y1 + by
+    # Calculate absolute coordinates of the refined value box in resized space
+    val_bx_abs = search_x1 + bx + val_bx
+    val_by_abs = search_y1 + by + val_by
+    
+    # Scale coordinates back to original image resolution
+    orig_h, orig_w = roi0_img.shape[:2]
+    scale_x = orig_w / 929.0
+    scale_y = orig_h / 823.0
+    
+    full_bx_val = val_bx_abs * scale_x
+    full_by_val = val_by_abs * scale_y
+    val_bw_scaled = val_bw * scale_x
+    val_bh_scaled = val_bh * scale_y
     
     result = {
         'roi_id': 'ROI_2',
-        'pd_value_bbox': [int(full_bx), int(full_by), int(bw), int(bh)],
+        'pd_value_bbox': [int(full_bx_val), int(full_by_val), int(val_bw_scaled), int(val_bh_scaled)],
         'pd_value': pd_text,
         'confidence': None
     }
@@ -201,11 +248,20 @@ def extract(roi0_img, save_debug=False, output_dir='ROI_2', filename=None):
         # Save the PD crop (the value part)
         result_path = os.path.join(output_dir, f'{prefix}_{now}_pd_debug.png')
         cv2.imwrite(result_path, roi_pd_value_crop)
-        # Save visualization on the full image
-        vis_full = img.copy()
-        cv2.circle(vis_full, (left_circle[0], left_circle[1]), left_circle[2], (255, 0, 0), 2)
-        cv2.circle(vis_full, (right_circle[0], right_circle[1]), right_circle[2], (255, 0, 0), 2)
-        cv2.rectangle(vis_full, (full_bx, full_by), (full_bx + bw, full_by + bh), (0, 255, 0), 2)
+        # Save visualization on the full image (using original image resolution)
+        vis_full = roi0_img.copy()
+        # Scale circle coordinates for visualization if needed, but here we just show the final bbox
+        # Note: left_circle/right_circle are in resized space, let's scale them too if we draw them
+        lx_scaled = int(left_circle[0] * scale_x)
+        ly_scaled = int(left_circle[1] * scale_y)
+        lr_scaled = int(left_circle[2] * ((scale_x + scale_y) / 2)) # Approx scale for radius
+        rx_scaled = int(right_circle[0] * scale_x)
+        ry_scaled = int(right_circle[1] * scale_y)
+        rr_scaled = int(right_circle[2] * ((scale_x + scale_y) / 2))
+        
+        cv2.circle(vis_full, (lx_scaled, ly_scaled), lr_scaled, (255, 0, 0), 2)
+        cv2.circle(vis_full, (rx_scaled, ry_scaled), rr_scaled, (255, 0, 0), 2)
+        cv2.rectangle(vis_full, (int(full_bx_val), int(full_by_val)), (int(full_bx_val + val_bw_scaled), int(full_by_val + val_bh_scaled)), (0, 255, 0), 2)
         vis_path = os.path.join(output_dir, f'{prefix}_{now}_pd_vis.png')
         cv2.imwrite(vis_path, vis_full)
         result['image_path'] = result_path
