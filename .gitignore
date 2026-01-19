@@ -1,11 +1,11 @@
 # Ignore all video files
-Sample/videos/
+Sample/videos*/
 ROI_*/
 pipeline_output/
 firstFrame/
 firstFrame_JSON/
 __pycache__/
-
-.DS_Store
+    
 settings.json
 pipeline_SC.py
+.DS_Store
