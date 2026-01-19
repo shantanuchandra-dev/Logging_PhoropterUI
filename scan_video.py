@@ -1,9 +1,9 @@
-
 import cv2
 import json
 import os
 import glob
 import sys
+from extract_roi0 import extract_roi0
 
 def load_config(config_path="config.json"):
     with open(config_path, "r") as f:
@@ -21,7 +21,8 @@ def parse_fps(fps_str):
     else:
         return float(fps_str)
 
-def main():
+
+def extract(video_path):
     # 1. Load Config
     try:
         config = load_config()
@@ -36,17 +37,6 @@ def main():
     output_dir = config.get("output_dir", "MatchedScreens")
     match_threshold = config.get("match_threshold", 0.8)
 
-    # 2. Pick first video
-    video_files = glob.glob(os.path.join(video_source_dir, "*"))
-    # Filter for valid video extensions if needed, but for now just pick first file
-    # that isn't a directory (glob might include dirs if logic is loose, but usually fine)
-    video_files = [f for f in video_files if os.path.isfile(f) and not f.lower().endswith('.ds_store')]
-    
-    if not video_files:
-        print(f"No videos found in {video_source_dir}")
-        return
-    
-    video_path = video_files[0]
     print(f"Processing video: {video_path}")
     print(f"Target Processing FPS: {target_fps} (Config: {fps_config})")
 
@@ -143,19 +133,50 @@ def main():
             cv2.imwrite(temp_filename, debug_frame)
             print(f"Debug: Frame {frame_id_to_grab} (t={frame_sec:.2f}s), Score: {max_val*100:.2f}%")
 
+
         if max_val >= match_threshold:
-            # Match found
-            video_basename = os.path.splitext(os.path.basename(video_path))[0]
-            output_filename = os.path.join(output_dir, f"{video_basename}_{int(frame_sec)}.png")
-            cv2.imwrite(output_filename, frame)
-            print(f"\nFirst matching frame saved: {output_filename}")
-            break
+            try:
+                roi0_result = extract_roi0(frame)
+                roi0 = roi0_result['roi0']
+                bbox = roi0_result['bbox']
+                roi0_area = roi0.shape[0] * roi0.shape[1]
+                frame_area = frame.shape[0] * frame.shape[1]
+                area_ratio = roi0_area / frame_area
+                print(f"ROI0 area ratio: {area_ratio:.3f}")
+                if 0.40 <= area_ratio <= 0.55:
+                    video_basename = os.path.splitext(os.path.basename(video_path))[0]
+                    output_filename = os.path.join(output_dir, f"{video_basename}_{int(frame_sec)}.png")
+                    cv2.imwrite(output_filename, frame)
+                    print(f"\nFirst matching frame saved: {output_filename}")
+                    break
+                else:
+                    print(f"ROI0 area ratio {area_ratio:.3f} out of range [0.40, 0.55], discarding frame.")
+            except Exception as e:
+                print(f"ROI0 extraction failed: {e}")
 
         current_frame_idx += step_frames
         processed_count += 1
 
     print("\nDone.")
     cap.release()
+
+def main():
+    video_path = None
+    if len(sys.argv) > 1:
+        video_path = sys.argv[1]
+        if not os.path.isfile(video_path):
+            print(f"Error: Provided video file '{video_path}' does not exist.")
+            return
+    else:
+        config = load_config()
+        video_source_dir = config.get("video_source_dir", "Sample/videos")
+        video_files = glob.glob(os.path.join(video_source_dir, "*"))
+        video_files = [f for f in video_files if os.path.isfile(f) and not f.lower().endswith('.ds_store')]
+        if not video_files:
+            print(f"No videos found in {video_source_dir}")
+            return
+        video_path = video_files[1] if len(video_files) > 1 else video_files[0]
+    extract(video_path)
 
 if __name__ == "__main__":
     main()
