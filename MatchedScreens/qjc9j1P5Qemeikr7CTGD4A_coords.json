@@ -1,0 +1,107 @@
+{
+  "timestamp": "2026-01-19T16:53:54.296857",
+  "rois": {
+    "menu": {
+      "error": "tesseract is not installed or it's not in your PATH. See README file for more information."
+    },
+    "table": {
+      "error": "tesseract is not installed or it's not in your PATH. See README file for more information."
+    },
+    "pd": {
+      "roi_id": "ROI_2",
+      "pd_value_bbox": [
+        418,
+        385,
+        94,
+        68
+      ],
+      "pd_value": "56.0",
+      "confidence": null
+    },
+    "occluders": {
+      "roi_id": "ROI_3_4",
+      "bboxes": [
+        {
+          "label": "left_occluder",
+          "box": [
+            321,
+            390,
+            64,
+            64
+          ],
+          "state": "filled/active (blue)"
+        },
+        {
+          "label": "right_occluder",
+          "box": [
+            541,
+            384,
+            74,
+            74
+          ],
+          "state": "filled/active (blue)"
+        }
+      ]
+    },
+    "chart_tabs": {
+      "roi_id": "ROI_5",
+      "bbox": [
+        183,
+        203,
+        310,
+        83
+      ],
+      "tab_boundaries": [
+        183,
+        303,
+        391,
+        479,
+        567,
+        493
+      ],
+      "selected_tab": -1,
+      "confidence": 0.0
+    },
+    "chart_grid": {
+      "roi_id": "ROI_6",
+      "bbox": [
+        -2,
+        321,
+        1054,
+        606
+      ],
+      "thumbnails": [
+        [
+          -2,
+          321,
+          1054,
+          300
+        ],
+        [
+          -2,
+          621,
+          1054,
+          306
+        ]
+      ],
+      "selected_index": -1
+    },
+    "big_chart": {
+      "roi_id": "ROI_7",
+      "bbox": [
+        656,
+        614,
+        284,
+        241
+      ],
+      "chart_info": {
+        "identity": "Unknown",
+        "matches_roi6": true,
+        "roi6_selected_index": -1,
+        "color_hint": null
+      }
+    }
+  },
+  "frame_id": 1300,
+  "time_seconds": 52.0
+}
