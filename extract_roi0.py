@@ -20,21 +20,31 @@ def extract_roi0(img, filename=None, save_dir='ROI_0', save=False):
         raise Exception('ROI-0 (main window) not found.')
     x, y, w, h = cv2.boundingRect(roi_contour)
     roi0 = img[y:y+h, x:x+w]
-    # Save ROI-0 and bounding box visualization if requested
+
+    output_path = None
+    vis_path = None
     if save:
         os.makedirs(save_dir, exist_ok=True)
+        now = datetime.datetime.now().strftime('%d%m_%H%M%S')
         if filename:
-            base_name = os.path.splitext(os.path.basename(filename))[0]
+            base = os.path.splitext(os.path.basename(filename))[0]
+            prefix = base[:4]
         else:
-            now = datetime.datetime.now().strftime('%d%m_%H%M%S')
-            base_name = f'roi0_{now}'
-        output_path = os.path.join(save_dir, f'{base_name}.png')
+            prefix = 'roi0'
+        output_path = os.path.join(save_dir, f'{prefix}_{now}.png')
         cv2.imwrite(output_path, roi0)
         vis = img.copy()
         cv2.rectangle(vis, (x, y), (x+w, y+h), (0, 255, 0), 3)
-        vis_path = os.path.join(save_dir, f'{base_name}_box.png')
+        vis_path = os.path.join(save_dir, f'{prefix}_{now}_box.png')
         cv2.imwrite(vis_path, vis)
-    return {'roi0': roi0, 'bbox': (x, y, w, h)}
+    return {
+        'roi0': roi0,
+        'bbox': (x, y, w, h),
+        'output_path': output_path,
+        'vis_path': vis_path,
+        'save_dir': save_dir,
+        'prefix': prefix if save else None
+    }
 
 
 # If run as a script, keep original behavior

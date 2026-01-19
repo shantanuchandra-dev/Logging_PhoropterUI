@@ -19,7 +19,7 @@ from pathlib import Path
 # Import ROI extractors
 import extract_roi0
 import extract_roi_menu
-import extract_roi1_ocr
+import extract_roi1, extract_roi1_ocr
 import extract_roi2  # Using extract_roi2 instead of extract_roi2_temp
 import extract_roi3_4
 import extract_roi5
@@ -126,16 +126,27 @@ def extract_all_rois(roi0_img, gpu_available=False, save_debug=True, output_dir=
     
     # 1. Menu
     try:
+        # Always use the provided filename for prefix consistency, even if roi0_img is a temp file
         menu_result = extract_roi_menu.extract(roi0_img, save_debug=save_debug, output_dir='ROI_Menu', filename=filename)
         results['rois']['menu'] = menu_result
     except Exception as e:
         results['rois']['menu'] = {'error': str(e)}
     # 2. ROI1 (Table)
-    try:
-        roi1_result = extract_roi1_ocr.extract(roi0_img, save_debug=save_debug, output_dir='ROI_1', filename=filename)
-        results['rois']['roi1'] = roi1_result
-    except Exception as e:
-        results['rois']['roi1'] = {'error': str(e)}
+    if save_debug:
+        try:
+                # Always use the actual ROI-0 file path for ROI-1 extraction
+                if isinstance(filename, str):
+                    # Compose the expected ROI-0 file path from the filename
+                    roi0_base = os.path.splitext(os.path.basename(filename))[0]
+                    roi0_path = os.path.join('ROI_0', f'{roi0_base}.png')
+                    if not os.path.isfile(roi0_path):
+                        raise FileNotFoundError(f'ROI-0 file not found: {roi0_path}')
+                    results['rois']['roi1'] = extract_roi1.extract(roi0_path, roi0_dir='ROI_0', roi_menu_dir='ROI_Menu', output_dir='ROI_1')
+                else:
+                    raise ValueError('filename must be provided as a string for ROI-1 extraction')
+            # No result dict is returned by the new extract function
+        except Exception as e:
+            results['rois']['roi1'] = {'error': str(e)}
     # 3. ROI2 (PD)
     try:
         roi2_result = extract_roi2.extract(roi0_img, save_debug=save_debug, output_dir='ROI_2', filename=filename)
@@ -149,11 +160,24 @@ def extract_all_rois(roi0_img, gpu_available=False, save_debug=True, output_dir=
     except Exception as e:
         results['rois']['roi3_4'] = {'error': str(e)}
     # 5. ROI5 (Chart Tabs)
-    try:
-        roi5_result = extract_roi5.extract(roi0_img, save_debug=save_debug, output_dir='ROI_5', filename=filename)
-        results['rois']['roi5'] = roi5_result
-    except Exception as e:
-        results['rois']['roi5'] = {'error': str(e)}
+    if save_debug:
+        try:
+            roi5_result = extract_roi5.extract(roi0_img, save_debug=save_debug, output_dir='ROI_5', filename=filename)
+            results['rois']['roi5'] = roi5_result
+            # Save ROI-5 output to file if available
+            if roi5_result and isinstance(roi5_result, dict):
+                roi0_base = os.path.splitext(os.path.basename(filename))[0] if filename else 'roi0'
+                roi5_out_path = os.path.join('ROI_5', f'{roi0_base}_roi5_output.json')
+                # Attempt to add absolute bboxes if available
+                abs_bboxes_path = os.path.join('ROI_5', f'{roi0_base}_roi5_chart_bboxes_on_roi0.txt')
+                if os.path.isfile(abs_bboxes_path):
+                    with open(abs_bboxes_path, 'r') as f_bbox:
+                        abs_bboxes = [eval(line.strip()) for line in f_bbox if line.strip()]
+                    roi5_result['chart_label_bboxes_on_roi0'] = abs_bboxes
+                with open(roi5_out_path, 'w') as f:
+                    json.dump(roi5_result, f, indent=2)
+        except Exception as e:
+            results['rois']['roi5'] = {'error': str(e)}
     # 6. ROI6 (Chart Grid)
     try:
         roi6_result = extract_roi6.extract(roi0_img, save_debug=save_debug, output_dir='ROI_6', filename=filename)
@@ -162,8 +186,7 @@ def extract_all_rois(roi0_img, gpu_available=False, save_debug=True, output_dir=
         results['rois']['roi6'] = {'error': str(e)}
     # 7. ROI7 (Big Chart)
     try:
-        roi6_data = results['rois'].get('roi6', {})
-        roi7_result = extract_roi7.extract(roi0_img, roi6_data=roi6_data, save_debug=save_debug, output_dir='ROI_7', filename=filename)
+        roi7_result = extract_roi7.extract(roi0_img, save_debug=save_debug, filename=filename)
         results['rois']['roi7'] = roi7_result
     except Exception as e:
         results['rois']['roi7'] = {'error': str(e)}
@@ -349,26 +372,28 @@ def main():
         # --- PHASE 2: Fix Coordinates on First Frame ---
         print(f"\n[PHASE 2] Setting reference coordinates on first frame (t={first_time_sec:.2f}s)...")
         try:
-            roi0_result = extract_roi0.extract_roi0(first_frame,save_dir='ROI_0',save=True)
+            roi0_result = extract_roi0.extract_roi0(first_frame, filename=video_filename, save_dir='ROI_0', save=True)
             roi0_img = roi0_result['roi0']
-            
+            roi0_path = roi0_result.get('output_path') if 'output_path' in roi0_result else os.path.join('ROI_0', f"{os.path.splitext(video_filename)[0]}.png")
+
             # Extract all ROIs to establish baseline coordinates
+
             ref_data = extract_all_rois(
                 roi0_img,
                 gpu_available=gpu_info['available'],
                 save_debug=True,
                 output_dir=config['output_dir'],
-                filename=video_filename
+                filename=roi0_path
             )
             ref_data['frame_id'] = first_frame_idx
             ref_data['time_seconds'] = first_time_sec
-            
-            # Store Reference Coordinates
+
+            # Overwrite coords.json if it exists
             ref_path = os.path.join(config['output_dir'], f"{video_basename}_coords.json")
             with open(ref_path, 'w') as f:
                 json.dump(ref_data, f, indent=2)
             print(f"  ✓ Reference coordinates stored: {ref_path}")
-            
+
         except Exception as e:
             print(f"✗ Failed to set reference on first frame: {e}")
             continue
@@ -413,7 +438,7 @@ def main():
                 is_present, _ = verify_ui_present(frame, cv2.imread(config['reference_image']), config['match_threshold'])
                 if not is_present:
                     continue
-                    
+
                 roi0_res = extract_roi0.extract_roi0(frame)
                 current_roi_data = extract_all_rois(
                     roi0_res['roi0'],
@@ -421,16 +446,20 @@ def main():
                     save_debug=False,
                     output_dir=config['output_dir']
                 )
-                
+                # Remove ROI-1, ROI-1 OCR, and ROI-5 from results for subsequent frames
+                for key in ['roi1', 'roi1_ocr', 'roi5']:
+                    if key in current_roi_data['rois']:
+                        del current_roi_data['rois'][key]
+
                 current_roi_data['frame_id'] = frame_count
                 current_roi_data['time_seconds'] = time_seconds
-                
+
                 # Save results
                 all_results.append(current_roi_data)
                 append_to_csv(video_csv_path, current_roi_data)
-                
+
                 extraction_count += 1
-                
+
             except Exception:
                 continue
 

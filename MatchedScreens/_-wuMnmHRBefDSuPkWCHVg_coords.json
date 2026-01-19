@@ -1,0 +1,196 @@
+{
+  "timestamp": "2026-01-20T02:56:26.705004",
+  "rois": {
+    "menu": {
+      "roi_id": "ROI_Menu",
+      "bbox": [
+        0,
+        0,
+        1050,
+        92
+      ],
+      "ocr_text": "\u201cEE TOPCON Cv-So00PC = x\ni a \u2014s)\n8b 2 ee Poe ama wRa les @ & Z fel\n"
+    },
+    "roi1": {
+      "roi_id": "ROI1",
+      "cell_bboxes_on_roi0": [
+        [
+          253,
+          156,
+          459,
+          204
+        ],
+        [
+          459,
+          156,
+          589,
+          204
+        ],
+        [
+          589,
+          156,
+          794,
+          204
+        ],
+        [
+          253,
+          204,
+          459,
+          253
+        ],
+        [
+          459,
+          204,
+          589,
+          253
+        ],
+        [
+          589,
+          204,
+          794,
+          253
+        ],
+        [
+          253,
+          253,
+          459,
+          303
+        ],
+        [
+          459,
+          253,
+          589,
+          303
+        ],
+        [
+          589,
+          253,
+          794,
+          303
+        ],
+        [
+          253,
+          303,
+          459,
+          352
+        ],
+        [
+          459,
+          303,
+          589,
+          352
+        ],
+        [
+          589,
+          303,
+          794,
+          352
+        ],
+        [
+          253,
+          352,
+          459,
+          404
+        ],
+        [
+          459,
+          352,
+          589,
+          404
+        ],
+        [
+          589,
+          352,
+          794,
+          404
+        ]
+      ],
+      "roi1_image": "ROI_1/_2001_025627_roi1.png",
+      "overlay_image": "ROI_1/_2001_025628_roi1_cells_on_roi0.png",
+      "bbox_file": "ROI_1/_2001_025628_roi1_cells_on_roi0_bboxes.txt"
+    },
+    "roi2": {
+      "roi_id": "ROI_2",
+      "pd_value_bbox": [
+        418,
+        386,
+        91,
+        66
+      ],
+      "pd_value": "58.5",
+      "confidence": null,
+      "image_path": "ROI_2/_-wu_2001_025628_pd_debug.png"
+    },
+    "roi3_4": {
+      "roi_id": "ROI_3_4",
+      "bboxes": [
+        {
+          "label": "left_occluder",
+          "box": [
+            321,
+            390,
+            64,
+            64
+          ],
+          "state": "filled/active (blue)"
+        },
+        {
+          "label": "right_occluder",
+          "box": [
+            541,
+            385,
+            74,
+            74
+          ],
+          "state": "filled/active (blue)"
+        }
+      ],
+      "image_paths": [
+        "ROI_3/_-wu_2001_025628_roi3.png",
+        "ROI_4/_-wu_2001_025628_roi4.png"
+      ]
+    },
+    "roi5": {
+      "selected_tab": -1,
+      "bboxes": [],
+      "viz_path": null
+    },
+    "roi6": {
+      "roi_id": "ROI_6",
+      "bbox": [
+        -2,
+        321,
+        1054,
+        606
+      ],
+      "thumbnails": [
+        [
+          -2,
+          321,
+          1054,
+          296
+        ],
+        [
+          -2,
+          617,
+          1054,
+          310
+        ]
+      ],
+      "selected_index": -1,
+      "image_path": "ROI_6/_-wu_2001_025628_grid_debug.png"
+    },
+    "roi7": {
+      "roi_id": "ROI7",
+      "bbox": [
+        994,
+        707,
+        48,
+        47
+      ],
+      "debug_image": "ROI_7/_-wu_2001_025628_labeled_roi7.png"
+    }
+  },
+  "frame_id": 2300,
+  "time_seconds": 92.0
+}
