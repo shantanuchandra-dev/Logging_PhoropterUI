@@ -13,7 +13,7 @@ import extract_roi_menu
 import extract_roi1
 import extract_roi2
 import extract_roi3_4
-import extract_roi5
+import extract_roi5_NB
 import extract_roi6
 import extract_roi7
 
@@ -99,7 +99,7 @@ def test_extractors():
     print("\n4. Testing Chart Tabs Extractor (ROI-5)")
     print("-" * 60)
     try:
-        tabs_result = extract_roi5.extract(roi0_img, save_debug=True, filename=roi0_path)
+        tabs_result = extract_roi5_NB.extract(roi0_img, save_debug=True, filename=roi0_path)
         print(f"✓ Chart tabs extraction successful")
         print(f"  - ROI ID: {tabs_result.get('roi_id')}")
         print(f"  - BBox: {tabs_result.get('bbox')}")

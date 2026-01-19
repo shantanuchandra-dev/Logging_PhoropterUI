@@ -1,173 +1,251 @@
-#!/usr/bin/env python3
-"""
-Extract ROI-5 Chart tabs region from bottom half images
-"""
-
-
 import cv2
 import numpy as np
-from pathlib import Path
-import json
 import os
+import pytesseract
 import datetime
 
+# 1. Broadly Crop the "Chart" area (User requested 60-75%)
+def crop_tab_band(roi0_img, output_dir, prefix):
+    h = roi0_img.shape[0]
+    y1 = int(h * 0.60)
+    y2 = int(h * 0.75)
+    tab_band = roi0_img[y1:y2, :]
+    os.makedirs(output_dir, exist_ok=True)
+    now = datetime.datetime.now().strftime('%d%m_%H%M%S')
+    crop_path = os.path.join(output_dir, f'{prefix}_{now}_tab_band.png')
+    cv2.imwrite(crop_path, tab_band)
+    return tab_band, crop_path, y1, y2
 
-def extract(roi0_img, save_debug=False, output_dir='ROI_5', filename=None):
-    """
-    Extract chart tabs (ROI-5) from ROI-0 image path.
+# Step 2: Preprocess (grayscale, enhanced)
+def preprocess_image_enhanced(img):
+    # Scale up for better OCR on small text
+    img_scaled = cv2.resize(img, None, fx=2, fy=2, interpolation=cv2.INTER_CUBIC)
+    gray = cv2.cvtColor(img_scaled, cv2.COLOR_BGR2GRAY)
     
-    Args:
-        roi0_path: Path to ROI-0 image
-        save_debug: Whether to save debug images
-        output_dir: Directory to save debug images
+    # Simple Otsu thresholding
+    _, thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
     
-    Returns:
-        dict: {
-            'roi_id': 'ROI_5',
-            'bbox': [x, y, w, h],  # Overall tabs region bbox
-            'tab_boundaries': [x1, x2, x3, x4, x5, x6],  # X coordinates of tab dividers
-            'selected_tab': int,  # Index of selected tab (0-4)
-            'confidence': float,  # Confidence score for selection
-            'image_path': 'path/to/debug_image.png' (if save_debug=True)
-        }
-    """
-    if roi0_img is None:
-        raise ValueError('Input image is None')
-    # Use filename for debug output naming if provided
-    if filename:
-        input_base = os.path.splitext(os.path.basename(filename))[0]
-        prefix = input_base[:4]
-    else:
-        prefix = 'roi0'
-    height, width = roi0_img.shape[:2]
-    
-    # --- Dynamic Detection Logic ---
-    template_path = Path("ROI_5/chart_template.png")
-    if not template_path.exists():
-        h, w = roi0_img.shape[:2]
-        y_start = int(h * 0.22)
-        y_end = int(h * 0.31)
-        x_start = int(w * 0.175)
-        x_end = int(w * 0.47)
-        tab_width = (x_end - x_start) / 5
-        # Adjust for wider Tab1 to avoid overlap
-        boundaries = [x_start, x_start + 120, x_start + 120 + 88, x_start + 120 + 176, x_start + 120 + 264, x_end]
-    else:
-        template = cv2.imread(str(template_path))
-        search_template = template
-        if width < 700:
-            scale = width / 929.0
-            search_template = cv2.resize(template, (0, 0), fx=scale, fy=scale)
+    # If the image is mostly dark (text is light), invert it
+    # But usually text is dark on light background.
+    if np.mean(thresh) < 127:
+        thresh = cv2.bitwise_not(thresh)
         
-        tw, th = search_template.shape[1], search_template.shape[0]
-        res = cv2.matchTemplate(roi0_img, search_template, cv2.TM_CCOEFF_NORMED)
-        loc = np.where(res >= 0.3)
-        matches = list(zip(*loc[::-1]))
-        
-        if not matches:
-             y_start, y_end, x_start, x_end = 0, 50, 0, 500
-             boundaries = [0, 100, 200, 300, 400, 500]
+    return thresh
+
+def is_chart_like(word):
+    import difflib
+    import re
+    word = word.upper().strip()
+    # Remove any non-alphanumeric characters
+    word = re.sub(r'[^A-Z0-9]', '', word)
+    
+    if "CHART" in word: # Added check for substring
+        return True
+    
+    # Check for fuzzy match against CHART or CHART1-5
+    variants = ["CHART", "CHART1", "CHART2", "CHART3", "CHART4", "CHART5"]
+    for v in variants:
+        if difflib.SequenceMatcher(None, word, v).ratio() > 0.6:
+            return True
+            
+    # Check if word contains something like 'CHART' with some OCR errors
+    # e.g., 'Chari', 'Chait', 'Cbart'
+    if len(word) >= 4:
+        if difflib.SequenceMatcher(None, word[:5], "CHART").ratio() > 0.6:
+            return True
+            
+    return False
+
+def extract_roi5_sc_v2(roi0_img, output_dir, prefix):
+    """
+    Revised logic for ROI5 SC extraction:
+    1. Crop 60-75% height.
+    2. Fuzzy match "Chart" on preprocessed crop.
+    3. Crop horizontally with 10px vertical buffer.
+    4. Aggressive contour matching (width > 2*height) for 5 tabs.
+    5. Label and return coordinates.
+    """
+    now = datetime.datetime.now().strftime('%d%m_%H%M%S')
+    
+    # 1. Initial Height Crop
+    tab_band, band_path, band_y1, band_y2 = crop_tab_band(roi0_img, output_dir, prefix)
+    
+    # 2. Preprocess for OCR
+    proc_band = preprocess_image_enhanced(tab_band)
+    cv2.imwrite(os.path.join(output_dir, f"{prefix}_{now}_proc_band.png"), proc_band)
+    
+    # 3. Fuzzy Match "Chart"
+    chart_word_idx = -1
+    psm_modes = ['--psm 11', '--psm 6', '--psm 3'] # Updated PSM modes
+    
+    # Scale factor used in preprocessing
+    scale_factor = 2.0
+    
+    for psm in psm_modes:
+        data = pytesseract.image_to_data(proc_band, config=psm, output_type=pytesseract.Output.DICT)
+        print(f"Trying PSM: {psm}, found words: {[t for t in data['text'] if t.strip()]}")
+        for i, text in enumerate(data['text']):
+            if is_chart_like(text):
+                chart_word_idx = i
+                break
+        if chart_word_idx != -1:
+            print(f"Found 'Chart' using {psm}: '{data['text'][chart_word_idx]}'")
+            break
+            
+    if chart_word_idx == -1:
+        # Fallback: Try CLAHE on original size
+        print("Fallback: Trying CLAHE preprocessing...")
+        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
+        gray_orig = cv2.cvtColor(tab_band, cv2.COLOR_BGR2GRAY)
+        proc_band_clahe = clahe.apply(gray_orig)
+        scale_factor = 1.0 # No scaling in fallback for now
+        for psm in psm_modes:
+            data = pytesseract.image_to_data(proc_band_clahe, config=psm, output_type=pytesseract.Output.DICT)
+            for i, text in enumerate(data['text']):
+                if is_chart_like(text):
+                    chart_word_idx = i
+                    break
+            if chart_word_idx != -1:
+                print(f"Found 'Chart' with CLAHE using {psm}: '{data['text'][chart_word_idx]}'")
+                proc_band = proc_band_clahe # Update proc_band if CLAHE worked
+                break
+
+    if chart_word_idx == -1:
+        print("Error: Could not find 'Chart' on cropped image after multiple attempts.")
+        return [], None
+
+    # Get OCR coordinates and scale back if needed
+    ox = data['left'][chart_word_idx] / scale_factor
+    oy = data['top'][chart_word_idx] / scale_factor
+    ow = data['width'][chart_word_idx] / scale_factor
+    oh = data['height'][chart_word_idx] / scale_factor
+    
+    print(f"Chart text found at band-relative coords: x={ox}, y={oy}, w={ow}, h={oh}")
+    
+    # Use the exact vertical bounds of the detected "Chart" text (no buffers)
+    y_start = int(oy)
+    y_end = int(oy + oh)
+    
+    line_crop = tab_band[y_start:y_end, :]
+    cv2.imwrite(os.path.join(output_dir, f"{prefix}_{now}_line_crop.png"), line_crop)
+    
+    # 5. Aggressive Contour Detection
+    gray_line = cv2.cvtColor(line_crop, cv2.COLOR_BGR2GRAY)
+    
+    # Use Canny edge detection
+    edges = cv2.Canny(gray_line, 80, 200)
+    cv2.imwrite(os.path.join(output_dir, f"{prefix}_{now}_edges.png"), edges)
+    
+    # Use Morphological Closing to connect edges of same tab but not between tabs
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
+    morphed = cv2.morphologyEx(edges, cv2.MORPH_CLOSE, kernel)
+    cv2.imwrite(os.path.join(output_dir, f"{prefix}_{now}_morphed.png"), morphed)
+    
+    contours, _ = cv2.findContours(morphed, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    
+    valid_contours = []
+    for cnt in contours:
+        bx, by, bw, bh = cv2.boundingRect(cnt)
+        # Tabs are horizontally wide. Target width is ~70-100px.
+        if bw > 50 and bh > 15:
+            valid_contours.append((bx, by, bw, bh))
+            
+    # Sort by X
+    valid_contours.sort(key=lambda b: b[0])
+
+    # Merge/Split Logic:
+    # If a contour is very wide, it contains multiple tabs. 
+    # A single tab in this ROI0 seems to be ~92px based on previous run.
+    tab_w_estimated = 92
+    new_valid = []
+    for bx, by, bw, bh in valid_contours:
+        if bw > 130: # Likely 2 or more tabs
+            num_tabs = int(round(bw / tab_w_estimated))
+            if num_tabs < 2: num_tabs = 2
+            actual_split_w = bw / num_tabs
+            for i in range(num_tabs):
+                new_valid.append((int(bx + i*actual_split_w), by, int(actual_split_w), bh))
         else:
-            # Group matches into 5 tab anchors
-            y_coords = [pt[1] for pt in matches]
-            y_level = max(set(y_coords), key=y_coords.count)
-            min_x = min(pt[0] for pt in matches)
-            max_x = max(pt[0] for pt in matches)
-            
-            y_start, y_end = y_level, y_level + th  # Use template height
-            x_start, x_end = min_x, max_x + tw  # No extra padding
-            
-            # Calculate boundaries for 5 tabs
-            tab_width = (x_end - x_start) / 5
-            boundaries = [int(x_start + i * tab_width) for i in range(6)]
+            # Check if it's wide enough to be a tab
+            if bw > 60:
+                new_valid.append((bx, by, bw, bh))
     
-    # Boundary safety check
-    y_start = min(max(0, y_start), height - 1)
-    y_end = min(max(y_start + 1, y_end), height)
-    x_start = min(max(0, x_start), width - 1)
-    x_end = min(max(x_start + 1, x_end), width)
-    
-    chart_tabs = roi0_img[y_start:y_end, x_start:x_end]
-    
-    # Detect selected tab
-    selected_index = None
-    max_yellow_score = 0
-    
-    for i in range(len(boundaries) - 1):
-        # Get region for this tab
-        bx1 = boundaries[i] - x_start  # Relative to crop
-        bx2 = boundaries[i+1] - x_start
-        tab_region = chart_tabs[:, bx1:bx2]
+    # Final cleanup: remove duplicates or highly overlapping ones
+    final_valid = []
+    if new_valid:
+        new_valid.sort(key=lambda b: b[0])
+        curr = new_valid[0]
+        final_valid.append(curr)
+        for i in range(1, len(new_valid)):
+            next_box = new_valid[i]
+            # If overlap > 50%, ignore
+            if next_box[0] < curr[0] + curr[2] * 0.5:
+                continue
+            else:
+                curr = next_box
+                final_valid.append(curr)
+
+    valid_contours = final_valid[:5] # Take first 5 from left
         
-        if tab_region.size == 0:
-            continue
+    # Labeling
+    labeled_contours = []
+    viz = line_crop.copy()
+    for i, (bx, by, bw, bh) in enumerate(valid_contours):
+        label = i + 1
+        labeled_contours.append({
+            'label': label,
+            'x': bx,
+            'y': by + y_start + band_y1, # Absolute Y in ROI0
+            'w': bw,
+            'h': bh,
+            'rel_x': bx,
+            'rel_y': by
+        })
+        cv2.rectangle(viz, (bx, by), (bx + bw, by + bh), (0, 255, 0), 2)
+        cv2.putText(viz, str(label), (bx + 2, by + 15), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
         
-        # Convert to HSV to detect yellow/orange color
-        hsv = cv2.cvtColor(tab_region, cv2.COLOR_BGR2HSV)
-        
-        # Yellow/orange range in HSV
-        lower_yellow = np.array([10, 80, 80])
-        upper_yellow = np.array([40, 255, 255])
-        
-        mask = cv2.inRange(hsv, lower_yellow, upper_yellow)
-        yellow_pixels = np.sum(mask > 0)
-        yellow_score = yellow_pixels / (tab_region.shape[0] * tab_region.shape[1])
-        
-        if yellow_score > max_yellow_score:
-            max_yellow_score = yellow_score
-            selected_index = i
+    viz_path = os.path.join(output_dir, f'{prefix}_{now}_final_contours.png')
+    cv2.imwrite(viz_path, viz)
     
-    result = {
-        'roi_id': 'ROI_5',
-        'bbox': [int(x_start), int(y_start), int(x_end - x_start), int(y_end - y_start)],
-        'tab_boundaries': [int(b) for b in boundaries],
-        'selected_tab': selected_index if selected_index is not None else -1,
-        'confidence': float(max_yellow_score)
-    }
-    
-    if save_debug:
-        os.makedirs(output_dir, exist_ok=True)
-        now = datetime.datetime.now().strftime('%d%m_%H%M%S')
-        # Save chart tabs image
-        tabs_path = os.path.join(output_dir, f'{prefix}_{now}_tabs.png')
-        cv2.imwrite(tabs_path, chart_tabs)
-        # Save visualization with boxes
-        viz = roi0_img.copy()
-        for i in range(len(boundaries) - 1):
-            tx1 = boundaries[i]
-            tx2 = boundaries[i+1]
-            color = (0, 0, 255) if i == selected_index else (255, 255, 0)
-            thickness = 3 if i == selected_index else 2
-            cv2.rectangle(viz, (tx1, y_start), (tx2, y_end), color, thickness)
-            cv2.putText(viz, f"C{i+1}", (tx1 + 5, y_start + 15), cv2.FONT_HERSHEY_SIMPLEX, 0.4, color, 1)
-        viz_path = os.path.join(output_dir, f'{prefix}_{now}_viz.png')
-        cv2.imwrite(viz_path, viz)
-        result['image_path'] = tabs_path
-    
-    return result
+    print(f"Final contours detected: {len(labeled_contours)}")
+    for lc in labeled_contours:
+        print(f"Label {lc['label']}: x={lc['x']}, y={lc['y']}, w={lc['w']}, h={lc['h']}")
+        
+    return labeled_contours, viz_path
 
 
+def extract(image, filename, debug=False):
+    """
+    Extract ROI-5 tab info from image.
+    Args:
+        image: np.ndarray, input image
+        filename: str, base filename (used for prefix)
+        debug: bool, whether to print debug info
+    Returns:
+        results: list of labeled contours
+        final_viz: path to final debug image
+    """
+    prefix = os.path.splitext(os.path.basename(filename))[0][:4]
+    output_dir = "ROI_5"
+    results, final_viz = extract_roi5_sc_v2(image, output_dir, prefix)
+    if debug:
+        if results:
+            print(f"Success! Final debug image: {final_viz}")
+            for lc in results:
+                print(f"Label {lc['label']}: x={lc['x']}, y={lc['y']}, w={lc['w']}, h={lc['h']}")
+        else:
+            print("Failed to extract contours.")
+    return results, final_viz
+
+# For standalone usage
 if __name__ == "__main__":
-    # Process all relevant images in ROI_5
-    roi5_dir = Path("ROI_5")
-    # Include standard bottom halves, sample webp images, and other common formats
-    files_to_process = []
-    for ext in ['*.png', '*.webp', '*.jpg']:
-        files_to_process.extend(list(roi5_dir.glob(ext)))
-    
-    # Filter for files that are inputs (not products of this script)
-    exclude_prefixes = ('roi5_chart_tabs', 'viz_blocks', 'viz_dynamic', 'dynamic_roi5', 'test_refine', 'viz_refine', 'crop_test', 'viz_test', 'chart_template')
-    inputs = [f for f in files_to_process if not f.name.lower().startswith(exclude_prefixes)]
-    inputs = sorted(inputs, key=lambda x: x.name)
-    
-    print(f"Found {len(inputs)} input images to process\n")
-    
-    for img_file in inputs:
-        print(f"Processing: {img_file.name}")
-        img = cv2.imread(str(img_file))
-        if img is not None:
-            result = extract(str(img_file), save_debug=True)
-            print(f"  Result: {result}")
-        print("-" * 30)
-    
-    print("✓ All chart tabs extracted!")
+    import sys
+    if len(sys.argv) > 1:
+        roi0_path = sys.argv[1]
+    else:
+        roi0_path = "ROI_0/1201.png"
+    img = cv2.imread(roi0_path)
+    if img is None:
+        print(f"Could not load {roi0_path}")
+        exit(1)
+    extract(img, roi0_path, debug=True)
