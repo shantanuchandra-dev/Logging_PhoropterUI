@@ -68,7 +68,7 @@ def load_config(config_path="config.json"):
         "video_source_dir": "Sample/videos",
         "reference_image": "topcon_ui_001.png",
         "output_dir": "roi_all",
-        "sampling_interval_seconds": 10,
+        "sampling_interval_seconds": 2,
         "match_threshold": 0.8,
         "max_consecutive_failures": 5,
         "save_debug_images": True
@@ -115,7 +115,7 @@ import scan_video
 
 # ... (detect_gpu, load_config, verify_ui_present remain same)
 
-def extract_all_rois(roi0_img, gpu_available=False, save_debug=False, output_dir='MatchedScreens'):
+def extract_all_rois(roi0_img, gpu_available=False, save_debug=True, output_dir='MatchedScreens', filename=None):
     """
     Extract all ROIs from ROI-0 image.
     """
@@ -124,55 +124,49 @@ def extract_all_rois(roi0_img, gpu_available=False, save_debug=False, output_dir
         'rois': {}
     }
     
-    # Extract Menu
+    # 1. Menu
     try:
-        menu_result = extract_roi_menu.extract(roi0_img, save_debug=save_debug, output_dir=output_dir)
+        menu_result = extract_roi_menu.extract(roi0_img, save_debug=save_debug, output_dir='ROI_Menu', filename=filename)
         results['rois']['menu'] = menu_result
     except Exception as e:
         results['rois']['menu'] = {'error': str(e)}
-    
-    # Extract Table (ROI-1) 
+    # 2. ROI1 (Table)
     try:
-        table_result = extract_roi1_ocr.extract(roi0_img, save_debug=save_debug, output_dir=output_dir)
-        results['rois']['table'] = table_result
+        roi1_result = extract_roi1_ocr.extract(roi0_img, save_debug=save_debug, output_dir='ROI_1', filename=filename)
+        results['rois']['roi1'] = roi1_result
     except Exception as e:
-        results['rois']['table'] = {'error': str(e)}
-    
-    # Extract PD (ROI-2)
+        results['rois']['roi1'] = {'error': str(e)}
+    # 3. ROI2 (PD)
     try:
-        pd_result = extract_roi2.extract(roi0_img, save_debug=save_debug, output_dir=output_dir)
-        results['rois']['pd'] = pd_result
+        roi2_result = extract_roi2.extract(roi0_img, save_debug=save_debug, output_dir='ROI_2', filename=filename)
+        results['rois']['roi2'] = roi2_result
     except Exception as e:
-        results['rois']['pd'] = {'error': str(e)}
-    
-    # Extract Occluders (ROI-3/4)
+        results['rois']['roi2'] = {'error': str(e)}
+    # 4. ROI3/ROI4 (Occluders)
     try:
-        occluder_result = extract_roi3_4.extract(roi0_img, save_debug=save_debug, output_dir=output_dir)
-        results['rois']['occluders'] = occluder_result
+        roi3_4_result = extract_roi3_4.extract(roi0_img, save_debug=save_debug, output_dir='ROI_3', filename=filename)
+        results['rois']['roi3_4'] = roi3_4_result
     except Exception as e:
-        results['rois']['occluders'] = {'error': str(e)}
-    
-    # Extract Chart Tabs (ROI-5)
+        results['rois']['roi3_4'] = {'error': str(e)}
+    # 5. ROI5 (Chart Tabs)
     try:
-        tabs_result = extract_roi5.extract(roi0_img, save_debug=save_debug, output_dir=output_dir)
-        results['rois']['chart_tabs'] = tabs_result
+        roi5_result = extract_roi5.extract(roi0_img, save_debug=save_debug, output_dir='ROI_5', filename=filename)
+        results['rois']['roi5'] = roi5_result
     except Exception as e:
-        results['rois']['chart_tabs'] = {'error': str(e)}
-    
-    # Extract Chart Grid (ROI-6)
+        results['rois']['roi5'] = {'error': str(e)}
+    # 6. ROI6 (Chart Grid)
     try:
-        grid_result = extract_roi6.extract(roi0_img, save_debug=save_debug, output_dir=output_dir)
-        results['rois']['chart_grid'] = grid_result
+        roi6_result = extract_roi6.extract(roi0_img, save_debug=save_debug, output_dir='ROI_6', filename=filename)
+        results['rois']['roi6'] = roi6_result
     except Exception as e:
-        results['rois']['chart_grid'] = {'error': str(e)}
-    
-    # Extract Big Chart (ROI-7) - needs ROI-6 data
+        results['rois']['roi6'] = {'error': str(e)}
+    # 7. ROI7 (Big Chart)
     try:
-        roi6_data = results['rois'].get('chart_grid', {})
-        chart_result = extract_roi7.extract(roi0_img, roi6_data=roi6_data, save_debug=save_debug, output_dir=output_dir)
-        results['rois']['big_chart'] = chart_result
+        roi6_data = results['rois'].get('roi6', {})
+        roi7_result = extract_roi7.extract(roi0_img, roi6_data=roi6_data, save_debug=save_debug, output_dir='ROI_7', filename=filename)
+        results['rois']['roi7'] = roi7_result
     except Exception as e:
-        results['rois']['big_chart'] = {'error': str(e)}
+        results['rois']['roi7'] = {'error': str(e)}
     
     return results
 
@@ -355,15 +349,16 @@ def main():
         # --- PHASE 2: Fix Coordinates on First Frame ---
         print(f"\n[PHASE 2] Setting reference coordinates on first frame (t={first_time_sec:.2f}s)...")
         try:
-            roi0_result = extract_roi0.extract_roi0(first_frame)
+            roi0_result = extract_roi0.extract_roi0(first_frame,save_dir='ROI_0',save=True)
             roi0_img = roi0_result['roi0']
             
             # Extract all ROIs to establish baseline coordinates
             ref_data = extract_all_rois(
                 roi0_img,
                 gpu_available=gpu_info['available'],
-                save_debug=False,
-                output_dir=config['output_dir']
+                save_debug=True,
+                output_dir=config['output_dir'],
+                filename=video_filename
             )
             ref_data['frame_id'] = first_frame_idx
             ref_data['time_seconds'] = first_time_sec

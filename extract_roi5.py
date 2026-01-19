@@ -214,7 +214,7 @@ def extract_roi5_sc_v2(roi0_img, output_dir, prefix):
     return labeled_contours, viz_path
 
 
-def extract(image, filename, debug=False):
+def extract(image, save_debug=False, output_dir='ROI_5', filename=None):
     """
     Extract ROI-5 tab info from image.
     Args:
@@ -225,17 +225,46 @@ def extract(image, filename, debug=False):
         results: list of labeled contours
         final_viz: path to final debug image
     """
-    prefix = os.path.splitext(os.path.basename(filename))[0][:4]
-    output_dir = "ROI_5"
+    # Always save ROI-5 outputs to ROI_5 folder, not pipeline output_dir
+    output_dir = 'ROI_5'
+    if filename:
+        prefix = os.path.splitext(os.path.basename(filename))[0][:4]
+    else:
+        prefix = 'roi5'
     results, final_viz = extract_roi5_sc_v2(image, output_dir, prefix)
-    if debug:
+    # Compute yellow ratio for each tab and select the one with max yellow
+    def get_yellow_ratio(image, bbox):
+        x, y, w, h = bbox
+        roi = image[y:y+h, x:x+w]
+        hsv = cv2.cvtColor(roi, cv2.COLOR_BGR2HSV)
+        lower_yellow = np.array([20, 80, 80])
+        upper_yellow = np.array([40, 255, 255])
+        mask = cv2.inRange(hsv, lower_yellow, upper_yellow)
+        yellow_ratio = np.sum(mask > 0) / (w * h) if (w * h) > 0 else 0
+        return yellow_ratio
+    max_yellow = 0
+    selected_tab = -1
+    for i, tab in enumerate(results):
+        bbox = (tab['x'], tab['y'], tab['w'], tab['h'])
+        yellow_ratio = get_yellow_ratio(image, bbox)
+        if yellow_ratio > max_yellow:
+            max_yellow = yellow_ratio
+            selected_tab = i
+    # Prepare output dict for pipeline compatibility
+    out = {
+        'selected_tab': selected_tab,
+        'bboxes': results,
+        'viz_path': final_viz
+    }
+    if save_debug:
         if results:
             print(f"Success! Final debug image: {final_viz}")
             for lc in results:
                 print(f"Label {lc['label']}: x={lc['x']}, y={lc['y']}, w={lc['w']}, h={lc['h']}")
+            print(f"Selected tab (max yellow): {selected_tab}")
         else:
             print("Failed to extract contours.")
-    return results, final_viz
+    return out
 
 # For standalone usage
 if __name__ == "__main__":

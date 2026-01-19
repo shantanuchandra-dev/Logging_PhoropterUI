@@ -30,7 +30,9 @@ def draw_and_save_grid_visualization(roi1_img, col_peaks, row_peaks, bboxes, out
         cv2.putText(vis_img, str(cell_num), (x1 + margin, y1 + int(20 * font_scale)), font, font_scale, (255, 0, 0), thickness, cv2.LINE_AA)
         cell_num += 1
     now = datetime.datetime.now().strftime('%d%m_%H%M%S')
-    prefix = basename[:4]
+    # Always use first 4 chars of base filename (no folder)
+    base = os.path.splitext(os.path.basename(basename))[0]
+    prefix = base[:4]
     vis_path = os.path.join(output_dir, f'{prefix}_{now}_grid.png')
     cv2.imwrite(vis_path, vis_img)
     print(f'ROI-1 with grid lines saved to {vis_path}')
@@ -129,7 +131,9 @@ def calculate_and_save_bboxes(col_peaks, row_peaks, roi1_img=None, output_dir='R
         bboxes = filter_bboxes_by_content(roi1_img, bboxes, n_cols=len(col_peaks)-1)
     
     now = datetime.datetime.now().strftime('%d%m_%H%M%S')
-    prefix = basename[:4]
+    # Always use first 4 chars of base filename (no folder)
+    base = os.path.splitext(os.path.basename(basename))[0]
+    prefix = base[:4]
     bbox_path = os.path.join(output_dir, f'{prefix}_{now}_bboxes.txt')
     with open(bbox_path, 'w') as f:
         for bbox in bboxes:

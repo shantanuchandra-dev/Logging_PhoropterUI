@@ -1,5 +1,7 @@
+
 import cv2
 import numpy as np
+import datetime
 
 def extract_roi7_from_roi0(roi0_img, debug=False):
     """
@@ -61,12 +63,13 @@ def extract(roi0_img, save_debug=False, filename=None, debug=False):
         import os
         out_dir = 'ROI_7'
         os.makedirs(out_dir, exist_ok=True)
-        # Use filename if provided, else default name
+        now = datetime.datetime.now().strftime('%d%m_%H%M%S')
         if filename:
             base = os.path.splitext(os.path.basename(filename))[0]
-            out_path = os.path.join(out_dir, f'labeled_{base}.png')
+            prefix = base[:4]
         else:
-            out_path = os.path.join(out_dir, 'labeled_roi7.png')
+            prefix = 'roi7'
+        out_path = os.path.join(out_dir, f'{prefix}_{now}_labeled_roi7.png')
         cv2.imwrite(out_path, labeled_img)
         result['debug_image'] = out_path
     if not bbox:
