@@ -10,6 +10,7 @@ import sys
 
 # Import extractors
 import extract_roi_menu
+import extract_roi1
 import extract_roi2
 import extract_roi3_4
 import extract_roi5
@@ -20,7 +21,7 @@ def test_extractors():
     """Test all ROI extractors with a sample image."""
     
     # Load a sample ROI-0 image
-    roi0_path = "ROI_0/roi0_20260115_085301.png"
+    roi0_path = "ROI_0/1201.png"
     print(f"Loading test image: {roi0_path}")
     
     roi0_img = cv2.imread(roi0_path)
@@ -35,7 +36,7 @@ def test_extractors():
     print("\n1. Testing Menu Extractor (ROI-Menu)")
     print("-" * 60)
     try:
-        menu_result = extract_roi_menu.extract(roi0_img, save_debug=False)
+        menu_result = extract_roi_menu.extract(roi0_img, save_debug=True)
         print(f"✓ Menu extraction successful")
         print(f"  - ROI ID: {menu_result.get('roi_id')}")
         print(f"  - BBox: {menu_result.get('bbox')}")
@@ -45,11 +46,25 @@ def test_extractors():
         import traceback
         traceback.print_exc()
     
+    # Test ROI1 Extractor
+    print("\n1b. Testing ROI1 Extractor (ROI-1)")
+    print("-" * 60)
+    try:
+        roi1_result = extract_roi1.extract(roi0_img, save_debug=True)
+        print(f"✓ ROI1 extraction successful")
+        print(f"  - ROI ID: {roi1_result.get('roi_id')}")
+        print(f"  - BBox: {roi1_result.get('bbox')}")
+        print(f"  - Grid BBoxes: {roi1_result.get('grid_bboxes', [])}")
+    except Exception as e:
+        print(f"✗ ROI1 extraction failed: {e}")
+        import traceback
+        traceback.print_exc()
+    
     # Test PD Extractor (ROI-2)
     print("\n2. Testing PD Extractor (ROI-2)")
     print("-" * 60)
     try:
-        pd_result = extract_roi2.extract(roi0_img, save_debug=False)
+        pd_result = extract_roi2.extract(roi0_img, save_debug=True, filename=roi0_path)
         print(f"✓ PD extraction successful")
         print(f"  - ROI ID: {pd_result.get('roi_id')}")
         if 'error' in pd_result:
@@ -66,7 +81,7 @@ def test_extractors():
     print("\n3. Testing Occluder Extractor (ROI-3/4)")
     print("-" * 60)
     try:
-        occluder_result = extract_roi3_4.extract(roi0_img, save_debug=False)
+        occluder_result = extract_roi3_4.extract(roi0_img, save_debug=True, filename=roi0_path)
         print(f"✓ Occluder extraction successful")
         print(f"  - ROI ID: {occluder_result.get('roi_id')}")
         if 'error' in occluder_result:
@@ -84,7 +99,7 @@ def test_extractors():
     print("\n4. Testing Chart Tabs Extractor (ROI-5)")
     print("-" * 60)
     try:
-        tabs_result = extract_roi5.extract(roi0_img, save_debug=False)
+        tabs_result = extract_roi5.extract(roi0_img, save_debug=True, filename=roi0_path)
         print(f"✓ Chart tabs extraction successful")
         print(f"  - ROI ID: {tabs_result.get('roi_id')}")
         print(f"  - BBox: {tabs_result.get('bbox')}")
@@ -99,7 +114,7 @@ def test_extractors():
     print("\n5. Testing Chart Grid Extractor (ROI-6)")
     print("-" * 60)
     try:
-        grid_result = extract_roi6.extract(roi0_img, save_debug=False)
+        grid_result = extract_roi6.extract(roi0_img, save_debug=True, filename=roi0_path)
         print(f"✓ Chart grid extraction successful")
         print(f"  - ROI ID: {grid_result.get('roi_id')}")
         if 'error' in grid_result:
@@ -119,7 +134,7 @@ def test_extractors():
     try:
         # Pass ROI-6 data if available
         roi6_data = grid_result if 'grid_result' in locals() else None
-        chart_result = extract_roi7.extract(roi0_img, roi6_data=roi6_data, save_debug=False)
+        chart_result = extract_roi7.extract(roi0_img, roi6_data=roi6_data, save_debug=True, filename=roi0_path)
         print(f"✓ Big chart extraction successful")
         print(f"  - ROI ID: {chart_result.get('roi_id')}")
         if 'error' in chart_result:

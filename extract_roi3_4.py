@@ -1,17 +1,16 @@
-
 import cv2
 import numpy as np
 import os
 import datetime
 
-def extract(roi0_img, save_debug=False, output_dir='ROI_3'):
+def extract(roi0_img, save_debug=False, output_dir='ROI_3', filename=None):
     """
-    Extract occluders (ROI-3 and ROI-4) from ROI-0 image.
+    Extract occluders (ROI-3 and ROI-4) from ROI-0 image path.
     
     Args:
-        roi0_img: ROI-0 image (numpy array)
+        roi0_path: Path to ROI-0 image
         save_debug: Whether to save debug images
-        output_dir: Directory to save debug images (will create ROI_3 and ROI_4 subdirs)
+        output_dir: Directory to save debug images
     
     Returns:
         dict: {
@@ -23,6 +22,14 @@ def extract(roi0_img, save_debug=False, output_dir='ROI_3'):
             'image_paths': ['path/to/roi3.png', 'path/to/roi4.png'] (if save_debug=True)
         }
     """
+    if roi0_img is None:
+        raise ValueError('Input image is None')
+    # Use filename for debug output naming if provided
+    if filename:
+        input_base = os.path.splitext(os.path.basename(filename))[0]
+        prefix = input_base[:4]
+    else:
+        prefix = 'roi0'
     # Resize to expected resolution for ROI 3/4
     img = cv2.resize(roi0_img, (929, 823))
     h, w = img.shape[:2]
@@ -96,20 +103,17 @@ def extract(roi0_img, save_debug=False, output_dir='ROI_3'):
     }
     
     if save_debug:
-        now = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
-        
+        now = datetime.datetime.now().strftime('%d%m_%H%M%S')
         # Save ROI-3
         roi3_dir = 'ROI_3'
         os.makedirs(roi3_dir, exist_ok=True)
-        roi3_path = os.path.join(roi3_dir, f'roi3_{now}.png')
+        roi3_path = os.path.join(roi3_dir, f'{prefix}_{now}_roi3.png')
         cv2.imwrite(roi3_path, roi3)
-        
         # Save ROI-4
         roi4_dir = 'ROI_4'
         os.makedirs(roi4_dir, exist_ok=True)
-        roi4_path = os.path.join(roi4_dir, f'roi4_{now}.png')
+        roi4_path = os.path.join(roi4_dir, f'{prefix}_{now}_roi4.png')
         cv2.imwrite(roi4_path, roi4)
-        
         result['image_paths'] = [roi3_path, roi4_path]
     
     return result
@@ -118,18 +122,16 @@ def extract(roi0_img, save_debug=False, output_dir='ROI_3'):
 if __name__ == "__main__":
     # Fallback to loading from ROI_0 directory
     roi0_dir = 'ROI_0'
-    roi0_files = [f for f in os.listdir(roi0_dir) if f.startswith('roi0_') and f.endswith('.png') and 'box' not in f]
+    roi0_files = [f for f in os.listdir(roi0_dir) if f.endswith('.png') and 'box' not in f]
     if not roi0_files:
         print('No ROI-0 images found in ROI_0 directory.')
         exit(1)
     roi0_files.sort()
     roi0_path = os.path.join(roi0_dir, roi0_files[-1])
-
     img = cv2.imread(roi0_path)
     if img is None:
         print(f'Could not load {roi0_path}')
         exit(1)
-
     # Call the extract function with debug saving enabled
-    result = extract(img, save_debug=True)
+    result = extract(img, save_debug=True, filename=roi0_path)
     print(f'Occluders extracted: {result}')
