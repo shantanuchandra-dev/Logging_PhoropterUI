@@ -1,5 +1,9 @@
 import cv2
 import numpy as np
+import torch
+import torch.nn as nn
+from torchvision import transforms
+import os
 
 def extract_roi7_from_roi0(roi0_img, debug=False):
     """
@@ -48,14 +52,87 @@ def extract_roi7_from_roi0(roi0_img, debug=False):
     return (x_abs, y_abs, rw, rh), labeled_img
 
 
+# Define the same CNN structure for loading
+class ChartCNN(nn.Module):
+    def __init__(self, num_classes):
+        super(ChartCNN, self).__init__()
+        self.features = nn.Sequential(
+            nn.Conv2d(1, 32, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(2),
+            nn.Conv2d(32, 64, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(2),
+            nn.Conv2d(64, 128, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(2)
+        )
+        self.classifier = nn.Sequential(
+            nn.Linear(128 * 8 * 8, 256),
+            nn.ReLU(),
+            nn.Dropout(0.5),
+            nn.Linear(256, num_classes)
+        )
+
+    def forward(self, x):
+        x = self.features(x)
+        x = x.view(x.size(0), -1)
+        x = self.classifier(x)
+        return x
+
+def predict_chart(roi7_img):
+    model_path = "chart_model.pth"
+    classes_path = "chart_classes.txt"
+    
+    if not os.path.exists(model_path) or not os.path.exists(classes_path):
+        return "Unknown (Model not found)"
+
+    with open(classes_path, "r") as f:
+        classes = [line.strip() for line in f.readlines()]
+    
+    num_classes = len(classes)
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    
+    # Initialize and load model
+    model = ChartCNN(num_classes).to(device)
+    model.load_state_dict(torch.load(model_path, map_location=device))
+    model.eval()
+
+    # Preprocess image
+    gray = cv2.cvtColor(roi7_img, cv2.COLOR_BGR2GRAY)
+    resized = cv2.resize(gray, (64, 64), interpolation=cv2.INTER_AREA)
+    
+    transform = transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Normalize((0.5,), (0.5,))
+    ])
+    
+    input_tensor = transform(resized).unsqueeze(0).to(device)
+    
+    with torch.no_grad():
+        outputs = model(input_tensor)
+        _, predicted = torch.max(outputs, 1)
+        return classes[predicted.item()]
+
+
 def extract(roi0_img, save_debug=False, filename=None, debug=False):
     """
     Extract function for ROI7, returns a result dict for test_extractors.
     """
     bbox, labeled_img = extract_roi7_from_roi0(roi0_img, debug=debug)
+    
+    chart_name = None
+    if bbox:
+        x, y, w, h = bbox
+        roi7_crop = roi0_img[y:y+h, x:x+w]
+        chart_name = predict_chart(roi7_crop)
+        if debug:
+            print(f"Predicted chart: {chart_name}")
+
     result = {
         'roi_id': 'ROI7',
         'bbox': bbox,
+        'chart_name': chart_name
     }
     if bbox and save_debug:
         import os

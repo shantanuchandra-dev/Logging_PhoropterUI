@@ -34,7 +34,7 @@ def label_images(processed_dir):
         print(f"Labeling: {filename}")
         label = input("Enter label: ").strip()
         
-        if label.lower() == 'quit':
+        if label.lower() in ['quit', 'exit']:
             break
         elif label.lower() == 'skip':
             continue
@@ -50,5 +50,5 @@ def label_images(processed_dir):
     print("Labeling session finished.")
 
 if __name__ == "__main__":
-    processed_folder = "/Users/chirayumaru/Desktop/Charts_Processed"
+    processed_folder = "Charts_Processed"
     label_images(processed_folder)
