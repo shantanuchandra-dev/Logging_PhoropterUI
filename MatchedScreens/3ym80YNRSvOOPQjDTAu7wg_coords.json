@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-01-20T16:26:51.331506",
+  "timestamp": "2026-01-20T18:12:07.195593",
   "rois": {
     "menu": {
       "roi_id": "ROI_Menu",
@@ -105,26 +105,26 @@
           373
         ]
       ],
-      "roi1_image": "ROI_1/3ym8_2001_162652_roi1.png",
-      "overlay_image": "ROI_1/3ym8_2001_162652_roi1_cells_on_roi0.png",
-      "bbox_file": "ROI_1/3ym8_2001_162652_roi1_cells_on_roi0_bboxes.txt"
+      "roi1_image": "ROI_1/3ym8_2001_181208_roi1.png",
+      "overlay_image": "ROI_1/3ym8_2001_181208_roi1_cells_on_roi0.png",
+      "bbox_file": "ROI_1/3ym8_2001_181208_roi1_cells_on_roi0_bboxes.txt"
     },
     "roi1_ocr": {
       "R_Sph": "0.00",
-      "S_Anchor": "SS",
+      "S_Anchor": "S",
       "L_Sph": "0.00",
-      "R_Cyl": "-0.00",
+      "R_Cyl": "0.00",
       "C_Anchor": "C",
-      "L_Cyl": "-0.00",
+      "L_Cyl": "0.00",
       "R_Axis": "90",
       "A_Anchor": "A",
       "L_Axis": "125",
       "R_Add": "0.00",
       "ADD_Anchor": "ADD",
       "L_Add": "0.00",
-      "R_blank": "fo",
-      "blank_anchor": "Cd",
-      "L_blank": "PG"
+      "R_blank": null,
+      "blank_anchor": null,
+      "L_blank": null
     },
     "roi2": {
       "roi_id": "ROI_2",
@@ -136,7 +136,7 @@
       ],
       "pd_value": "",
       "confidence": null,
-      "image_path": "ROI_2/3ym8_2001_162653_pd_debug.png"
+      "image_path": "ROI_2/3ym8_2001_181209_pd_debug.png"
     },
     "roi3_4": {
       "roi_id": "ROI_3_4",
@@ -163,8 +163,8 @@
         }
       ],
       "image_paths": [
-        "ROI_3/3ym8_2001_162653_roi3.png",
-        "ROI_4/3ym8_2001_162653_roi4.png"
+        "ROI_3/3ym8_2001_181209_roi3.png",
+        "ROI_4/3ym8_2001_181209_roi4.png"
       ]
     },
     "roi5": {
@@ -217,43 +217,6 @@
         }
       ]
     },
-    "roi6": {
-      "roi_id": "ROI_6",
-      "bbox": [
-        -2,
-        280,
-        880,
-        530
-      ],
-      "thumbnails": [
-        [
-          -2,
-          305,
-          880,
-          62
-        ],
-        [
-          -2,
-          367,
-          880,
-          60
-        ],
-        [
-          -2,
-          427,
-          880,
-          219
-        ],
-        [
-          -2,
-          646,
-          880,
-          164
-        ]
-      ],
-      "selected_index": 0,
-      "image_path": "ROI_6/3ym8_2001_162654_grid_debug.png"
-    },
     "roi7": {
       "roi_id": "ROI7",
       "bbox": [
@@ -262,9 +225,9 @@
         245,
         226
       ],
-      "debug_image": "ROI_7/3ym8_2001_162654_labeled_roi7.png"
+      "debug_image": "ROI_7/3ym8_2001_181210_labeled_roi7.png"
     }
   },
-  "frame_id": 350,
-  "time_seconds": 14.0
+  "frame_id": 325,
+  "time_seconds": 13.0
 }
