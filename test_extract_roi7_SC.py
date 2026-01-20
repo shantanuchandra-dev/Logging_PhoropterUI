@@ -2,7 +2,7 @@ import cv2
 from extract_roi7 import extract_roi7_from_roi0
 
 # Path to the test image
-img_path = 'ROI_0/3ym80YNRSvOOPQjDTAu7wg_14.png'
+img_path = 'ROI_0/roi0_1901_235811.png'
 img = cv2.imread(img_path)
 
 if img is None:

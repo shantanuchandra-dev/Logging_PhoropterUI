@@ -1,3 +1,84 @@
+# --- ROI-1 Extraction Function ---
+def extract(roi0_path, roi0_dir='ROI_0', roi_menu_dir='ROI_Menu', output_dir='ROI_1'):
+    # Extract prefix from filename
+    basename = os.path.splitext(os.path.basename(roi0_path))[0]
+    # Remove 'crop_' prefix if present
+    if basename.startswith('crop_'):
+        prefix = basename.replace('crop_', '').split('_')[0]
+    else:
+        prefix = basename.split('_')[0]
+    # Find corresponding ROI_Menu image (first 4 chars match)
+    roi_menu_path = None
+    short_prefix = prefix[:4]
+    if os.path.isdir(roi_menu_dir):
+        roi_menu_files = [f for f in os.listdir(roi_menu_dir) if f.endswith('.png') and f.startswith(short_prefix)]
+        roi_menu_files.sort()
+        if not roi_menu_files:
+            print(f"Error: No ROI_Menu image found in '{roi_menu_dir}' matching prefix '{short_prefix}'. Exiting.")
+            exit(1)
+        roi_menu_path = os.path.join(roi_menu_dir, roi_menu_files[-1])
+    # Step 1: Crop and subtract menu
+    cropped_img, crop_path = crop_and_subtract_menu(roi0_path, roi_menu_path, output_dir)
+    # Step 2: Detect centered table
+    table_rect = detect_centered_table(cropped_img)
+    # Step 3: Extract and save table region
+    roi1_img, roi1_path, found_top = extract_and_save_table_region(cropped_img, table_rect, output_dir, basename=prefix)
+    # Step 4: Detect grid lines
+    col_peaks, row_peaks = detect_grid_lines_hough(roi1_img, n_cols=3, n_rows=5)
+    # Step 5: Calculate and save bounding boxes (with filtering if needed)
+    bboxes, bbox_path = calculate_and_save_bboxes(col_peaks, row_peaks, roi1_img, output_dir, basename=prefix)
+    # Step 6: Draw and save grid visualization
+    vis_path = draw_and_save_grid_visualization(roi1_img, col_peaks, row_peaks, bboxes, output_dir, basename=prefix)
+    # --- Draw cell bboxes on ROI-0 and save absolute bboxes ---
+    roi1_x, roi1_y, _, _ = table_rect
+    roi_menu_y2 = 0
+    if roi_menu_path:
+        roi_menu_img = cv2.imread(roi_menu_path)
+        if roi_menu_img is not None:
+            roi_menu_y2 = roi_menu_img.shape[0]
+    abs_roi1_x = roi1_x
+    abs_roi1_y = roi1_y + roi_menu_y2 + found_top
+    roi0_img = cv2.imread(roi0_path)
+    overlay = roi0_img.copy()
+    abs_bboxes = []
+    cell_num = 1
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    font_scale = min(overlay.shape[0], overlay.shape[1]) / 1200.0
+    thickness = max(1, int(min(overlay.shape[0], overlay.shape[1]) / 600))
+    margin = int(5 * font_scale)
+    for bbox in bboxes:
+        x1, y1, x2, y2 = bbox
+        abs_x1 = int(abs_roi1_x + x1)
+        abs_y1 = int(abs_roi1_y + y1)
+        abs_x2 = int(abs_roi1_x + x2)
+        abs_y2 = int(abs_roi1_y + y2)
+        abs_bboxes.append((abs_x1, abs_y1, abs_x2, abs_y2))
+        cv2.rectangle(overlay, (abs_x1, abs_y1), (abs_x2, abs_y2), (0, 0, 255), 2)
+        cv2.putText(overlay, str(cell_num), (abs_x1 + margin, abs_y1 + int(20 * font_scale)), font, font_scale, (255, 0, 0), thickness, cv2.LINE_AA)
+        cell_num += 1
+    h1, w1 = roi1_img.shape[:2]
+    cv2.rectangle(overlay, (abs_roi1_x, abs_roi1_y), (abs_roi1_x + w1, abs_roi1_y + h1), (0, 255, 0), 2)
+    now = datetime.datetime.now().strftime('%d%m_%H%M%S')
+    short_prefix = prefix[:4]
+    abs_overlay_path = os.path.join(output_dir, f'{short_prefix}_{now}_roi1_cells_on_roi0.png')
+    cv2.imwrite(abs_overlay_path, overlay)
+    abs_bbox_path = os.path.join(output_dir, f'{short_prefix}_{now}_roi1_cells_on_roi0_bboxes.txt')
+    with open(abs_bbox_path, 'w') as f:
+        for bbox in abs_bboxes:
+            f.write(f'{bbox}\n')
+    print(f'ROI-1 cell bboxes on ROI-0 saved to {abs_bbox_path}')
+    print(f'Overlay image saved to {abs_overlay_path}')
+    print(f'Pipeline completed for {roi0_path}')
+    print(f'ROI1 image: {roi1_path}')
+    print(f'Bounding boxes: {bbox_path}')
+    # Return bounding boxes of each cell (in ROI-0 coordinates) in the result
+    return {
+        'roi_id': 'ROI1',
+        'cell_bboxes_on_roi0': abs_bboxes,
+        'roi1_image': roi1_path,
+        'overlay_image': abs_overlay_path,
+        'bbox_file': abs_bbox_path
+    }
 import cv2
 import numpy as np
 import os
@@ -30,7 +111,9 @@ def draw_and_save_grid_visualization(roi1_img, col_peaks, row_peaks, bboxes, out
         cv2.putText(vis_img, str(cell_num), (x1 + margin, y1 + int(20 * font_scale)), font, font_scale, (255, 0, 0), thickness, cv2.LINE_AA)
         cell_num += 1
     now = datetime.datetime.now().strftime('%d%m_%H%M%S')
-    prefix = basename[:4]
+    # Always use first 4 chars of base filename (no folder)
+    base = os.path.splitext(os.path.basename(basename))[0]
+    prefix = base[:4]
     vis_path = os.path.join(output_dir, f'{prefix}_{now}_grid.png')
     cv2.imwrite(vis_path, vis_img)
     print(f'ROI-1 with grid lines saved to {vis_path}')
@@ -129,14 +212,16 @@ def calculate_and_save_bboxes(col_peaks, row_peaks, roi1_img=None, output_dir='R
         bboxes = filter_bboxes_by_content(roi1_img, bboxes, n_cols=len(col_peaks)-1)
     
     now = datetime.datetime.now().strftime('%d%m_%H%M%S')
-    prefix = basename[:4]
+    # Always use first 4 chars of base filename (no folder)
+    base = os.path.splitext(os.path.basename(basename))[0]
+    prefix = base[:4]
     bbox_path = os.path.join(output_dir, f'{prefix}_{now}_bboxes.txt')
     with open(bbox_path, 'w') as f:
         for bbox in bboxes:
             f.write(f'{bbox}\n')
     print(f'ROI-1 cell bounding boxes saved to {bbox_path}')
     return bboxes, bbox_path
-def detect_grid_lines_hough(roi1_img, n_cols=3, n_rows=5):
+def detect_grid_lines_hough(roi1_img, n_cols=3, n_rows=5, output_dir='ROI_1', basename='roi1'):
     """
     Detects grid lines in the ROI-1 table image using Hough Line Transform.
     Returns column and row positions (peaks) for grid lines.
@@ -151,18 +236,12 @@ def detect_grid_lines_hough(roi1_img, n_cols=3, n_rows=5):
     morph_v = cv2.morphologyEx(bin_img, cv2.MORPH_OPEN, kernel_v)
     # Save intermediate images
     now = datetime.datetime.now().strftime('%d%m_%H%M%S')
-    os.makedirs('ROI_1', exist_ok=True)
-    # Always get prefix from caller's 'basename' or 'prefix' local variable
-    import inspect
-    prefix = 'roi1'
-    frame = inspect.currentframe().f_back
-    if 'basename' in frame.f_locals:
-        prefix = str(frame.f_locals['basename'])[:4]
-    elif 'prefix' in frame.f_locals:
-        prefix = str(frame.f_locals['prefix'])[:4]
-    cv2.imwrite(f'ROI_1/{prefix}_{now}_bin.png', bin_img)
-    cv2.imwrite(f'ROI_1/{prefix}_{now}_hlines.png', morph_h)
-    cv2.imwrite(f'ROI_1/{prefix}_{now}_vlines.png', morph_v)
+    os.makedirs(output_dir, exist_ok=True)
+    base = os.path.splitext(os.path.basename(basename))[0]
+    prefix = base[:4]
+    cv2.imwrite(os.path.join(output_dir, f'{prefix}_{now}_bin.png'), bin_img)
+    cv2.imwrite(os.path.join(output_dir, f'{prefix}_{now}_hlines.png'), morph_h)
+    cv2.imwrite(os.path.join(output_dir, f'{prefix}_{now}_vlines.png'), morph_v)
     # Projection profiles for line detection
     h_proj = np.sum(morph_h, axis=1)
     v_proj = np.sum(morph_v, axis=0)
@@ -182,7 +261,7 @@ def detect_grid_lines_hough(roi1_img, n_cols=3, n_rows=5):
         cv2.line(overlay, (0, py), (width, py), (0, 255, 255), 2)
     for px in v_peaks:
         cv2.line(overlay, (px, 0), (px, height), (255, 255, 0), 2)
-    cv2.imwrite(f'ROI_1/{prefix}_{now}_grid_overlay.png', overlay)
+    cv2.imwrite(os.path.join(output_dir, f'{prefix}_{now}_grid_overlay.png'), overlay)
     print(f'Intermediate images saved: bin, hlines, vlines, grid overlay')
     # Return peaks as grid lines
     return v_peaks, h_peaks
@@ -359,113 +438,9 @@ if __name__ == '__main__':
     if os.path.isdir(roi_menu_dir):
         roi_menu_files = [f for f in os.listdir(roi_menu_dir) if f.endswith('.png') and f.startswith(short_prefix)]
         roi_menu_files.sort()
-        roi_menu_path = os.path.join(roi_menu_dir, roi_menu_files[-1]) if roi_menu_files else None
+        if not roi_menu_files:
+            print(f"Error: No ROI_Menu image found in '{roi_menu_dir}' matching prefix '{short_prefix}'. Exiting.")
+            exit(1)
+        roi_menu_path = os.path.join(roi_menu_dir, roi_menu_files[-1])
 
-    # Step 1: Crop and subtract menu
-    cropped_img, crop_path = crop_and_subtract_menu(roi0_path, roi_menu_path, output_dir)
-    # Step 2: Detect centered table
-    table_rect = detect_centered_table(cropped_img)
-    # Step 3: Extract and save table region
-    roi1_img, roi1_path, found_top = extract_and_save_table_region(cropped_img, table_rect, output_dir, basename=prefix)
-    # Step 4: Detect grid lines
-    col_peaks, row_peaks = detect_grid_lines_hough(roi1_img, n_cols=3, n_rows=5)
-    # Step 5: Calculate and save bounding boxes (with filtering if needed)
-    bboxes, bbox_path = calculate_and_save_bboxes(col_peaks, row_peaks, roi1_img, output_dir, basename=prefix)
-    # Step 6: Draw and save grid visualization
-    vis_path = draw_and_save_grid_visualization(roi1_img, col_peaks, row_peaks, bboxes, output_dir, basename=prefix)
-
-    # --- Draw cell bboxes on ROI-0 and save absolute bboxes ---
-    # table_rect is (x, y, w, h) in cropped_img (which is top half of ROI-0 minus menu)
-    roi1_x, roi1_y, _, _ = table_rect
-    # The cropped_img is the top half of ROI-0 minus menu, so we need to know the offset of cropped_img in ROI-0
-    # crop_and_subtract_menu subtracts menu height (roi_menu_y2), then takes top half (cropped_half)
-    # So, cropped_img is from roi_menu_y2 to roi_menu_y2 + h_full//2 in ROI-0
-    # The offset of cropped_img in ROI-0 is roi_menu_y2
-    # The offset of ROI-1 in ROI-0 is (roi1_x, roi1_y + roi_menu_y2)
-    # But if the menu is not present, roi_menu_y2 = 0
-    # Let's recompute the offset:
-    roi_menu_y2 = 0
-    if roi_menu_path:
-        roi_menu_img = cv2.imread(roi_menu_path)
-        if roi_menu_img is not None:
-            roi_menu_y2 = roi_menu_img.shape[0]
-    # The cropped_img is from roi_menu_y2 to roi_menu_y2 + h_full//2 in ROI-0
-    # The offset of ROI-1 in ROI-0 is (roi1_x, roi1_y + roi_menu_y2)
-    abs_roi1_x = roi1_x
-    abs_roi1_y = roi1_y + roi_menu_y2 + found_top
-
-    # Load the original ROI-0 image
-    roi0_img = cv2.imread(roi0_path)
-    overlay = roi0_img.copy()
-    abs_bboxes = []
-    cell_num = 1
-    font = cv2.FONT_HERSHEY_SIMPLEX
-    font_scale = min(overlay.shape[0], overlay.shape[1]) / 1200.0
-    thickness = max(1, int(min(overlay.shape[0], overlay.shape[1]) / 600))
-    margin = int(5 * font_scale)
-    for bbox in bboxes:
-        x1, y1, x2, y2 = bbox
-        abs_x1 = abs_roi1_x + x1
-        abs_y1 = abs_roi1_y + y1
-        abs_x2 = abs_roi1_x + x2
-        abs_y2 = abs_roi1_y + y2
-        abs_bboxes.append((abs_x1, abs_y1, abs_x2, abs_y2))
-        cv2.rectangle(overlay, (abs_x1, abs_y1), (abs_x2, abs_y2), (0, 0, 255), 2)
-        # Draw cell number in top left of each cell
-        cv2.putText(overlay, str(cell_num), (abs_x1 + margin, abs_y1 + int(20 * font_scale)), font, font_scale, (255, 0, 0), thickness, cv2.LINE_AA)
-        cell_num += 1
-    # Optionally, draw the outer ROI-1 rectangle
-    h1, w1 = roi1_img.shape[:2]
-    cv2.rectangle(overlay, (abs_roi1_x, abs_roi1_y), (abs_roi1_x + w1, abs_roi1_y + h1), (0, 255, 0), 2)
-    # Save the overlay image in ROI_1 folder with correct naming
-    now = datetime.datetime.now().strftime('%d%m_%H%M%S')
-    # Use only the first 4 characters of the referred image for naming
-    short_prefix = prefix[:4]
-    abs_overlay_path = os.path.join(output_dir, f'{short_prefix}_{now}_roi1_cells_on_roi0.png')
-    cv2.imwrite(abs_overlay_path, overlay)
-    # Save the absolute bboxes to a file
-    abs_bbox_path = os.path.join(output_dir, f'{short_prefix}_{now}_roi1_cells_on_roi0_bboxes.txt')
-    with open(abs_bbox_path, 'w') as f:
-        for bbox in abs_bboxes:
-            f.write(f'{bbox}\n')
-    print(f'ROI-1 cell bboxes on ROI-0 saved to {abs_bbox_path}')
-    print(f'Overlay image saved to {abs_overlay_path}')
-    print(f'Pipeline completed for {roi0_path}')
-    print(f'ROI1 image: {roi1_path}')
-    print(f'Bounding boxes: {bbox_path}')
-
-def extract(roi0_img, save_debug=False):
-    """
-    Extract ROI-1 table and grid from a given ROI-0 image.
-    Returns a dict with ROI ID, bbox, grid bboxes, and debug info.
-    """
-    import numpy as np
-    import os
-    import datetime
-    # Step 1: Crop top half minus menu (assume menu height is 0 for direct image)
-    img_h, img_w = roi0_img.shape[:2]
-    menu_height = 0
-    cropped_img = roi0_img[menu_height:, :]
-    h_full, w_full = cropped_img.shape[:2]
-    cropped_half = cropped_img[:h_full//2, :]
-    # Step 2: Detect centered table
-    table_rect = detect_centered_table(cropped_half)
-    # Step 3: Extract and save table region
-    roi1_img, _, found_top = extract_and_save_table_region(cropped_half, table_rect, output_dir='ROI_1', basename='roi1')
-    # Step 4: Detect grid lines
-    col_peaks, row_peaks = detect_grid_lines_hough(roi1_img, n_cols=3, n_rows=5)
-    # Step 5: Calculate bounding boxes
-    bboxes, _ = calculate_and_save_bboxes(col_peaks, row_peaks, roi1_img, output_dir='ROI_1', basename='roi1')
-    # Step 6: Optionally save debug images
-    if save_debug:
-        draw_and_save_grid_visualization(roi1_img, col_peaks, row_peaks, bboxes, output_dir='ROI_1', basename='roi1')
-    # Compose result
-    result = {
-        'roi_id': 'ROI_1',
-        'bbox': table_rect,
-        'grid_bboxes': bboxes,
-        'found_top': found_top,
-        'col_peaks': col_peaks,
-        'row_peaks': row_peaks
-    }
-    return result
+    extract(roi0_path, roi0_dir=roi0_dir, roi_menu_dir=roi_menu_dir, output_dir=output_dir)

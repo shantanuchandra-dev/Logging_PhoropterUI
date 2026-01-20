@@ -88,16 +88,16 @@ def find_first_ui_frame(video_path, config):
         res = cv2.matchTemplate(process_frame, process_template, cv2.TM_CCOEFF_NORMED)
         _, max_val, _, _ = cv2.minMaxLoc(res)
         
-        # Debug: Save first 20 processed frames to temp and print score
-        if processed_count < 20:
-            debug_frame = frame.copy()
-            cv2.putText(debug_frame, f"Score: {max_val*100:.2f}%", (50, 50), 
-                        cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
-            cv2.line(debug_frame, (0, frame_h//2), (frame_w, frame_h//2), (0, 0, 255), 2)
-            temp_filename = os.path.join("temp", f"temp_{processed_count}_{frame_id_to_grab}.png")
-            cv2.imwrite(temp_filename, debug_frame)
-            print(f"Debug: Frame {frame_id_to_grab} (t={frame_sec:.2f}s), Score: {max_val*100:.2f}%")
-            processed_count += 1
+        # # Debug: Save first 20 processed frames to temp and print score
+        # if processed_count < 20:
+        #     debug_frame = frame.copy()
+        #     cv2.putText(debug_frame, f"Score: {max_val*100:.2f}%", (50, 50), 
+        #                 cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+        #     cv2.line(debug_frame, (0, frame_h//2), (frame_w, frame_h//2), (0, 0, 255), 2)
+        #     temp_filename = os.path.join("temp", f"temp_{processed_count}_{frame_id_to_grab}.png")
+        #     cv2.imwrite(temp_filename, debug_frame)
+        #     print(f"Debug: Frame {frame_id_to_grab} (t={frame_sec:.2f}s), Score: {max_val*100:.2f}%")
+        #     processed_count += 1
 
         if max_val >= match_threshold:
             try:
