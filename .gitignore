@@ -8,4 +8,3 @@ __pycache__/
 
 .DS_Store
 settings.json
-pipeline.py

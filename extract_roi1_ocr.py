@@ -148,56 +148,141 @@ def extract_roi1_ocr(img, bboxes):
             results[label] = value
     return results
 
-# If run as a script, keep original behavior
+def extract(roi0_img, save_debug=False, output_dir='ROI_1'):
+    """
+    Standard extract function for pipeline integration.
+    Finds the S/C/A/ADD table in ROI-0 and performs OCR.
+    """
+    h_img, w_img = roi0_img.shape[:2]
+    
+    # 1. Find the Table ROI (ROI-1)
+    # The table is typically in the upper-center area.
+    search_y_end = int(h_img * 0.5)
+    search_x_start = int(w_img * 0.1)
+    search_x_end = int(w_img * 0.9)
+    
+    crop = roi0_img[0:search_y_end, search_x_start:search_x_end]
+    gray = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)
+    blurred = cv2.GaussianBlur(gray, (5, 5), 0)
+    edges = cv2.Canny(blurred, 30, 100)
+    
+    kernel = np.ones((5, 5), np.uint8)
+    dilated = cv2.dilate(edges, kernel, iterations=3)
+    contours, _ = cv2.findContours(dilated, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    
+    table_rect = None
+    max_area = 0
+    for cnt in contours:
+        x, y, w, h = cv2.boundingRect(cnt)
+        area = w * h
+        # Table must be large and roughly rectangular/central
+        if area > 10000 and 0.5 < w/h < 2.5:
+            if area > max_area:
+                max_area = area
+                table_rect = (x + search_x_start, y, w, h)
+                
+    if not table_rect:
+        # Fallback: use a plausible central region if detection fails
+        table_rect = (int(w_img * 0.25), int(h_img * 0.1), int(w_img * 0.5), int(h_img * 0.35))
+
+    tx, ty, tw, th = table_rect
+    table_img = roi0_img[ty:ty+th, tx:tx+tw]
+    
+    # 2. Segment Cells (3 columns, 5 rows)
+    # Using simple proportional segmentation as fallback, but let's try to find dividers
+    gray_table = cv2.cvtColor(table_img, cv2.COLOR_BGR2GRAY)
+    edges_table = cv2.Canny(gray_table, 50, 150)
+    
+    proj_h = np.sum(edges_table, axis=1)
+    proj_v = np.sum(edges_table, axis=0)
+    
+    def find_dividers(proj, n_segments, min_gap=10):
+        if len(proj) == 0: return []
+        limit = np.max(proj) * 0.2
+        candidates = np.where(proj > limit)[0]
+        if len(candidates) == 0: return []
+        clusters = []
+        if len(candidates) > 0:
+            curr = [candidates[0]]
+            for i in range(1, len(candidates)):
+                if candidates[i] - candidates[i-1] < min_gap:
+                    curr.append(candidates[i])
+                else:
+                    clusters.append(int(np.mean(curr)))
+                    curr = [candidates[i]]
+            clusters.append(int(np.mean(curr)))
+        return clusters
+
+    row_divs = find_dividers(proj_h, 5)
+    col_divs = find_dividers(proj_v, 3)
+    
+    # Ensure we have enough dividers or use proportional
+    if len(row_divs) < 4:
+        row_divs = [int(th * i / 5) for i in range(6)]
+    else:
+        if row_divs[0] > 10: row_divs = [0] + row_divs
+        if row_divs[-1] < th - 10: row_divs.append(th)
+        
+    if len(col_divs) < 2:
+        col_divs = [int(tw * i / 3) for i in range(4)]
+    else:
+        if col_divs[0] > 10: col_divs = [0] + col_divs
+        if col_divs[-1] < tw - 10: col_divs.append(tw)
+
+    # Generate cell bboxes relative to table_img
+    bboxes = []
+    for r in range(len(row_divs) - 1):
+        for c in range(len(col_divs) - 1):
+            y1, y2 = row_divs[r], row_divs[r+1]
+            x1, x2 = col_divs[c], col_divs[c+1]
+            bboxes.append((x1, y1, x2, y2))
+            
+    # 3. Perform OCR
+    ocr_results = extract_roi1_ocr(table_img, bboxes)
+    
+    result = {
+        'roi_id': 'ROI_1',
+        'bbox': [int(tx), int(ty), int(tw), int(th)],
+        'data': ocr_results
+    }
+    
+    if save_debug:
+        os.makedirs(output_dir, exist_ok=True)
+        now = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+        viz = roi0_img.copy()
+        cv2.rectangle(viz, (tx, ty), (tx+tw, ty+th), (0, 255, 0), 2)
+        for box in bboxes:
+            bx1, by1, bx2, by2 = box
+            cv2.rectangle(viz, (tx+bx1, ty+by1), (tx+bx2, ty+by2), (255, 0, 0), 1)
+        viz_path = os.path.join(output_dir, f'viz_roi1_{now}.png')
+        cv2.imwrite(viz_path, viz)
+        result['image_path'] = viz_path
+        
+    return result
+
+# Keep original main for testing
 if __name__ == '__main__':
+    # (Original main content remains similar but uses extract if needed)
     import sys
     import json
-    import re
-    # Usage: python extract_roi1_ocr.py [roi1_img_path] [bbox_path]
-    if len(sys.argv) >= 3:
-        roi1_path = sys.argv[1]
-        bbox_path = sys.argv[2]
-        img = cv2.imread(roi1_path)
-        if img is None:
-            raise FileNotFoundError(f'Could not load {roi1_path}')
-        def parse_bbox_line(line):
-            nums = re.findall(r'(?:np\.int64\()?(-?\d+)(?:\))?', line)
-            return tuple(map(int, nums))
-        with open(bbox_path, 'r') as f:
-            bboxes = [parse_bbox_line(line) for line in f]
-        results = extract_roi1_ocr(img, bboxes)
-        roi1_dir = os.path.dirname(roi1_path) or '.'
-    else:
-        roi1_dir = 'ROI_1'
-        roi1_files = [f for f in os.listdir(roi1_dir) if f.startswith('roi1_') and f.endswith('.png')]
-        roi1_files.sort()
-        roi1_path = os.path.join(roi1_dir, roi1_files[-1])
-        bbox_files = [f for f in os.listdir(roi1_dir) if f.startswith('roi1_bboxes_') and f.endswith('.txt')]
-        bbox_files.sort()
-        bbox_path = os.path.join(roi1_dir, bbox_files[-1])
-        img = cv2.imread(roi1_path)
-        if img is None:
-            raise FileNotFoundError(f'Could not load {roi1_path}')
-        def parse_bbox_line(line):
-            nums = re.findall(r'(?:np\.int64\()?(-?\d+)(?:\))?', line)
-            return tuple(map(int, nums))
-        with open(bbox_path, 'r') as f:
-            bboxes = [parse_bbox_line(line) for line in f]
-        results = extract_roi1_ocr(img, bboxes)
-    for label in [
-        'R_Sph', 'S_Anchor', 'L_Sph',
-        'R_Cyl', 'C_Anchor', 'L_Cyl',
-        'R_Axis', 'A_Anchor', 'L_Axis',
-        'R_Add', 'ADD_Anchor', 'L_Add'
-    ]:
-        print(f'{label}: {results[label]}')
-    now = datetime.datetime.now().strftime('%d%m_%H%M%S')
-    # Get prefix from roi1_path
-    base = os.path.splitext(os.path.basename(roi1_path))[0]
-    prefix = base[:4]
-    output_path = os.path.join(roi1_dir, f'{prefix}_{now}_ocr.json')
-    with open(output_path, 'w') as f:
-        json.dump(results, f, indent=2)
-    print(f'Cell values saved to {output_path}')
+    if len(sys.argv) > 1:
+        img_path = sys.argv[1]
+        img = cv2.imread(img_path)
+        if img is not None:
+            # If it's a full ROI-0 image
+            if img.shape[0] > 600:
+                res = extract(img, save_debug=True)
+                print(json.dumps(res, indent=2))
+            else:
+                # If it's just the table crop
+                if len(sys.argv) > 2:
+                    bbox_path = sys.argv[2]
+                    def parse_bbox_line(line):
+                        nums = re.findall(r'(?:np\.int64\()?(-?\d+)(?:\))?', line)
+                        return tuple(map(int, nums))
+                    with open(bbox_path, 'r') as f:
+                        bboxes = [parse_bbox_line(line) for line in f]
+                    res = extract_roi1_ocr(img, bboxes)
+                    print(json.dumps(res, indent=2))
 
 

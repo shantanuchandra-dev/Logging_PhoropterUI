@@ -15,13 +15,13 @@ import extract_roi2
 import extract_roi3_4
 import extract_roi5_NB
 import extract_roi6
-import extract_roi7
+import extract_roi7_NB
 
 def test_extractors():
     """Test all ROI extractors with a sample image."""
     
     # Load a sample ROI-0 image
-    roi0_path = "ROI_0/1201.png"
+    roi0_path = "ROI_0/3ym80YNRSvOOPQjDTAu7wg_14.png"
     print(f"Loading test image: {roi0_path}")
     
     roi0_img = cv2.imread(roi0_path)
@@ -133,8 +133,9 @@ def test_extractors():
     print("-" * 60)
     try:
         # Pass ROI-6 data if available
-        roi6_data = grid_result if 'grid_result' in locals() else None
-        chart_result = extract_roi7.extract(roi0_img, roi6_data=roi6_data, save_debug=True, filename=roi0_path)
+        # Only pass supported arguments to extract_roi7.extract
+        import extract_roi7
+        chart_result = extract_roi7.extract(roi0_img, save_debug=True, filename=roi0_path)
         print(f"✓ Big chart extraction successful")
         print(f"  - ROI ID: {chart_result.get('roi_id')}")
         if 'error' in chart_result:
