@@ -1,11 +1,34 @@
 {
-  "timestamp": "2026-01-19T16:53:54.296857",
+  "timestamp": "2026-01-20T11:11:53.318484",
   "rois": {
     "menu": {
-      "error": "tesseract is not installed or it's not in your PATH. See README file for more information."
+      "error": "extract() got an unexpected keyword argument 'output_dir'"
     },
     "table": {
-      "error": "tesseract is not installed or it's not in your PATH. See README file for more information."
+      "roi_id": "ROI_1",
+      "bbox": [
+        105,
+        34,
+        840,
+        428
+      ],
+      "data": {
+        "R_Sph": null,
+        "S_Anchor": "",
+        "L_Sph": null,
+        "R_Cyl": null,
+        "C_Anchor": "",
+        "L_Cyl": null,
+        "R_Axis": null,
+        "A_Anchor": "",
+        "L_Axis": null,
+        "R_Add": null,
+        "ADD_Anchor": null,
+        "L_Add": null,
+        "R_blank": "",
+        "blank_anchor": "",
+        "L_blank": ""
+      }
     },
     "pd": {
       "roi_id": "ROI_2",
@@ -44,23 +67,7 @@
       ]
     },
     "chart_tabs": {
-      "roi_id": "ROI_5",
-      "bbox": [
-        183,
-        203,
-        310,
-        83
-      ],
-      "tab_boundaries": [
-        183,
-        303,
-        391,
-        479,
-        567,
-        493
-      ],
-      "selected_tab": -1,
-      "confidence": 0.0
+      "error": "extract() got an unexpected keyword argument 'save_debug'"
     },
     "chart_grid": {
       "roi_id": "ROI_6",
@@ -87,19 +94,7 @@
       "selected_index": -1
     },
     "big_chart": {
-      "roi_id": "ROI_7",
-      "bbox": [
-        656,
-        614,
-        284,
-        241
-      ],
-      "chart_info": {
-        "identity": "Unknown",
-        "matches_roi6": true,
-        "roi6_selected_index": -1,
-        "color_hint": null
-      }
+      "error": "extract() got an unexpected keyword argument 'roi6_data'"
     }
   },
   "frame_id": 1300,
