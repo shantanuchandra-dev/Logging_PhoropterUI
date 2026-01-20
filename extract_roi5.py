@@ -83,7 +83,7 @@ def extract_roi5_sc_v2(roi0_img, output_dir, prefix):
     
     for psm in psm_modes:
         data = pytesseract.image_to_data(proc_band, config=psm, output_type=pytesseract.Output.DICT)
-        print(f"Trying PSM: {psm}, found words: {[t for t in data['text'] if t.strip()]}")
+        # print(f"Trying PSM: {psm}, found words: {[t for t in data['text'] if t.strip()]}")
         for i, text in enumerate(data['text']):
             if is_chart_like(text):
                 chart_word_idx = i
@@ -94,7 +94,7 @@ def extract_roi5_sc_v2(roi0_img, output_dir, prefix):
             
     if chart_word_idx == -1:
         # Fallback: Try CLAHE on original size
-        print("Fallback: Trying CLAHE preprocessing...")
+        # print("Fallback: Trying CLAHE preprocessing...")
         clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
         gray_orig = cv2.cvtColor(tab_band, cv2.COLOR_BGR2GRAY)
         proc_band_clahe = clahe.apply(gray_orig)
@@ -214,6 +214,32 @@ def extract_roi5_sc_v2(roi0_img, output_dir, prefix):
     return labeled_contours, viz_path
 
 
+
+def get_yellow_ratio(image, bbox):
+    x, y, w, h = bbox
+    roi = image[y:y+h, x:x+w]
+    hsv = cv2.cvtColor(roi, cv2.COLOR_BGR2HSV)
+    lower_yellow = np.array([20, 80, 80])
+    upper_yellow = np.array([40, 255, 255])
+    mask = cv2.inRange(hsv, lower_yellow, upper_yellow)
+    yellow_ratio = np.sum(mask > 0) / (w * h) if (w * h) > 0 else 0
+    return yellow_ratio
+
+def select_max_yellow_tab(image, tab_bboxes):
+    """
+    Given an image and a list of tab bounding boxes (dicts with x, y, w, h),
+    return the index of the tab with the maximum yellow ratio.
+    """
+    max_yellow = 0
+    selected_tab = -1
+    for i, tab in enumerate(tab_bboxes):
+        bbox = (tab['x'], tab['y'], tab['w'], tab['h'])
+        yellow_ratio = get_yellow_ratio(image, bbox)
+        if yellow_ratio > max_yellow:
+            max_yellow = yellow_ratio
+            selected_tab = i
+    return selected_tab
+
 def extract(image, save_debug=False, output_dir='ROI_5', filename=None):
     """
     Extract ROI-5 tab info from image.
@@ -232,24 +258,7 @@ def extract(image, save_debug=False, output_dir='ROI_5', filename=None):
     else:
         prefix = 'roi5'
     results, final_viz = extract_roi5_sc_v2(image, output_dir, prefix)
-    # Compute yellow ratio for each tab and select the one with max yellow
-    def get_yellow_ratio(image, bbox):
-        x, y, w, h = bbox
-        roi = image[y:y+h, x:x+w]
-        hsv = cv2.cvtColor(roi, cv2.COLOR_BGR2HSV)
-        lower_yellow = np.array([20, 80, 80])
-        upper_yellow = np.array([40, 255, 255])
-        mask = cv2.inRange(hsv, lower_yellow, upper_yellow)
-        yellow_ratio = np.sum(mask > 0) / (w * h) if (w * h) > 0 else 0
-        return yellow_ratio
-    max_yellow = 0
-    selected_tab = -1
-    for i, tab in enumerate(results):
-        bbox = (tab['x'], tab['y'], tab['w'], tab['h'])
-        yellow_ratio = get_yellow_ratio(image, bbox)
-        if yellow_ratio > max_yellow:
-            max_yellow = yellow_ratio
-            selected_tab = i
+    selected_tab = select_max_yellow_tab(image, results)
     # Prepare output dict for pipeline compatibility
     out = {
         'selected_tab': selected_tab,
