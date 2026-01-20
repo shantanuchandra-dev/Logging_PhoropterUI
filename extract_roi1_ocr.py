@@ -83,107 +83,192 @@ def extract_roi1_ocr(img, bboxes):
         
         # ...existing code...
     
-    for row in range(5):  # Process all 5 rows including blank
+        
+    def preprocess_image(cell_img, scale=4):
+        """
+        Preprocesses a cell image for OCR. Optimized for speed and clarity.
+        """
+        if cell_img is None or cell_img.size == 0:
+            return []
+            
+        # 1. Upscale (Scale 4x is the sweet spot for speed vs accuracy)
+        h, w = cell_img.shape[:2]
+        new_size = (int(w * scale), int(h * scale))
+        upscaled = cv2.resize(cell_img, new_size, interpolation=cv2.INTER_CUBIC)
+        
+        # 2. Grayscale
+        gray = cv2.cvtColor(upscaled, cv2.COLOR_BGR2GRAY)
+        
+        # 3. CLAHE (Contrast Enhancement)
+        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+        enhanced = clahe.apply(gray)
+        
+        versions = []
+        # Version A: CLAHE (Best for most cases)
+        versions.append(enhanced)
+        
+        # Version B: Simple binary threshold (Otsu)
+        _, bin_simple = cv2.threshold(enhanced, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        versions.append(bin_simple)
+        
+        # Version C: Adaptive threshold
+        bin_adaptive = cv2.adaptiveThreshold(enhanced, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2)
+        versions.append(bin_adaptive)
+        
+        return versions
+
+    def quantize_0_25(val_str, force_sign=False):
+        """Quantizes to nearest 0.25 increment, standardizing zeros."""
+        try:
+            val = float(val_str)
+            quantized = round(val * 4) / 4
+            if abs(quantized) < 0.001:
+                return "0.00"
+            return f"{quantized:+.2f}"
+        except:
+            return val_str
+
+    def extract_value_with_ensemble(cell_img, label):
+        """
+        Optimized OCR ensemble: uses skeptical early exit and weighted voting for signs.
+        """
+        is_sph_cyl = 'Sph' in label or 'Cyl' in label
+        is_add = 'Add' in label
+
+        if is_sph_cyl or is_add:
+            target_type = 'float'
+            pattern = r'([+-]?\s*\d+\.\d{1,2})'
+            whitelist = '+-0123456789. '
+        elif 'Axis' in label:
+            target_type = 'int'
+            pattern = r'(\d{1,3})'
+            whitelist = '0123456789'
+        elif 'Anchor' in label:
+            target_type = 'anchor'
+            anchor_map = {'S_Anchor': 'S', 'C_Anchor': 'C', 'A_Anchor': 'A', 'ADD_Anchor': 'ADD'}
+            whitelist = anchor_map.get(label, '')
+            pattern = rf'({whitelist})' if whitelist else ''
+        else:
+            return None
+
+        # Tiered processing: Start with fast 4x scale
+        current_scale = 4
+        image_versions = preprocess_image(cell_img, scale=current_scale)
+        # Added PSM 4 for Axis (sometimes handled better as block)
+        psm_modes = [7, 8, 11, 13, 4]
+        
+        candidates = []
+        for psm in psm_modes:
+            config = f'--oem 3 --psm {psm}'
+            if whitelist:
+                config += f' -c tessedit_char_whitelist={whitelist}'
+            
+            for img_version in image_versions:
+                text = pytesseract.image_to_string(img_version, config=config)
+                text = text.strip().replace(' ', '').replace('\n', '').replace('\r', '')
+                
+                res = None
+                if target_type == 'float':
+                    text = text.replace(',', '.')
+                    match = re.search(pattern, text)
+                    if match:
+                        val_str = match.group(1).replace(' ', '')
+                        if '.' not in val_str: val_str += '.00'
+                        elif len(val_str.split('.')[1]) == 1: val_str += '0'
+                        res = quantize_0_25(val_str, force_sign=is_sph_cyl)
+                elif target_type == 'int':
+                    match = re.search(pattern, text)
+                    if match:
+                        val_int = int(match.group(1))
+                        # Common phoropter misreads for Axis 180
+                        if val_int in [1, 18]: val_int = 180
+                        if val_int <= 180: res = str(val_int)
+                elif target_type == 'anchor':
+                    if whitelist.upper() in text.upper(): res = whitelist
+
+                if res:
+                    candidates.append(res)
+                    # SKEPTICAL EARLY EXIT:
+                    # Negative/Zero values are common/safe - return immediately.
+                    # Positive (+) values are skeptical - always require ensemble verification.
+                    if psm in [7, 8]:
+                        if res.startswith('-') or res == "0.00" or target_type != 'float':
+                            return res
+                
+                if len(candidates) >= 6: break
+            if len(candidates) >= 6: break
+
+        if not candidates:
+            return None
+            
+        # Consensus with HYPER-SKEPTICAL sign weights
+        from collections import Counter
+        counts = Counter(candidates)
+        
+        if is_sph_cyl:
+             groups = {}
+             for val, count in counts.items():
+                 abs_val = val.replace('+', '').replace('-', '')
+                 if abs_val not in groups: groups[abs_val] = []
+                 groups[abs_val].append((val, count))
+             
+             best_abs = max(groups.keys(), key=lambda k: sum(c for v, c in groups[k]))
+             variants = groups[best_abs]
+             
+             # SIGN SKEPTICISM: Heuristic preference for '-' in Phoropter UI
+             # HALLUCINATION GUARD: '+' requires 2.5x more weight to win against a '-' or ambiguity.
+             scores = {}
+             has_minus = any(v.startswith('-') for v, c in variants)
+             for val, count in variants:
+                 if val.startswith('-'):
+                     score = count * 3.0 # Heavy preference for negative
+                 elif val == "0.00":
+                     score = count * 2.0
+                 else:
+                     # Positive values must be very consistent to win
+                     score = count * 1.0
+                 scores[val] = score
+             
+             return max(scores.keys(), key=lambda k: scores[k])
+
+        return counts.most_common(1)[0][0]
+
+    for row in range(5):
         for col in range(3):
             idx = row * 3 + col
+            label = cell_labels[row][col]
             if idx >= len(bboxes):
-                results[cell_labels[row][col]] = None
+                results[label] = None
                 continue
+                
             x1, y1, x2, y2 = bboxes[idx]
             cell_img = img[y1:y2, x1:x2]
-            gray = cv2.cvtColor(cell_img, cv2.COLOR_BGR2GRAY)
-            clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
-            enhanced = clahe.apply(gray)
-            label = cell_labels[row][col]
-            value = None
-            if 'Sph' in label or 'Cyl' in label or 'Add' in label:
-                configs = [
-                    '--oem 3 --psm 10',
-                    '--oem 3 --psm 8',
-                    '--oem 3 --psm 7',
-                ]
-                for config in configs:
-                    text = pytesseract.image_to_string(enhanced, config=config)
-                    text = text.strip().replace(' ', '').replace('\n', '')
-                    match = re.search(r'([+-]?\d+\.\d{2})', text)
-                    if match:
-                        value = match.group(1)
-                        if value == '0.00' or value.startswith(('+', '-')):
-                            break
-                        else:
-                            value = None
-            elif 'Axis' in label:
-                configs = [
-                    '--oem 3 --psm 10',
-                    '--oem 3 --psm 8',
-                    '--oem 3 --psm 7',
-                ]
-                for config in configs:
-                    text = pytesseract.image_to_string(enhanced, config=config)
-                    text = text.strip().replace(' ', '').replace('\n', '')
-                    match = re.search(r'(\d{2,3})', text)
-                    if match:
-                        val = int(match.group(1))
-                        if val % 5 == 0:
-                            value = str(val)
-                            break
-            elif 'Anchor' in label:
-                _, bin_img = cv2.threshold(gray, 180, 255, cv2.THRESH_BINARY)
-                anchor_map = {
-                    'S_Anchor': 'S',
-                    'C_Anchor': 'C',
-                    'A_Anchor': 'A',
-                    'ADD_Anchor': 'ADD'
-                }
-                whitelist = anchor_map.get(label, '')
-                if whitelist:
-                    config = f'--oem 3 --psm 10 -c tessedit_char_whitelist={whitelist}'
-                    text = pytesseract.image_to_string(bin_img, config=config)
-                    value = text.strip().replace(' ', '').replace('\n', '')
-                    if label == 'ADD_Anchor' and value.lower() != 'add':
-                        value = None
-                else:
-                    value = ''
-            else:
-                custom_config = r'--oem 3 --psm 7'
-                text = pytesseract.image_to_string(enhanced, config=custom_config)
-                value = text.strip().replace(' ', '').replace('\n', '')
+            
+            value = extract_value_with_ensemble(cell_img, label)
             results[label] = value
 
-    # Print main OCR values in order after extraction
+    # PRINT SUMMARY
     main_keys = ['R_Sph', 'L_Sph', 'R_Cyl', 'L_Cyl', 'R_Axis', 'L_Axis', 'R_Add', 'L_Add']
-    print(' | '.join(str(results.get(k, '')) for k in main_keys))
+    print(' | '.join(str(results.get(k) or '') for k in main_keys))
 
-    # After extraction, check if majority of R/L Sph, Cyl, Axis, Add are blank/null
-    main_keys = ['R_Sph', 'L_Sph', 'R_Cyl', 'L_Cyl', 'R_Axis', 'L_Axis', 'R_Add', 'L_Add']
+    # Error handling for too many blanks
     blank_count = sum(1 for k in main_keys if not results.get(k))
     if blank_count >= 5:
-        def parse_bbox(b):
-            if isinstance(b, (list, tuple)) and len(b) == 4:
-                return tuple(int(x) for x in b)
-            if isinstance(b, str):
-                import re
-                nums = re.findall(r'-?\d+', b)
-                if len(nums) == 4:
-                    return tuple(int(x) for x in nums)
-            raise ValueError(f"Invalid bbox format: {b}")
+        # Save crops for debugging
         try:
             os.makedirs('ROI_1', exist_ok=True)
-            idx_r_sph = 0  # row 0, col 0
-            idx_l_sph = 2  # row 0, col 2
-            if idx_r_sph < len(bboxes):
-                x1, y1, x2, y2 = parse_bbox(bboxes[idx_r_sph])
-                r_sph_img = img[y1:y2, x1:x2]
-                cv2.imwrite('ROI_1/R_Sph_crop_cells_on_roi0.png', r_sph_img)
-            if idx_l_sph < len(bboxes):
-                x1, y1, x2, y2 = parse_bbox(bboxes[idx_l_sph])
-                l_sph_img = img[y1:y2, x1:x2]
-                cv2.imwrite('ROI_1/L_Sph_crop_cells_on_roi0.png', l_sph_img)
-        except Exception as crop_exc:
-            print(f"[ERROR] Could not save R_Sph/L_Sph crops: {crop_exc}")
-        import sys
-        print(f"[ERROR] extract_roi1_ocr: {blank_count} of 8 main Sph/Cyl/Axis/Add fields are blank/null. Likely bbox/image mismatch or OCR failure. Exiting.")
-        sys.exit(1)
+            for k in ['R_Sph', 'L_Sph']:
+                k_idx = 0 if k == 'R_Sph' else 2
+                if k_idx < len(bboxes):
+                    bx1, by1, bx2, by2 = bboxes[k_idx]
+                    cv2.imwrite(f'ROI_1/{k}_failed_crop.png', img[by1:by2, bx1:bx2])
+        except:
+            pass
+        print(f"[WARNING] extract_roi1_ocr: {blank_count}/8 fields blank. Accuracy might be low.")
+        # We don't exit in Phase 3 to avoid stopping the whole pipeline, 
+        # but we should definitely log it.
+    
+    return results
     return results
 
 

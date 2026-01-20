@@ -12,7 +12,6 @@ def extract_pd_value(pd_crop_img):
     Returns the extracted PD value as a string (or None if not found).
     """
     if pd_crop_img is None or pd_crop_img.size == 0:
-        print("[PD DEBUG] Empty or None pd_crop_img")
         return None
 
     # Save the first 20 crops for debugging
@@ -29,12 +28,9 @@ def extract_pd_value(pd_crop_img):
     _, pd_bin = cv2.threshold(pd_res, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
     custom_config = r'--oem 3 --psm 7 -c tessedit_char_whitelist=0123456789.'
     pd_text = None
-    print(f"[PD DEBUG] Running OCR on crop shape: {pd_crop_img.shape}")
     try:
         pd_text = pytesseract.image_to_string(pd_bin, config=custom_config).strip()
-        print(f"[PD DEBUG] pytesseract result: '{pd_text}'")
     except Exception as e:
-        print(f"[PD DEBUG] pytesseract error: {e}")
         try:
             import easyocr
             import logging
@@ -42,9 +38,7 @@ def extract_pd_value(pd_crop_img):
             reader = easyocr.Reader(['en'], gpu=False)
             results = reader.readtext(pd_bin, detail=0)
             pd_text = " ".join(results).strip() if results else None
-            print(f"[PD DEBUG] easyocr result: '{pd_text}'")
         except Exception as e2:
-            print(f"[PD DEBUG] easyocr error: {e2}")
             pd_text = None
     return pd_text
 

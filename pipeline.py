@@ -389,7 +389,7 @@ def append_to_csv(csv_path, frame_data):
             occ_state = "Right_Occluded"
 
     # 5. Chart Display (ROI-7)
-    chart_display = rois.get('big_chart', {}).get('chart_info', '')
+    chart_display = rois.get('roi7', {}).get('chart_info', '')
 
     # Prepare Row
     time_sec = frame_data.get('time_seconds', 0)
@@ -557,11 +557,9 @@ def main():
             """Extracts the row dict as written to CSV for value comparison."""
             rois = frame_data.get('rois', {})
             # 1. Table Data (ROI-1 OCR)
-            table = {}
-            if 'roi1_ocr' in rois and 'data' in rois['roi1_ocr']:
-                table = rois['roi1_ocr']['data']
-            elif 'roi1' in rois and 'data' in rois['roi1']: # Fallback
-                table = rois['roi1']['data']
+            table = rois.get('roi1_ocr', {})
+            if not table:
+                table = rois.get('roi1', {}).get('data', {}) # Fallback
             
             # 2. PD (ROI-2)
             pd_val = rois.get('roi2', {}).get('pd_value', '')
@@ -570,9 +568,10 @@ def main():
             chart_num = rois.get('roi5', {}).get('selected_tab', -1)
             if chart_num != -1:
                 chart_num += 1  # 1-based index (so 0→1, 1→2, ... 4→5)
+            
             occ_state = "Unknown"
-            if 'occluders' in rois and 'bboxes' in rois['occluders']:
-                occs = rois['occluders']['bboxes']
+            if 'roi3_4' in rois and 'bboxes' in rois['roi3_4']:
+                occs = rois['roi3_4']['bboxes']
                 left_active = False
                 right_active = False
                 for occ in occs:
@@ -593,16 +592,24 @@ def main():
             
             # 5. Chart Info (ROI-7)
             chart_display = rois.get('roi7', {}).get('chart_info', '')
+
+            def normalize_val(v):
+                if isinstance(v, str):
+                    v_clean = v.strip().replace('+', '').replace('-', '')
+                    if v_clean == '0.00':
+                        return '0.00'
+                return v
+
             row = {
-                'R_SPH': table.get('R_Sph', ''),
-                'R_CYL': table.get('R_Cyl', ''),
+                'R_SPH': normalize_val(table.get('R_Sph', '')),
+                'R_CYL': normalize_val(table.get('R_Cyl', '')),
                 'R_AXIS': table.get('R_Axis', ''),
-                'R_ADD': table.get('R_Add', ''),
-                'L_SPH': table.get('L_Sph', ''),
-                'L_CYL': table.get('L_Cyl', ''),
+                'R_ADD': normalize_val(table.get('R_Add', '')),
+                'L_SPH': normalize_val(table.get('L_Sph', '')),
+                'L_CYL': normalize_val(table.get('L_Cyl', '')),
                 'L_AXIS': table.get('L_Axis', ''),
-                'L_ADD': table.get('L_Add', ''),
-                'PD': pd_val,
+                'L_ADD': normalize_val(table.get('L_Add', '')),
+                'PD': normalize_val(pd_val),
                 'Chart_Number': chart_num,
                 'Occluder_State': occ_state,
                 'Chart_Display': chart_display
@@ -619,9 +626,9 @@ def main():
 
         extraction_count = 1
         
-        # Difference thresholds
-        FRAME_DIFF_THRESHOLD = 0.005 # 0.5% average pixel change
-        ROI0_DIFF_THRESHOLD = 0.005
+        # Difference thresholds (now from config)
+        FRAME_DIFF_THRESHOLD = float(config.get('frame_diff_threshold', 0.0005))
+        ROI0_DIFF_THRESHOLD = float(config.get('roi0_diff_threshold', 0.005))
 
         while True:
             ret, frame = cap.read()
