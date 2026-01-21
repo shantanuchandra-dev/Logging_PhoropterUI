@@ -10,3 +10,15 @@ temp/
 settings.json
 pipeline_SC.py
 .DS_Store
+DS_Store
+DS_Store/
+.DS_Store/
+deps
+
+.venv
+.venv/
+venv
+venv/
+env
+env/
+.vscode

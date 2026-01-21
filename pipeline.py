@@ -294,7 +294,28 @@ def extract_all_rois(roi0_img, gpu_available=False, save_debug=True, output_dir=
 
     # 7. ROI7 (Big Chart)
     try:
-        roi7_result = extract_roi7.extract(roi0_img, save_debug=save_debug, filename=filename)
+        roi7_bbox = None
+        if not save_debug:
+            # In PHASE 3, try to load ROI7 bbox from _coords.json
+            video_basename = os.path.splitext(os.path.basename(filename))[0] if filename else 'roi0'
+            # Find coords path (re-using logic from ROI1/5 if needed, but let's be direct)
+            prefix = video_basename[:4] if len(video_basename) >= 4 else video_basename
+            coords_path = None
+            for search_dir in [output_dir, '.']:
+                for f in os.listdir(search_dir):
+                    if f.startswith(prefix) and f.endswith('_coords.json'):
+                        candidate = os.path.join(search_dir, f)
+                        if os.path.isfile(candidate):
+                            coords_path = candidate
+                            break
+                if coords_path: break
+            
+            if coords_path:
+                with open(coords_path, 'r') as f:
+                    coords_data = json.load(f)
+                    roi7_bbox = coords_data.get('rois', {}).get('roi7', {}).get('bbox', None)
+        
+        roi7_result = extract_roi7.extract(roi0_img, save_debug=save_debug, filename=filename, bbox=roi7_bbox)
         results['rois']['roi7'] = roi7_result
     except Exception as e:
         results['rois']['roi7'] = {'error': str(e)}

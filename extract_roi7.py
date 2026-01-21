@@ -118,6 +118,7 @@ def predict_chart(roi7_img):
 def extract(roi0_img, save_debug=False, filename=None, debug=False):
     """
     Extract function for ROI7, returns a result dict for test_extractors.
+    If bbox is provided, skips detection and only performs classification.
     """
     bbox, labeled_img = extract_roi7_from_roi0(roi0_img, debug=debug)
     
@@ -134,8 +135,8 @@ def extract(roi0_img, save_debug=False, filename=None, debug=False):
         'bbox': bbox,
         'chart_name': chart_name
     }
+    
     if bbox and save_debug:
-        import os
         out_dir = 'ROI_7'
         os.makedirs(out_dir, exist_ok=True)
         # Use filename if provided, else default name

@@ -1,4 +1,14 @@
 # --- ROI-1 Extraction Function ---
+import pytesseract
+import os
+
+# Set tesseract path for Homebrew on macOS
+if os.path.exists('/opt/homebrew/bin/tesseract'):
+    pytesseract.pytesseract.tesseract_cmd = '/opt/homebrew/bin/tesseract'
+elif os.path.exists('/usr/local/bin/tesseract'):
+    pytesseract.pytesseract.tesseract_cmd = '/usr/local/bin/tesseract'
+
+
 def extract(roi0_path, roi0_dir='ROI_0', roi_menu_dir='ROI_Menu', output_dir='ROI_1'):
     # Extract prefix from filename
     basename = os.path.splitext(os.path.basename(roi0_path))[0]
@@ -14,9 +24,17 @@ def extract(roi0_path, roi0_dir='ROI_0', roi_menu_dir='ROI_Menu', output_dir='RO
         roi_menu_files = [f for f in os.listdir(roi_menu_dir) if f.endswith('.png') and f.startswith(short_prefix)]
         roi_menu_files.sort()
         if not roi_menu_files:
-            print(f"Error: No ROI_Menu image found in '{roi_menu_dir}' matching prefix '{short_prefix}'. Exiting.")
-            exit(1)
-        roi_menu_path = os.path.join(roi_menu_dir, roi_menu_files[-1])
+            # Fallback: use the most recent ROI_Menu file regardless of prefix
+            print(f"Warning: No ROI_Menu image found matching prefix '{short_prefix}'. Using most recent ROI_Menu file.")
+            all_menu_files = [f for f in os.listdir(roi_menu_dir) if f.endswith('.png')]
+            if all_menu_files:
+                all_menu_files.sort()
+                roi_menu_path = os.path.join(roi_menu_dir, all_menu_files[-1])
+                print(f"Using fallback ROI_Menu: {roi_menu_path}")
+            else:
+                print(f"Warning: No ROI_Menu images found in '{roi_menu_dir}'. Proceeding without menu subtraction.")
+        else:
+            roi_menu_path = os.path.join(roi_menu_dir, roi_menu_files[-1])
     # Step 1: Crop and subtract menu
     cropped_img, crop_path = crop_and_subtract_menu(roi0_path, roi_menu_path, output_dir)
     # Step 2: Detect centered table
@@ -439,8 +457,17 @@ if __name__ == '__main__':
         roi_menu_files = [f for f in os.listdir(roi_menu_dir) if f.endswith('.png') and f.startswith(short_prefix)]
         roi_menu_files.sort()
         if not roi_menu_files:
-            print(f"Error: No ROI_Menu image found in '{roi_menu_dir}' matching prefix '{short_prefix}'. Exiting.")
-            exit(1)
-        roi_menu_path = os.path.join(roi_menu_dir, roi_menu_files[-1])
+            # Fallback: use the most recent ROI_Menu file regardless of prefix
+            print(f"Warning: No ROI_Menu image found matching prefix '{short_prefix}'. Using most recent ROI_Menu file.")
+            all_menu_files = [f for f in os.listdir(roi_menu_dir) if f.endswith('.png')]
+            if all_menu_files:
+                all_menu_files.sort()
+                roi_menu_path = os.path.join(roi_menu_dir, all_menu_files[-1])
+                print(f"Using fallback ROI_Menu: {roi_menu_path}")
+            else:
+                print(f"Warning: No ROI_Menu images found in '{roi_menu_dir}'. Proceeding without menu subtraction.")
+        else:
+            roi_menu_path = os.path.join(roi_menu_dir, roi_menu_files[-1])
+
 
     extract(roi0_path, roi0_dir=roi0_dir, roi_menu_dir=roi_menu_dir, output_dir=output_dir)
