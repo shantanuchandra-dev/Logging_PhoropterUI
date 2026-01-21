@@ -4,7 +4,7 @@ import random
 from pathlib import Path
 from PIL import Image
 
-def prepare_data(source_dir="_Charts", output_dir="chart_dataset", train_split=0.8):
+def prepare_data(source_dir="Charts_Processed", output_dir="chart_dataset", train_split=0.8):
     """
     Organizes images from _Charts into a standard train/val split.
     Normalizes folder names.
@@ -23,8 +23,13 @@ def prepare_data(source_dir="_Charts", output_dir="chart_dataset", train_split=0
         class_name = class_path.name.strip().lower().replace(" ", "_")
         print(f"Processing class: {class_path.name} -> {class_name}")
         
-        # Get all images
-        images = [f for f in class_path.iterdir() if f.is_file() and f.suffix.lower() in ['.png', '.jpg', '.jpeg']]
+        # Get all images recursively
+        images = []
+        for root, dirs, files in os.walk(class_path):
+            for file in files:
+                if file.lower().endswith(('.png', '.jpg', '.jpeg')):
+                    images.append(Path(root) / file)
+        
         random.shuffle(images)
         
         if len(images) == 1:

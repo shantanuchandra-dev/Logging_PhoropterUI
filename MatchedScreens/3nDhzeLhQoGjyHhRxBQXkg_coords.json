@@ -1,0 +1,234 @@
+{
+  "timestamp": "2026-01-21T17:04:41.403560",
+  "rois": {
+    "menu": {
+      "roi_id": "ROI_Menu",
+      "bbox": [
+        0,
+        0,
+        1051,
+        92
+      ],
+      "ocr_text": "\"ERE TOPCON Cv-5000PC = mo |\nFile Course Examination Reference Data DataSet Tools View Step Help\nBS &2 era amnrArnmnwrmahAeea & Ze\n"
+    },
+    "roi1": {
+      "roi_id": "ROI1",
+      "cell_bboxes_on_roi0": [
+        [
+          255,
+          155,
+          460,
+          204
+        ],
+        [
+          460,
+          155,
+          589,
+          204
+        ],
+        [
+          589,
+          155,
+          795,
+          204
+        ],
+        [
+          255,
+          204,
+          460,
+          253
+        ],
+        [
+          460,
+          204,
+          589,
+          253
+        ],
+        [
+          589,
+          204,
+          795,
+          253
+        ],
+        [
+          255,
+          253,
+          460,
+          302
+        ],
+        [
+          460,
+          253,
+          589,
+          302
+        ],
+        [
+          589,
+          253,
+          795,
+          302
+        ],
+        [
+          255,
+          302,
+          460,
+          351
+        ],
+        [
+          460,
+          302,
+          589,
+          351
+        ],
+        [
+          589,
+          302,
+          795,
+          351
+        ],
+        [
+          255,
+          351,
+          460,
+          402
+        ],
+        [
+          460,
+          351,
+          589,
+          402
+        ],
+        [
+          589,
+          351,
+          795,
+          402
+        ]
+      ],
+      "roi1_image": "ROI_1/3nDh_2101_170443_roi1.png",
+      "overlay_image": "ROI_1/3nDh_2101_170443_roi1_cells_on_roi0.png",
+      "bbox_file": "ROI_1/3nDh_2101_170443_roi1_cells_on_roi0_bboxes.txt"
+    },
+    "roi1_ocr": {
+      "R_Sph": "+1.50",
+      "S_Anchor": "S",
+      "L_Sph": "+1.00",
+      "R_Cyl": "-0.25",
+      "C_Anchor": "C",
+      "L_Cyl": "0.00",
+      "R_Axis": "165",
+      "A_Anchor": "A",
+      "L_Axis": "105",
+      "R_Add": "+2.00",
+      "ADD_Anchor": "ADD",
+      "L_Add": "+2.00",
+      "R_blank": null,
+      "blank_anchor": null,
+      "L_blank": null
+    },
+    "roi2": {
+      "roi_id": "ROI_2",
+      "pd_value_bbox": [
+        472,
+        461,
+        102,
+        46
+      ],
+      "pd_value": "",
+      "confidence": null,
+      "image_path": "ROI_2/3nDh_2101_170446_pd_debug.png"
+    },
+    "roi3_4": {
+      "roi_id": "ROI_3_4",
+      "bboxes": [
+        {
+          "label": "left_occluder",
+          "box": [
+            358,
+            433,
+            81,
+            80
+          ],
+          "state": "filled/active (blue)"
+        },
+        {
+          "label": "right_occluder",
+          "box": [
+            613,
+            432,
+            81,
+            80
+          ],
+          "state": "filled/active (blue)"
+        }
+      ],
+      "image_paths": [
+        "ROI_3/3nDh_2101_170446_roi3.png",
+        "ROI_4/3nDh_2101_170446_roi4.png"
+      ]
+    },
+    "roi5": {
+      "selected_tab": 0,
+      "bboxes": [
+        {
+          "label": 1,
+          "x": 0,
+          "y": 609,
+          "w": 92,
+          "h": 54,
+          "rel_x": 0,
+          "rel_y": 0
+        },
+        {
+          "label": 2,
+          "x": 92,
+          "y": 609,
+          "w": 92,
+          "h": 54,
+          "rel_x": 92,
+          "rel_y": 0
+        },
+        {
+          "label": 3,
+          "x": 185,
+          "y": 609,
+          "w": 92,
+          "h": 54,
+          "rel_x": 185,
+          "rel_y": 0
+        },
+        {
+          "label": 4,
+          "x": 278,
+          "y": 609,
+          "w": 92,
+          "h": 54,
+          "rel_x": 278,
+          "rel_y": 0
+        },
+        {
+          "label": 5,
+          "x": 370,
+          "y": 609,
+          "w": 92,
+          "h": 54,
+          "rel_x": 370,
+          "rel_y": 0
+        }
+      ]
+    },
+    "roi7": {
+      "roi_id": "ROI7",
+      "bbox": [
+        651,
+        601,
+        294,
+        259
+      ],
+      "chart_info": "",
+      "debug_image": "ROI_7/3nDh_2101_170447_labeled_roi7.png"
+    }
+  },
+  "frame_id": 2312,
+  "time_seconds": 92.48
+}

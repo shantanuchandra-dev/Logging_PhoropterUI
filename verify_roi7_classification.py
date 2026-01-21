@@ -4,14 +4,10 @@ import json
 from extract_roi7 import extract
 
 def test_on_charts():
-    chart_dir = "_Charts/e charts "
-    # Get first image
-    images = [f for f in os.listdir(chart_dir) if f.lower().endswith('.png') or f.lower().endswith('.jpg')]
-    if not images:
-        print("No images found in alphabetic chart dir")
+    img_path = "Charts_Processed/Number Chart/number chart 20/Screenshot 2026-01-20 at 1.00.41 PM.png"
+    if not os.path.exists(img_path):
+        print(f"Image not found: {img_path}")
         return
-        
-    img_path = os.path.join(chart_dir, images[0])
     img = cv2.imread(img_path)
     
     # We need to simulate ROI0 because extract_roi7 expects a full UI frame to search in.
