@@ -178,7 +178,7 @@ def extract_all_rois(roi0_img, gpu_available=False, save_debug=True, output_dir=
                         video_basename = os.path.splitext(os.path.basename(filename))[0]
                 else:
                     video_basename = os.path.splitext(os.path.basename(filename))[0] if filename else 'roi0'
-                # print(f"[DEBUG] video_basename: {video_basename}")
+                print(f"[DEBUG] video_basename: {video_basename}")
                 coords_json_path = None
                 for search_dir in [output_dir, '.']:
                     candidate = os.path.join(search_dir, f'{video_basename}_coords.json')
@@ -663,7 +663,7 @@ def main():
             if frame_count % sampling_interval_frames != 0:
                 continue
 
-            print(f"\rFrame {frame_count} (t={time_seconds:.2f}s)   ", end="")
+            print(f"\r→ Frame {frame_count} / {total_frames} (t={time_seconds:.2f}s)", end="")
 
             try:
                 # 1. Frame-to-Frame Change Detection
