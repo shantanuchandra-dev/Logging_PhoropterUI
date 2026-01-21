@@ -2,6 +2,72 @@
 import cv2
 import numpy as np
 import datetime
+import os
+import json
+import torch
+import torch.nn as nn
+from torchvision import models, transforms
+from PIL import Image
+
+# Global variables to cache model and class mapping
+_CHART_MODEL = None
+_CLASS_MAPPING = None
+
+def load_chart_model():
+    """Loads the trained chart classification model and class mapping."""
+    global _CHART_MODEL, _CLASS_MAPPING
+    
+    if _CHART_MODEL is not None:
+        return _CHART_MODEL, _CLASS_MAPPING
+    
+    model_path = "chart_classifier.pth"
+    mapping_path = "class_mapping.json"
+    
+    if not os.path.exists(model_path) or not os.path.exists(mapping_path):
+        return None, None
+        
+    try:
+        with open(mapping_path, 'r') as f:
+            _CLASS_MAPPING = json.load(f)
+        
+        num_classes = len(_CLASS_MAPPING)
+        model = models.resnet18()
+        num_ftrs = model.fc.in_features
+        model.fc = nn.Linear(num_ftrs, num_classes)
+        
+        model.load_state_dict(torch.load(model_path, map_location=torch.device('cpu')))
+        model.eval()
+        _CHART_MODEL = model
+        return _CHART_MODEL, _CLASS_MAPPING
+    except Exception as e:
+        print(f"[ROI7] Error loading model: {e}")
+        return None, None
+
+def classify_chart(roi_img):
+    """Classifies the given chart image using the trained model."""
+    model, mapping = load_chart_model()
+    if model is None:
+        return "Unknown"
+        
+    try:
+        preprocess = transforms.Compose([
+            transforms.Resize((224, 224)),
+            transforms.ToTensor(),
+            transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+        ])
+        
+        img_pil = Image.fromarray(cv2.cvtColor(roi_img, cv2.COLOR_BGR2RGB))
+        input_tensor = preprocess(img_pil)
+        input_batch = input_tensor.unsqueeze(0)
+        
+        with torch.no_grad():
+            output = model(input_batch)
+            _, preds = torch.max(output, 1)
+            class_idx = str(preds[0].item())
+            return mapping.get(class_idx, "Unknown")
+    except Exception as e:
+        print(f"[ROI7] Error during classification: {e}")
+        return "Error"
 
 def extract_roi7_from_roi0(roi0_img, debug=False):
     """
@@ -60,12 +126,16 @@ def extract_roi7_from_roi0(roi0_img, debug=False):
     if not candidates:
         if debug:
             print("No suitable chart blobs found in ROI7 search area.")
-        return None, roi0_img
+        return None, roi0_img, "None"
 
     # Pick the best candidate (biggest rectangle with preferred proportion)
     candidates.sort(key=lambda x: x['score'], reverse=True)
     best = candidates[0]
     x, y, rw, rh = best['bbox']
+    
+    # Crop the chart region for classification
+    chart_crop = search_area[y:y+rh, x:x+rw]
+    chart_info = classify_chart(chart_crop)
     
     # Adjust coordinates to original ROI0
     x_abs = x + x_start
@@ -73,27 +143,46 @@ def extract_roi7_from_roi0(roi0_img, debug=False):
     
     labeled_img = roi0_img.copy()
     cv2.rectangle(labeled_img, (x_abs, y_abs), (x_abs+rw, y_abs+rh), (0, 255, 0), 2)
-    label_text = f'ROI7 (asp={best["aspect"]:.2f})'
+    label_text = f'ROI7: {chart_info}'
     cv2.putText(labeled_img, label_text, (x_abs, y_abs-10), 
                 cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
     
     if debug:
-        print(f"ROI7 found at: x={x_abs}, y={y_abs}, w={rw}, h={rh}, aspect={best['aspect']:.2f}, score={best['score']:.0f}")
+        print(f"ROI7 found at: x={x_abs}, y={y_abs}, w={rw}, h={rh}, chart={chart_info}")
         
-    return (x_abs, y_abs, rw, rh), labeled_img
+    return (x_abs, y_abs, rw, rh), labeled_img, chart_info
 
 
-def extract(roi0_img, save_debug=False, filename=None, debug=False):
+def extract(roi0_img, save_debug=False, filename=None, debug=False, bbox=None):
     """
     Extract function for ROI7, returns a result dict for test_extractors.
+    If bbox is provided, skips detection and only performs classification.
     """
-    bbox, labeled_img = extract_roi7_from_roi0(roi0_img, debug=debug)
+    chart_info = "Unknown"
+    labeled_img = roi0_img.copy()
+    
+    if bbox is not None and len(bbox) == 4:
+        x_abs, y_abs, rw, rh = bbox
+        # Crop the chart region for classification
+        # Need to convert absolute ROI0 coordinates back to search_area relative if we were using search_area
+        # But here we can just crop from roi0_img directly
+        chart_crop = roi0_img[y_abs:y_abs+rh, x_abs:x_abs+rw]
+        chart_info = classify_chart(chart_crop)
+        
+        cv2.rectangle(labeled_img, (x_abs, y_abs), (x_abs+rw, y_abs+rh), (0, 255, 0), 2)
+        label_text = f'ROI7: {chart_info}'
+        cv2.putText(labeled_img, label_text, (x_abs, y_abs-10), 
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+    else:
+        bbox, labeled_img, chart_info = extract_roi7_from_roi0(roi0_img, debug=debug)
+
     result = {
         'roi_id': 'ROI7',
         'bbox': bbox,
+        'chart_info': chart_info
     }
+    
     if bbox and save_debug:
-        import os
         out_dir = 'ROI_7'
         os.makedirs(out_dir, exist_ok=True)
         now = datetime.datetime.now().strftime('%d%m_%H%M%S')

@@ -1,0 +1,7406 @@
+[
+  {
+    "timestamp": "2026-01-21T12:40:43.174972",
+    "rois": {
+      "menu": {
+        "roi_id": "ROI_Menu",
+        "bbox": [
+          0,
+          0,
+          1050,
+          92
+        ],
+        "ocr_text": "\u201cEE TOPCON Cv-So00PC = x\ni a \u2014s)\n8b 2 ee Poe ama wRa les @ & Z fel\n"
+      },
+      "roi1": {
+        "roi_id": "ROI1",
+        "cell_bboxes_on_roi0": [
+          [
+            253,
+            156,
+            459,
+            204
+          ],
+          [
+            459,
+            156,
+            589,
+            204
+          ],
+          [
+            589,
+            156,
+            794,
+            204
+          ],
+          [
+            253,
+            204,
+            459,
+            253
+          ],
+          [
+            459,
+            204,
+            589,
+            253
+          ],
+          [
+            589,
+            204,
+            794,
+            253
+          ],
+          [
+            253,
+            253,
+            459,
+            303
+          ],
+          [
+            459,
+            253,
+            589,
+            303
+          ],
+          [
+            589,
+            253,
+            794,
+            303
+          ],
+          [
+            253,
+            303,
+            459,
+            352
+          ],
+          [
+            459,
+            303,
+            589,
+            352
+          ],
+          [
+            589,
+            303,
+            794,
+            352
+          ],
+          [
+            253,
+            352,
+            459,
+            404
+          ],
+          [
+            459,
+            352,
+            589,
+            404
+          ],
+          [
+            589,
+            352,
+            794,
+            404
+          ]
+        ],
+        "roi1_image": "ROI_1/_2101_124044_roi1.png",
+        "overlay_image": "ROI_1/_2101_124044_roi1_cells_on_roi0.png",
+        "bbox_file": "ROI_1/_2101_124044_roi1_cells_on_roi0_bboxes.txt"
+      },
+      "roi1_ocr": {
+        "R_Sph": "+1.75",
+        "S_Anchor": "S",
+        "L_Sph": "+1.50",
+        "R_Cyl": "0.00",
+        "C_Anchor": "C",
+        "L_Cyl": "0.00",
+        "R_Axis": "45",
+        "A_Anchor": "A",
+        "L_Axis": "180",
+        "R_Add": "+1.25",
+        "ADD_Anchor": "ADD",
+        "L_Add": "+1.25",
+        "R_blank": null,
+        "blank_anchor": null,
+        "L_blank": null
+      },
+      "roi2": {
+        "roi_id": "ROI_2",
+        "pd_value_bbox": [
+          472,
+          463,
+          102,
+          44
+        ],
+        "pd_value": "58.5",
+        "confidence": null,
+        "image_path": "ROI_2/_-wu_2101_124047_pd_debug.png"
+      },
+      "roi3_4": {
+        "roi_id": "ROI_3_4",
+        "bboxes": [
+          {
+            "label": "left_occluder",
+            "box": [
+              362,
+              438,
+              72,
+              71
+            ],
+            "state": "filled/active (blue)"
+          },
+          {
+            "label": "right_occluder",
+            "box": [
+              611,
+              432,
+              83,
+              83
+            ],
+            "state": "filled/active (blue)"
+          }
+        ],
+        "image_paths": [
+          "ROI_3/_-wu_2101_124047_roi3.png",
+          "ROI_4/_-wu_2101_124047_roi4.png"
+        ]
+      },
+      "roi5": {
+        "selected_tab": -1,
+        "bboxes": []
+      },
+      "roi7": {
+        "roi_id": "ROI7",
+        "bbox": [
+          651,
+          601,
+          294,
+          259
+        ],
+        "chart_info": "alphabetic_chart",
+        "debug_image": "ROI_7/_-wu_2101_124048_labeled_roi7.png"
+      }
+    },
+    "frame_id": 2262,
+    "time_seconds": 90.48
+  },
+  {
+    "timestamp": "2026-01-21T12:40:49.299325",
+    "rois": {
+      "menu": {
+        "roi_id": "ROI_Menu",
+        "bbox": [
+          0,
+          0,
+          1050,
+          92
+        ],
+        "ocr_text": "Lf TOPCON CV-S000PC = x\nFile Course Examination Reference Data g Z\n\n# Authenticating session vie QR code |_\u2014_$_$_____\u2014\n& 2a moam\n"
+      },
+      "roi1": {
+        "cell_bboxes_on_roi0": [
+          [
+            253,
+            156,
+            459,
+            204
+          ],
+          [
+            459,
+            156,
+            589,
+            204
+          ],
+          [
+            589,
+            156,
+            794,
+            204
+          ],
+          [
+            253,
+            204,
+            459,
+            253
+          ],
+          [
+            459,
+            204,
+            589,
+            253
+          ],
+          [
+            589,
+            204,
+            794,
+            253
+          ],
+          [
+            253,
+            253,
+            459,
+            303
+          ],
+          [
+            459,
+            253,
+            589,
+            303
+          ],
+          [
+            589,
+            253,
+            794,
+            303
+          ],
+          [
+            253,
+            303,
+            459,
+            352
+          ],
+          [
+            459,
+            303,
+            589,
+            352
+          ],
+          [
+            589,
+            303,
+            794,
+            352
+          ],
+          [
+            253,
+            352,
+            459,
+            404
+          ],
+          [
+            459,
+            352,
+            589,
+            404
+          ],
+          [
+            589,
+            352,
+            794,
+            404
+          ]
+        ]
+      },
+      "roi1_ocr": {
+        "R_Sph": null,
+        "S_Anchor": null,
+        "L_Sph": null,
+        "R_Cyl": "0.00",
+        "C_Anchor": "C",
+        "L_Cyl": "0.00",
+        "R_Axis": "45",
+        "A_Anchor": "A",
+        "L_Axis": "180",
+        "R_Add": "+1.25",
+        "ADD_Anchor": "ADD",
+        "L_Add": "+1.25",
+        "R_blank": null,
+        "blank_anchor": null,
+        "L_blank": null
+      },
+      "roi2": {
+        "roi_id": "ROI_2",
+        "pd_value_bbox": [
+          472,
+          463,
+          102,
+          44
+        ],
+        "pd_value": ""
+      },
+      "roi3_4": {
+        "roi_id": "ROI_3_4",
+        "bboxes": [
+          {
+            "label": "left_occluder",
+            "box": [
+              362,
+              438,
+              72,
+              71
+            ],
+            "state": "filled/active (blue)"
+          },
+          {
+            "label": "right_occluder",
+            "box": [
+              611,
+              432,
+              83,
+              83
+            ],
+            "state": "filled/active (blue)"
+          }
+        ]
+      },
+      "roi5": {
+        "error": "No ROI5 bboxes found in coords.json"
+      },
+      "roi7": {
+        "roi_id": "ROI7",
+        "bbox": [
+          651,
+          601,
+          294,
+          259
+        ],
+        "chart_info": "alphabetic_chart"
+      }
+    },
+    "frame_id": 2532,
+    "time_seconds": 101.28
+  },
+  {
+    "timestamp": "2026-01-21T12:40:54.982891",
+    "rois": {
+      "menu": {
+        "roi_id": "ROI_Menu",
+        "bbox": [
+          0,
+          0,
+          1050,
+          92
+        ],
+        "ocr_text": "fi TOPCON CV-5000PC - x\nFile Course Examination Reference Data [ = \"\n\n\u2014 3 Jaithul is controlling your computer \u2014\na2 2a Peo oap CC lllU!UlUllUlleEe\n"
+      },
+      "roi1": {
+        "cell_bboxes_on_roi0": [
+          [
+            253,
+            156,
+            459,
+            204
+          ],
+          [
+            459,
+            156,
+            589,
+            204
+          ],
+          [
+            589,
+            156,
+            794,
+            204
+          ],
+          [
+            253,
+            204,
+            459,
+            253
+          ],
+          [
+            459,
+            204,
+            589,
+            253
+          ],
+          [
+            589,
+            204,
+            794,
+            253
+          ],
+          [
+            253,
+            253,
+            459,
+            303
+          ],
+          [
+            459,
+            253,
+            589,
+            303
+          ],
+          [
+            589,
+            253,
+            794,
+            303
+          ],
+          [
+            253,
+            303,
+            459,
+            352
+          ],
+          [
+            459,
+            303,
+            589,
+            352
+          ],
+          [
+            589,
+            303,
+            794,
+            352
+          ],
+          [
+            253,
+            352,
+            459,
+            404
+          ],
+          [
+            459,
+            352,
+            589,
+            404
+          ],
+          [
+            589,
+            352,
+            794,
+            404
+          ]
+        ]
+      },
+      "roi1_ocr": {
+        "R_Sph": "+1.75",
+        "S_Anchor": "S",
+        "L_Sph": "+1.50",
+        "R_Cyl": "0.00",
+        "C_Anchor": "C",
+        "L_Cyl": "0.00",
+        "R_Axis": "45",
+        "A_Anchor": "A",
+        "L_Axis": "180",
+        "R_Add": "+1.25",
+        "ADD_Anchor": "ADD",
+        "L_Add": "+1.25",
+        "R_blank": null,
+        "blank_anchor": null,
+        "L_blank": null
+      },
+      "roi2": {
+        "roi_id": "ROI_2",
+        "pd_value_bbox": [
+          472,
+          463,
+          102,
+          44
+        ],
+        "pd_value": ""
+      },
+      "roi3_4": {
+        "roi_id": "ROI_3_4",
+        "bboxes": [
+          {
+            "label": "left_occluder",
+            "box": [
+              362,
+              438,
+              72,
+              71
+            ],
+            "state": "filled/active (blue)"
+          },
+          {
+            "label": "right_occluder",
+            "box": [
+              611,
+              432,
+              83,
+              83
+            ],
+            "state": "filled/active (blue)"
+          }
+        ]
+      },
+      "roi5": {
+        "error": "No ROI5 bboxes found in coords.json"
+      },
+      "roi7": {
+        "roi_id": "ROI7",
+        "bbox": [
+          651,
+          601,
+          294,
+          259
+        ],
+        "chart_info": "alphabetic_chart"
+      }
+    },
+    "frame_id": 2556,
+    "time_seconds": 102.24
+  },
+  {
+    "timestamp": "2026-01-21T12:41:01.866995",
+    "rois": {
+      "menu": {
+        "roi_id": "ROI_Menu",
+        "bbox": [
+          0,
+          0,
+          1051,
+          92
+        ],
+        "ocr_text": "fi, 4\nif TOPCON CV-5000PC = x\nFile Course Examination Reference Data ' |,\n\nToe me ee mem 4 Jaithulis controlling your computer GREE\na2 eco oap -  llU!UlUlUllUlleES\n"
+      },
+      "roi1": {
+        "cell_bboxes_on_roi0": [
+          [
+            253,
+            156,
+            459,
+            204
+          ],
+          [
+            459,
+            156,
+            589,
+            204
+          ],
+          [
+            589,
+            156,
+            794,
+            204
+          ],
+          [
+            253,
+            204,
+            459,
+            253
+          ],
+          [
+            459,
+            204,
+            589,
+            253
+          ],
+          [
+            589,
+            204,
+            794,
+            253
+          ],
+          [
+            253,
+            253,
+            459,
+            303
+          ],
+          [
+            459,
+            253,
+            589,
+            303
+          ],
+          [
+            589,
+            253,
+            794,
+            303
+          ],
+          [
+            253,
+            303,
+            459,
+            352
+          ],
+          [
+            459,
+            303,
+            589,
+            352
+          ],
+          [
+            589,
+            303,
+            794,
+            352
+          ],
+          [
+            253,
+            352,
+            459,
+            404
+          ],
+          [
+            459,
+            352,
+            589,
+            404
+          ],
+          [
+            589,
+            352,
+            794,
+            404
+          ]
+        ]
+      },
+      "roi1_ocr": {
+        "R_Sph": "+1.75",
+        "S_Anchor": "S",
+        "L_Sph": "+1.50",
+        "R_Cyl": "0.00",
+        "C_Anchor": "C",
+        "L_Cyl": "0.00",
+        "R_Axis": "45",
+        "A_Anchor": "A",
+        "L_Axis": "180",
+        "R_Add": "+1.25",
+        "ADD_Anchor": "ADD",
+        "L_Add": "+1.25",
+        "R_blank": null,
+        "blank_anchor": null,
+        "L_blank": null
+      },
+      "roi2": {
+        "roi_id": "ROI_2",
+        "pd_value_bbox": [
+          472,
+          463,
+          102,
+          44
+        ],
+        "pd_value": ""
+      },
+      "roi3_4": {
+        "roi_id": "ROI_3_4",
+        "bboxes": [
+          {
+            "label": "left_occluder",
+            "box": [
+              535,
+              201,
+              153,
+              152
+            ],
+            "state": "unfilled/inactive (gray)"
+          },
+          {
+            "label": "right_occluder",
+            "box": [
+              863,
+              183,
+              135,
+              134
+            ],
+            "state": "unfilled/inactive (gray)"
+          }
+        ]
+      },
+      "roi5": {
+        "error": "No ROI5 bboxes found in coords.json"
+      },
+      "roi7": {
+        "roi_id": "ROI7",
+        "bbox": [
+          651,
+          601,
+          294,
+          259
+        ],
+        "chart_info": "alphabetic_chart"
+      }
+    },
+    "frame_id": 2628,
+    "time_seconds": 105.12
+  },
+  {
+    "timestamp": "2026-01-21T12:41:05.676050",
+    "rois": {
+      "menu": {
+        "roi_id": "ROI_Menu",
+        "bbox": [
+          0,
+          0,
+          1049,
+          92
+        ],
+        "ocr_text": "4: TOPCON Cv-5000PC - x\nFile Course Examination ReferenceData * c G\n\nes @ ene Be m2: Zaithulis controlling your computer \u2014\na2 eco Cll\n"
+      },
+      "roi1": {
+        "cell_bboxes_on_roi0": [
+          [
+            253,
+            156,
+            459,
+            204
+          ],
+          [
+            459,
+            156,
+            589,
+            204
+          ],
+          [
+            589,
+            156,
+            794,
+            204
+          ],
+          [
+            253,
+            204,
+            459,
+            253
+          ],
+          [
+            459,
+            204,
+            589,
+            253
+          ],
+          [
+            589,
+            204,
+            794,
+            253
+          ],
+          [
+            253,
+            253,
+            459,
+            303
+          ],
+          [
+            459,
+            253,
+            589,
+            303
+          ],
+          [
+            589,
+            253,
+            794,
+            303
+          ],
+          [
+            253,
+            303,
+            459,
+            352
+          ],
+          [
+            459,
+            303,
+            589,
+            352
+          ],
+          [
+            589,
+            303,
+            794,
+            352
+          ],
+          [
+            253,
+            352,
+            459,
+            404
+          ],
+          [
+            459,
+            352,
+            589,
+            404
+          ],
+          [
+            589,
+            352,
+            794,
+            404
+          ]
+        ]
+      },
+      "roi1_ocr": {
+        "R_Sph": "+1.75",
+        "S_Anchor": "S",
+        "L_Sph": "+1.50",
+        "R_Cyl": "0.00",
+        "C_Anchor": "C",
+        "L_Cyl": "0.00",
+        "R_Axis": "4",
+        "A_Anchor": "A",
+        "L_Axis": "180",
+        "R_Add": "+1.25",
+        "ADD_Anchor": "ADD",
+        "L_Add": "+41.25",
+        "R_blank": null,
+        "blank_anchor": null,
+        "L_blank": null
+      },
+      "roi2": {
+        "roi_id": "ROI_2",
+        "pd_value_bbox": [
+          472,
+          463,
+          102,
+          44
+        ],
+        "pd_value": "58.5"
+      },
+      "roi3_4": {
+        "roi_id": "ROI_3_4",
+        "bboxes": [
+          {
+            "label": "left_occluder",
+            "box": [
+              355,
+              432,
+              83,
+              83
+            ],
+            "state": "filled/active (blue)"
+          },
+          {
+            "label": "right_occluder",
+            "box": [
+              616,
+              438,
+              72,
+              71
+            ],
+            "state": "filled/active (blue)"
+          }
+        ]
+      },
+      "roi5": {
+        "error": "No ROI5 bboxes found in coords.json"
+      },
+      "roi7": {
+        "roi_id": "ROI7",
+        "bbox": [
+          651,
+          601,
+          294,
+          259
+        ],
+        "chart_info": "e_charts"
+      }
+    },
+    "frame_id": 2952,
+    "time_seconds": 118.08
+  },
+  {
+    "timestamp": "2026-01-21T12:41:11.407829",
+    "rois": {
+      "menu": {
+        "roi_id": "ROI_Menu",
+        "bbox": [
+          0,
+          0,
+          1049,
+          92
+        ],
+        "ocr_text": "iff TOPCON CV-5000PC = x\nFile Course Examination Reference Data s\n\noe mm en ee a) ee Zaithul is controlling your computer stop Control [iat\na2 eC op lll! lee\n"
+      },
+      "roi1": {
+        "cell_bboxes_on_roi0": [
+          [
+            253,
+            156,
+            459,
+            204
+          ],
+          [
+            459,
+            156,
+            589,
+            204
+          ],
+          [
+            589,
+            156,
+            794,
+            204
+          ],
+          [
+            253,
+            204,
+            459,
+            253
+          ],
+          [
+            459,
+            204,
+            589,
+            253
+          ],
+          [
+            589,
+            204,
+            794,
+            253
+          ],
+          [
+            253,
+            253,
+            459,
+            303
+          ],
+          [
+            459,
+            253,
+            589,
+            303
+          ],
+          [
+            589,
+            253,
+            794,
+            303
+          ],
+          [
+            253,
+            303,
+            459,
+            352
+          ],
+          [
+            459,
+            303,
+            589,
+            352
+          ],
+          [
+            589,
+            303,
+            794,
+            352
+          ],
+          [
+            253,
+            352,
+            459,
+            404
+          ],
+          [
+            459,
+            352,
+            589,
+            404
+          ],
+          [
+            589,
+            352,
+            794,
+            404
+          ]
+        ]
+      },
+      "roi1_ocr": {
+        "R_Sph": "0.00",
+        "S_Anchor": "S",
+        "L_Sph": "0.00",
+        "R_Cyl": "0.00",
+        "C_Anchor": "C",
+        "L_Cyl": "0.00",
+        "R_Axis": "80",
+        "A_Anchor": "A",
+        "L_Axis": "180",
+        "R_Add": "0.00",
+        "ADD_Anchor": "ADD",
+        "L_Add": "0.00",
+        "R_blank": null,
+        "blank_anchor": null,
+        "L_blank": null
+      },
+      "roi2": {
+        "roi_id": "ROI_2",
+        "pd_value_bbox": [
+          472,
+          463,
+          102,
+          44
+        ],
+        "pd_value": "64.0"
+      },
+      "roi3_4": {
+        "roi_id": "ROI_3_4",
+        "bboxes": [
+          {
+            "label": "left_occluder",
+            "box": [
+              355,
+              432,
+              83,
+              83
+            ],
+            "state": "filled/active (blue)"
+          },
+          {
+            "label": "right_occluder",
+            "box": [
+              616,
+              438,
+              72,
+              71
+            ],
+            "state": "filled/active (blue)"
+          }
+        ]
+      },
+      "roi5": {
+        "error": "No ROI5 bboxes found in coords.json"
+      },
+      "roi7": {
+        "roi_id": "ROI7",
+        "bbox": [
+          651,
+          601,
+          294,
+          259
+        ],
+        "chart_info": "e_charts"
+      }
+    },
+    "frame_id": 2964,
+    "time_seconds": 118.56
+  },
+  {
+    "timestamp": "2026-01-21T12:41:13.702102",
+    "rois": {
+      "menu": {
+        "roi_id": "ROI_Menu",
+        "bbox": [
+          0,
+          0,
+          1049,
+          92
+        ],
+        "ocr_text": "4: TOPCON Cv-5000PC - x\nFile Course Examination ReferenceData * c G j\n\n\u2014e @ ene Be m2: Zaithulis controlling your computer \u2014\nfo eo a: oe ry a ee\n"
+      },
+      "roi1": {
+        "cell_bboxes_on_roi0": [
+          [
+            253,
+            156,
+            459,
+            204
+          ],
+          [
+            459,
+            156,
+            589,
+            204
+          ],
+          [
+            589,
+            156,
+            794,
+            204
+          ],
+          [
+            253,
+            204,
+            459,
+            253
+          ],
+          [
+            459,
+            204,
+            589,
+            253
+          ],
+          [
+            589,
+            204,
+            794,
+            253
+          ],
+          [
+            253,
+            253,
+            459,
+            303
+          ],
+          [
+            459,
+            253,
+            589,
+            303
+          ],
+          [
+            589,
+            253,
+            794,
+            303
+          ],
+          [
+            253,
+            303,
+            459,
+            352
+          ],
+          [
+            459,
+            303,
+            589,
+            352
+          ],
+          [
+            589,
+            303,
+            794,
+            352
+          ],
+          [
+            253,
+            352,
+            459,
+            404
+          ],
+          [
+            459,
+            352,
+            589,
+            404
+          ],
+          [
+            589,
+            352,
+            794,
+            404
+          ]
+        ]
+      },
+      "roi1_ocr": {
+        "R_Sph": "0.00",
+        "S_Anchor": "S",
+        "L_Sph": "0.00",
+        "R_Cyl": "0.00",
+        "C_Anchor": "C",
+        "L_Cyl": "0.00",
+        "R_Axis": "180",
+        "A_Anchor": "A",
+        "L_Axis": "180",
+        "R_Add": "0.00",
+        "ADD_Anchor": "ADD",
+        "L_Add": "0.00",
+        "R_blank": null,
+        "blank_anchor": null,
+        "L_blank": null
+      },
+      "roi2": {
+        "roi_id": "ROI_2",
+        "pd_value_bbox": [
+          472,
+          463,
+          102,
+          44
+        ],
+        "pd_value": "64.0"
+      },
+      "roi3_4": {
+        "roi_id": "ROI_3_4",
+        "bboxes": [
+          {
+            "label": "left_occluder",
+            "box": [
+              355,
+              432,
+              83,
+              83
+            ],
+            "state": "filled/active (blue)"
+          },
+          {
+            "label": "right_occluder",
+            "box": [
+              616,
+              438,
+              72,
+              71
+            ],
+            "state": "filled/active (blue)"
+          }
+        ]
+      },
+      "roi5": {
+        "error": "No ROI5 bboxes found in coords.json"
+      },
+      "roi7": {
+        "roi_id": "ROI7",
+        "bbox": [
+          651,
+          601,
+          294,
+          259
+        ],
+        "chart_info": "alphabetic_chart"
+      }
+    },
+    "frame_id": 3024,
+    "time_seconds": 120.96
+  },
+  {
+    "timestamp": "2026-01-21T12:41:17.700518",
+    "rois": {
+      "menu": {
+        "roi_id": "ROI_Menu",
+        "bbox": [
+          0,
+          0,
+          1050,
+          92
+        ],
+        "ocr_text": "\u00a7& TOPCON CV-5000PC = x\nFile Course Examination Reference Data\nSe Jaithulis controlling your computer RSTn\na2 2a rPenaean ~ CCl\n"
+      },
+      "roi1": {
+        "cell_bboxes_on_roi0": [
+          [
+            253,
+            156,
+            459,
+            204
+          ],
+          [
+            459,
+            156,
+            589,
+            204
+          ],
+          [
+            589,
+            156,
+            794,
+            204
+          ],
+          [
+            253,
+            204,
+            459,
+            253
+          ],
+          [
+            459,
+            204,
+            589,
+            253
+          ],
+          [
+            589,
+            204,
+            794,
+            253
+          ],
+          [
+            253,
+            253,
+            459,
+            303
+          ],
+          [
+            459,
+            253,
+            589,
+            303
+          ],
+          [
+            589,
+            253,
+            794,
+            303
+          ],
+          [
+            253,
+            303,
+            459,
+            352
+          ],
+          [
+            459,
+            303,
+            589,
+            352
+          ],
+          [
+            589,
+            303,
+            794,
+            352
+          ],
+          [
+            253,
+            352,
+            459,
+            404
+          ],
+          [
+            459,
+            352,
+            589,
+            404
+          ],
+          [
+            589,
+            352,
+            794,
+            404
+          ]
+        ]
+      },
+      "roi1_ocr": {
+        "R_Sph": "0.00",
+        "S_Anchor": "S",
+        "L_Sph": "0.00",
+        "R_Cyl": "0.00",
+        "C_Anchor": "C",
+        "L_Cyl": "0.00",
+        "R_Axis": "180",
+        "A_Anchor": "A",
+        "L_Axis": "180",
+        "R_Add": "0.00",
+        "ADD_Anchor": "ADD",
+        "L_Add": "0.00",
+        "R_blank": null,
+        "blank_anchor": null,
+        "L_blank": null
+      },
+      "roi2": {
+        "roi_id": "ROI_2",
+        "pd_value_bbox": [
+          472,
+          463,
+          102,
+          44
+        ],
+        "pd_value": "64.0"
+      },
+      "roi3_4": {
+        "roi_id": "ROI_3_4",
+        "bboxes": [
+          {
+            "label": "left_occluder",
+            "box": [
+              362,
+              438,
+              72,
+              71
+            ],
+            "state": "filled/active (blue)"
+          },
+          {
+            "label": "right_occluder",
+            "box": [
+              611,
+              432,
+              83,
+              83
+            ],
+            "state": "unfilled/inactive (gray)"
+          }
+        ]
+      },
+      "roi5": {
+        "error": "No ROI5 bboxes found in coords.json"
+      },
+      "roi7": {
+        "roi_id": "ROI7",
+        "bbox": [
+          651,
+          601,
+          294,
+          259
+        ],
+        "chart_info": "alphabetic_chart"
+      }
+    },
+    "frame_id": 3348,
+    "time_seconds": 133.92
+  },
+  {
+    "timestamp": "2026-01-21T12:41:19.549831",
+    "rois": {
+      "menu": {
+        "roi_id": "ROI_Menu",
+        "bbox": [
+          0,
+          0,
+          1050,
+          92
+        ],
+        "ocr_text": "4: TOPCON CV-5000PC \u2014 x\nFile Course Examination ReferenceData * 5 c ;\na2 2a rPenaean ~ CCl\n"
+      },
+      "roi1": {
+        "cell_bboxes_on_roi0": [
+          [
+            253,
+            156,
+            459,
+            204
+          ],
+          [
+            459,
+            156,
+            589,
+            204
+          ],
+          [
+            589,
+            156,
+            794,
+            204
+          ],
+          [
+            253,
+            204,
+            459,
+            253
+          ],
+          [
+            459,
+            204,
+            589,
+            253
+          ],
+          [
+            589,
+            204,
+            794,
+            253
+          ],
+          [
+            253,
+            253,
+            459,
+            303
+          ],
+          [
+            459,
+            253,
+            589,
+            303
+          ],
+          [
+            589,
+            253,
+            794,
+            303
+          ],
+          [
+            253,
+            303,
+            459,
+            352
+          ],
+          [
+            459,
+            303,
+            589,
+            352
+          ],
+          [
+            589,
+            303,
+            794,
+            352
+          ],
+          [
+            253,
+            352,
+            459,
+            404
+          ],
+          [
+            459,
+            352,
+            589,
+            404
+          ],
+          [
+            589,
+            352,
+            794,
+            404
+          ]
+        ]
+      },
+      "roi1_ocr": {
+        "R_Sph": "0.00",
+        "S_Anchor": "S",
+        "L_Sph": "0.00",
+        "R_Cyl": "0.00",
+        "C_Anchor": "C",
+        "L_Cyl": "0.00",
+        "R_Axis": "180",
+        "A_Anchor": "A",
+        "L_Axis": "80",
+        "R_Add": "0.00",
+        "ADD_Anchor": "ADD",
+        "L_Add": "0.00",
+        "R_blank": null,
+        "blank_anchor": null,
+        "L_blank": null
+      },
+      "roi2": {
+        "roi_id": "ROI_2",
+        "pd_value_bbox": [
+          472,
+          463,
+          102,
+          44
+        ],
+        "pd_value": "64.0"
+      },
+      "roi3_4": {
+        "roi_id": "ROI_3_4",
+        "bboxes": [
+          {
+            "label": "left_occluder",
+            "box": [
+              362,
+              438,
+              72,
+              71
+            ],
+            "state": "filled/active (blue)"
+          },
+          {
+            "label": "right_occluder",
+            "box": [
+              611,
+              432,
+              83,
+              83
+            ],
+            "state": "unfilled/inactive (gray)"
+          }
+        ]
+      },
+      "roi5": {
+        "error": "No ROI5 bboxes found in coords.json"
+      },
+      "roi7": {
+        "roi_id": "ROI7",
+        "bbox": [
+          651,
+          601,
+          294,
+          259
+        ],
+        "chart_info": "alphabetic_chart"
+      }
+    },
+    "frame_id": 3384,
+    "time_seconds": 135.36
+  },
+  {
+    "timestamp": "2026-01-21T12:41:21.783697",
+    "rois": {
+      "menu": {
+        "roi_id": "ROI_Menu",
+        "bbox": [
+          0,
+          0,
+          1050,
+          92
+        ],
+        "ocr_text": "4: TOPCON CV-5000PC \u2014 x\nFile Course Examination ReferenceData * 5 c ;\na2 2a rPenaean ~ CCl\n"
+      },
+      "roi1": {
+        "cell_bboxes_on_roi0": [
+          [
+            253,
+            156,
+            459,
+            204
+          ],
+          [
+            459,
+            156,
+            589,
+            204
+          ],
+          [
+            589,
+            156,
+            794,
+            204
+          ],
+          [
+            253,
+            204,
+            459,
+            253
+          ],
+          [
+            459,
+            204,
+            589,
+            253
+          ],
+          [
+            589,
+            204,
+            794,
+            253
+          ],
+          [
+            253,
+            253,
+            459,
+            303
+          ],
+          [
+            459,
+            253,
+            589,
+            303
+          ],
+          [
+            589,
+            253,
+            794,
+            303
+          ],
+          [
+            253,
+            303,
+            459,
+            352
+          ],
+          [
+            459,
+            303,
+            589,
+            352
+          ],
+          [
+            589,
+            303,
+            794,
+            352
+          ],
+          [
+            253,
+            352,
+            459,
+            404
+          ],
+          [
+            459,
+            352,
+            589,
+            404
+          ],
+          [
+            589,
+            352,
+            794,
+            404
+          ]
+        ]
+      },
+      "roi1_ocr": {
+        "R_Sph": "0.00",
+        "S_Anchor": "S",
+        "L_Sph": "0.00",
+        "R_Cyl": "0.00",
+        "C_Anchor": "C",
+        "L_Cyl": "0.00",
+        "R_Axis": "180",
+        "A_Anchor": "A",
+        "L_Axis": "80",
+        "R_Add": "0.00",
+        "ADD_Anchor": "ADD",
+        "L_Add": "0.00",
+        "R_blank": null,
+        "blank_anchor": null,
+        "L_blank": null
+      },
+      "roi2": {
+        "roi_id": "ROI_2",
+        "pd_value_bbox": [
+          472,
+          463,
+          102,
+          44
+        ],
+        "pd_value": "65.5"
+      },
+      "roi3_4": {
+        "roi_id": "ROI_3_4",
+        "bboxes": [
+          {
+            "label": "left_occluder",
+            "box": [
+              362,
+              438,
+              72,
+              71
+            ],
+            "state": "filled/active (blue)"
+          },
+          {
+            "label": "right_occluder",
+            "box": [
+              611,
+              432,
+              83,
+              83
+            ],
+            "state": "unfilled/inactive (gray)"
+          }
+        ]
+      },
+      "roi5": {
+        "error": "No ROI5 bboxes found in coords.json"
+      },
+      "roi7": {
+        "roi_id": "ROI7",
+        "bbox": [
+          651,
+          601,
+          294,
+          259
+        ],
+        "chart_info": "alphabetic_chart"
+      }
+    },
+    "frame_id": 3492,
+    "time_seconds": 139.68
+  },
+  {
+    "timestamp": "2026-01-21T12:41:30.916562",
+    "rois": {
+      "menu": {
+        "roi_id": "ROI_Menu",
+        "bbox": [
+          0,
+          0,
+          1050,
+          92
+        ],
+        "ocr_text": "i TOPCON Cv-5000PC = x\nFile Course Examination Reference Data\neC: _Jaithulis controlling your computer RSS Ren yg\na2 2a Pea eoan -~ = CCCle\n"
+      },
+      "roi1": {
+        "cell_bboxes_on_roi0": [
+          [
+            253,
+            156,
+            459,
+            204
+          ],
+          [
+            459,
+            156,
+            589,
+            204
+          ],
+          [
+            589,
+            156,
+            794,
+            204
+          ],
+          [
+            253,
+            204,
+            459,
+            253
+          ],
+          [
+            459,
+            204,
+            589,
+            253
+          ],
+          [
+            589,
+            204,
+            794,
+            253
+          ],
+          [
+            253,
+            253,
+            459,
+            303
+          ],
+          [
+            459,
+            253,
+            589,
+            303
+          ],
+          [
+            589,
+            253,
+            794,
+            303
+          ],
+          [
+            253,
+            303,
+            459,
+            352
+          ],
+          [
+            459,
+            303,
+            589,
+            352
+          ],
+          [
+            589,
+            303,
+            794,
+            352
+          ],
+          [
+            253,
+            352,
+            459,
+            404
+          ],
+          [
+            459,
+            352,
+            589,
+            404
+          ],
+          [
+            589,
+            352,
+            794,
+            404
+          ]
+        ]
+      },
+      "roi1_ocr": {
+        "R_Sph": "0.00",
+        "S_Anchor": "S",
+        "L_Sph": "0.00",
+        "R_Cyl": "0.00",
+        "C_Anchor": "C",
+        "L_Cyl": "0.00",
+        "R_Axis": "180",
+        "A_Anchor": "A",
+        "L_Axis": "180",
+        "R_Add": "0.00",
+        "ADD_Anchor": "ADD",
+        "L_Add": "0.00",
+        "R_blank": null,
+        "blank_anchor": null,
+        "L_blank": null
+      },
+      "roi2": {
+        "roi_id": "ROI_2",
+        "pd_value_bbox": [
+          472,
+          463,
+          102,
+          44
+        ],
+        "pd_value": "65.5"
+      },
+      "roi3_4": {
+        "roi_id": "ROI_3_4",
+        "bboxes": [
+          {
+            "label": "left_occluder",
+            "box": [
+              362,
+              438,
+              72,
+              71
+            ],
+            "state": "unfilled/inactive (gray)"
+          },
+          {
+            "label": "right_occluder",
+            "box": [
+              613,
+              433,
+              81,
+              80
+            ],
+            "state": "filled/active (blue)"
+          }
+        ]
+      },
+      "roi5": {
+        "error": "No ROI5 bboxes found in coords.json"
+      },
+      "roi7": {
+        "roi_id": "ROI7",
+        "bbox": [
+          651,
+          601,
+          294,
+          259
+        ],
+        "chart_info": "alphabetic_chart"
+      }
+    },
+    "frame_id": 3756,
+    "time_seconds": 150.24
+  },
+  {
+    "timestamp": "2026-01-21T12:41:39.251815",
+    "rois": {
+      "menu": {
+        "roi_id": "ROI_Menu",
+        "bbox": [
+          0,
+          0,
+          1050,
+          92
+        ],
+        "ocr_text": "4) TOPCON C\u00a5-5000PC = x\nFile Course Examination ReferenceData * 5 c ;\na2 2a Poop \u00b0\u00b0 OCCU\n"
+      },
+      "roi1": {
+        "cell_bboxes_on_roi0": [
+          [
+            253,
+            156,
+            459,
+            204
+          ],
+          [
+            459,
+            156,
+            589,
+            204
+          ],
+          [
+            589,
+            156,
+            794,
+            204
+          ],
+          [
+            253,
+            204,
+            459,
+            253
+          ],
+          [
+            459,
+            204,
+            589,
+            253
+          ],
+          [
+            589,
+            204,
+            794,
+            253
+          ],
+          [
+            253,
+            253,
+            459,
+            303
+          ],
+          [
+            459,
+            253,
+            589,
+            303
+          ],
+          [
+            589,
+            253,
+            794,
+            303
+          ],
+          [
+            253,
+            303,
+            459,
+            352
+          ],
+          [
+            459,
+            303,
+            589,
+            352
+          ],
+          [
+            589,
+            303,
+            794,
+            352
+          ],
+          [
+            253,
+            352,
+            459,
+            404
+          ],
+          [
+            459,
+            352,
+            589,
+            404
+          ],
+          [
+            589,
+            352,
+            794,
+            404
+          ]
+        ]
+      },
+      "roi1_ocr": {
+        "R_Sph": "0.00",
+        "S_Anchor": "S",
+        "L_Sph": "0.00",
+        "R_Cyl": "0.00",
+        "C_Anchor": "C",
+        "L_Cyl": "0.00",
+        "R_Axis": "180",
+        "A_Anchor": "A",
+        "L_Axis": "180",
+        "R_Add": "0.00",
+        "ADD_Anchor": "ADD",
+        "L_Add": "0.00",
+        "R_blank": null,
+        "blank_anchor": null,
+        "L_blank": null
+      },
+      "roi2": {
+        "roi_id": "ROI_2",
+        "pd_value_bbox": [
+          472,
+          463,
+          102,
+          44
+        ],
+        "pd_value": "65.5"
+      },
+      "roi3_4": {
+        "roi_id": "ROI_3_4",
+        "bboxes": [
+          {
+            "label": "left_occluder",
+            "box": [
+              362,
+              438,
+              72,
+              71
+            ],
+            "state": "unfilled/inactive (gray)"
+          },
+          {
+            "label": "right_occluder",
+            "box": [
+              606,
+              428,
+              92,
+              92
+            ],
+            "state": "unfilled/inactive (gray)"
+          }
+        ]
+      },
+      "roi5": {
+        "error": "No ROI5 bboxes found in coords.json"
+      },
+      "roi7": {
+        "roi_id": "ROI7",
+        "bbox": [
+          651,
+          601,
+          294,
+          259
+        ],
+        "chart_info": "jcc_chart"
+      }
+    },
+    "frame_id": 4140,
+    "time_seconds": 165.6
+  },
+  {
+    "timestamp": "2026-01-21T12:41:44.575976",
+    "rois": {
+      "menu": {
+        "roi_id": "ROI_Menu",
+        "bbox": [
+          0,
+          0,
+          1050,
+          92
+        ],
+        "ocr_text": "4) TOPCON C\u00a5-5000PC = x\nFile Course Examination ReferenceData * 5 c ;\na2 2a Peo oap - CC COCOOOOCOUlUllee\n"
+      },
+      "roi1": {
+        "cell_bboxes_on_roi0": [
+          [
+            253,
+            156,
+            459,
+            204
+          ],
+          [
+            459,
+            156,
+            589,
+            204
+          ],
+          [
+            589,
+            156,
+            794,
+            204
+          ],
+          [
+            253,
+            204,
+            459,
+            253
+          ],
+          [
+            459,
+            204,
+            589,
+            253
+          ],
+          [
+            589,
+            204,
+            794,
+            253
+          ],
+          [
+            253,
+            253,
+            459,
+            303
+          ],
+          [
+            459,
+            253,
+            589,
+            303
+          ],
+          [
+            589,
+            253,
+            794,
+            303
+          ],
+          [
+            253,
+            303,
+            459,
+            352
+          ],
+          [
+            459,
+            303,
+            589,
+            352
+          ],
+          [
+            589,
+            303,
+            794,
+            352
+          ],
+          [
+            253,
+            352,
+            459,
+            404
+          ],
+          [
+            459,
+            352,
+            589,
+            404
+          ],
+          [
+            589,
+            352,
+            794,
+            404
+          ]
+        ]
+      },
+      "roi1_ocr": {
+        "R_Sph": "0.00",
+        "S_Anchor": "S",
+        "L_Sph": "0.00",
+        "R_Cyl": "0.00",
+        "C_Anchor": "C",
+        "L_Cyl": "0.00",
+        "R_Axis": "180",
+        "A_Anchor": "A",
+        "L_Axis": "5",
+        "R_Add": "0.00",
+        "ADD_Anchor": "ADD",
+        "L_Add": "0.00",
+        "R_blank": null,
+        "blank_anchor": null,
+        "L_blank": null
+      },
+      "roi2": {
+        "roi_id": "ROI_2",
+        "pd_value_bbox": [
+          472,
+          463,
+          102,
+          44
+        ],
+        "pd_value": "65.5"
+      },
+      "roi3_4": {
+        "roi_id": "ROI_3_4",
+        "bboxes": [
+          {
+            "label": "left_occluder",
+            "box": [
+              362,
+              438,
+              72,
+              71
+            ],
+            "state": "unfilled/inactive (gray)"
+          },
+          {
+            "label": "right_occluder",
+            "box": [
+              606,
+              429,
+              90,
+              89
+            ],
+            "state": "unfilled/inactive (gray)"
+          }
+        ]
+      },
+      "roi5": {
+        "error": "No ROI5 bboxes found in coords.json"
+      },
+      "roi7": {
+        "roi_id": "ROI7",
+        "bbox": [
+          651,
+          601,
+          294,
+          259
+        ],
+        "chart_info": "jcc_chart"
+      }
+    },
+    "frame_id": 4320,
+    "time_seconds": 172.8
+  },
+  {
+    "timestamp": "2026-01-21T12:41:46.225820",
+    "rois": {
+      "menu": {
+        "roi_id": "ROI_Menu",
+        "bbox": [
+          0,
+          0,
+          1050,
+          92
+        ],
+        "ocr_text": "4) TOPCON C\u00a5-5000PC = x\nFile Course Examination ReferenceData * 5 c ;\na2 2a Peo oap - CC COCOOOOCOUlUllee\n"
+      },
+      "roi1": {
+        "cell_bboxes_on_roi0": [
+          [
+            253,
+            156,
+            459,
+            204
+          ],
+          [
+            459,
+            156,
+            589,
+            204
+          ],
+          [
+            589,
+            156,
+            794,
+            204
+          ],
+          [
+            253,
+            204,
+            459,
+            253
+          ],
+          [
+            459,
+            204,
+            589,
+            253
+          ],
+          [
+            589,
+            204,
+            794,
+            253
+          ],
+          [
+            253,
+            253,
+            459,
+            303
+          ],
+          [
+            459,
+            253,
+            589,
+            303
+          ],
+          [
+            589,
+            253,
+            794,
+            303
+          ],
+          [
+            253,
+            303,
+            459,
+            352
+          ],
+          [
+            459,
+            303,
+            589,
+            352
+          ],
+          [
+            589,
+            303,
+            794,
+            352
+          ],
+          [
+            253,
+            352,
+            459,
+            404
+          ],
+          [
+            459,
+            352,
+            589,
+            404
+          ],
+          [
+            589,
+            352,
+            794,
+            404
+          ]
+        ]
+      },
+      "roi1_ocr": {
+        "R_Sph": "0.00",
+        "S_Anchor": "S",
+        "L_Sph": "0.00",
+        "R_Cyl": "0.00",
+        "C_Anchor": "C",
+        "L_Cyl": "0.00",
+        "R_Axis": "180",
+        "A_Anchor": "A",
+        "L_Axis": null,
+        "R_Add": "0.00",
+        "ADD_Anchor": "ADD",
+        "L_Add": "0.00",
+        "R_blank": null,
+        "blank_anchor": null,
+        "L_blank": null
+      },
+      "roi2": {
+        "roi_id": "ROI_2",
+        "pd_value_bbox": [
+          472,
+          463,
+          102,
+          44
+        ],
+        "pd_value": "65.5"
+      },
+      "roi3_4": {
+        "roi_id": "ROI_3_4",
+        "bboxes": [
+          {
+            "label": "left_occluder",
+            "box": [
+              362,
+              438,
+              72,
+              71
+            ],
+            "state": "unfilled/inactive (gray)"
+          },
+          {
+            "label": "right_occluder",
+            "box": [
+              606,
+              429,
+              90,
+              89
+            ],
+            "state": "unfilled/inactive (gray)"
+          }
+        ]
+      },
+      "roi5": {
+        "error": "No ROI5 bboxes found in coords.json"
+      },
+      "roi7": {
+        "roi_id": "ROI7",
+        "bbox": [
+          651,
+          601,
+          294,
+          259
+        ],
+        "chart_info": "jcc_chart"
+      }
+    },
+    "frame_id": 4404,
+    "time_seconds": 176.16
+  },
+  {
+    "timestamp": "2026-01-21T12:41:48.957651",
+    "rois": {
+      "menu": {
+        "roi_id": "ROI_Menu",
+        "bbox": [
+          0,
+          0,
+          1050,
+          92
+        ],
+        "ocr_text": "4) TOPCON C\u00a5-5000PC = x\nFile Course Examination ReferenceData * 5 c ;\na2 2a Peo oap - CC COCOOOOCOUlUllee\n"
+      },
+      "roi1": {
+        "cell_bboxes_on_roi0": [
+          [
+            253,
+            156,
+            459,
+            204
+          ],
+          [
+            459,
+            156,
+            589,
+            204
+          ],
+          [
+            589,
+            156,
+            794,
+            204
+          ],
+          [
+            253,
+            204,
+            459,
+            253
+          ],
+          [
+            459,
+            204,
+            589,
+            253
+          ],
+          [
+            589,
+            204,
+            794,
+            253
+          ],
+          [
+            253,
+            253,
+            459,
+            303
+          ],
+          [
+            459,
+            253,
+            589,
+            303
+          ],
+          [
+            589,
+            253,
+            794,
+            303
+          ],
+          [
+            253,
+            303,
+            459,
+            352
+          ],
+          [
+            459,
+            303,
+            589,
+            352
+          ],
+          [
+            589,
+            303,
+            794,
+            352
+          ],
+          [
+            253,
+            352,
+            459,
+            404
+          ],
+          [
+            459,
+            352,
+            589,
+            404
+          ],
+          [
+            589,
+            352,
+            794,
+            404
+          ]
+        ]
+      },
+      "roi1_ocr": {
+        "R_Sph": "0.00",
+        "S_Anchor": "S",
+        "L_Sph": "0.00",
+        "R_Cyl": "0.00",
+        "C_Anchor": "C",
+        "L_Cyl": "0.00",
+        "R_Axis": "180",
+        "A_Anchor": "A",
+        "L_Axis": "5",
+        "R_Add": "0.00",
+        "ADD_Anchor": "ADD",
+        "L_Add": "0.00",
+        "R_blank": null,
+        "blank_anchor": null,
+        "L_blank": null
+      },
+      "roi2": {
+        "roi_id": "ROI_2",
+        "pd_value_bbox": [
+          472,
+          463,
+          102,
+          44
+        ],
+        "pd_value": "65.5"
+      },
+      "roi3_4": {
+        "roi_id": "ROI_3_4",
+        "bboxes": [
+          {
+            "label": "left_occluder",
+            "box": [
+              362,
+              438,
+              72,
+              71
+            ],
+            "state": "unfilled/inactive (gray)"
+          },
+          {
+            "label": "right_occluder",
+            "box": [
+              606,
+              429,
+              90,
+              89
+            ],
+            "state": "unfilled/inactive (gray)"
+          }
+        ]
+      },
+      "roi5": {
+        "error": "No ROI5 bboxes found in coords.json"
+      },
+      "roi7": {
+        "roi_id": "ROI7",
+        "bbox": [
+          651,
+          601,
+          294,
+          259
+        ],
+        "chart_info": "jcc_chart"
+      }
+    },
+    "frame_id": 4476,
+    "time_seconds": 179.04
+  },
+  {
+    "timestamp": "2026-01-21T12:41:50.555004",
+    "rois": {
+      "menu": {
+        "roi_id": "ROI_Menu",
+        "bbox": [
+          0,
+          0,
+          1050,
+          92
+        ],
+        "ocr_text": "#& TOPCON Cv-S000PC \u2014 x\nFile Course Examination Reference Data $\nowe me ne em \u00ab2 Zaithul is controlling your computer stop Control |i tas\na2 2a Peo oap - CC COCOOOOCOUlUllee\n"
+      },
+      "roi1": {
+        "cell_bboxes_on_roi0": [
+          [
+            253,
+            156,
+            459,
+            204
+          ],
+          [
+            459,
+            156,
+            589,
+            204
+          ],
+          [
+            589,
+            156,
+            794,
+            204
+          ],
+          [
+            253,
+            204,
+            459,
+            253
+          ],
+          [
+            459,
+            204,
+            589,
+            253
+          ],
+          [
+            589,
+            204,
+            794,
+            253
+          ],
+          [
+            253,
+            253,
+            459,
+            303
+          ],
+          [
+            459,
+            253,
+            589,
+            303
+          ],
+          [
+            589,
+            253,
+            794,
+            303
+          ],
+          [
+            253,
+            303,
+            459,
+            352
+          ],
+          [
+            459,
+            303,
+            589,
+            352
+          ],
+          [
+            589,
+            303,
+            794,
+            352
+          ],
+          [
+            253,
+            352,
+            459,
+            404
+          ],
+          [
+            459,
+            352,
+            589,
+            404
+          ],
+          [
+            589,
+            352,
+            794,
+            404
+          ]
+        ]
+      },
+      "roi1_ocr": {
+        "R_Sph": "0.00",
+        "S_Anchor": "S",
+        "L_Sph": "0.00",
+        "R_Cyl": "0.00",
+        "C_Anchor": "C",
+        "L_Cyl": "-0.25",
+        "R_Axis": "180",
+        "A_Anchor": "A",
+        "L_Axis": "8",
+        "R_Add": "0.00",
+        "ADD_Anchor": "ADD",
+        "L_Add": "0.00",
+        "R_blank": null,
+        "blank_anchor": null,
+        "L_blank": null
+      },
+      "roi2": {
+        "roi_id": "ROI_2",
+        "pd_value_bbox": [
+          472,
+          463,
+          102,
+          44
+        ],
+        "pd_value": "65.5"
+      },
+      "roi3_4": {
+        "roi_id": "ROI_3_4",
+        "bboxes": [
+          {
+            "label": "left_occluder",
+            "box": [
+              362,
+              438,
+              72,
+              71
+            ],
+            "state": "unfilled/inactive (gray)"
+          },
+          {
+            "label": "right_occluder",
+            "box": [
+              766,
+              465,
+              151,
+              150
+            ],
+            "state": "unfilled/inactive (gray)"
+          }
+        ]
+      },
+      "roi5": {
+        "error": "No ROI5 bboxes found in coords.json"
+      },
+      "roi7": {
+        "roi_id": "ROI7",
+        "bbox": [
+          651,
+          601,
+          294,
+          259
+        ],
+        "chart_info": "jcc_chart"
+      }
+    },
+    "frame_id": 4500,
+    "time_seconds": 180.0
+  },
+  {
+    "timestamp": "2026-01-21T12:41:52.900140",
+    "rois": {
+      "menu": {
+        "roi_id": "ROI_Menu",
+        "bbox": [
+          0,
+          0,
+          1050,
+          92
+        ],
+        "ocr_text": "fi TOPCON Cv-S000PC a Ms\nFile Course Examination Reference Data $\n5 eee Jaithul is controlling your computer stop Control [iia\na 2a PLDT  COCOOOOUUlFlllee\n"
+      },
+      "roi1": {
+        "cell_bboxes_on_roi0": [
+          [
+            253,
+            156,
+            459,
+            204
+          ],
+          [
+            459,
+            156,
+            589,
+            204
+          ],
+          [
+            589,
+            156,
+            794,
+            204
+          ],
+          [
+            253,
+            204,
+            459,
+            253
+          ],
+          [
+            459,
+            204,
+            589,
+            253
+          ],
+          [
+            589,
+            204,
+            794,
+            253
+          ],
+          [
+            253,
+            253,
+            459,
+            303
+          ],
+          [
+            459,
+            253,
+            589,
+            303
+          ],
+          [
+            589,
+            253,
+            794,
+            303
+          ],
+          [
+            253,
+            303,
+            459,
+            352
+          ],
+          [
+            459,
+            303,
+            589,
+            352
+          ],
+          [
+            589,
+            303,
+            794,
+            352
+          ],
+          [
+            253,
+            352,
+            459,
+            404
+          ],
+          [
+            459,
+            352,
+            589,
+            404
+          ],
+          [
+            589,
+            352,
+            794,
+            404
+          ]
+        ]
+      },
+      "roi1_ocr": {
+        "R_Sph": "0.00",
+        "S_Anchor": "S",
+        "L_Sph": "0.00",
+        "R_Cyl": "0.00",
+        "C_Anchor": "C",
+        "L_Cyl": "-0.25",
+        "R_Axis": "180",
+        "A_Anchor": "A",
+        "L_Axis": null,
+        "R_Add": "0.00",
+        "ADD_Anchor": "ADD",
+        "L_Add": "0.00",
+        "R_blank": null,
+        "blank_anchor": null,
+        "L_blank": null
+      },
+      "roi2": {
+        "roi_id": "ROI_2",
+        "pd_value_bbox": [
+          472,
+          463,
+          102,
+          44
+        ],
+        "pd_value": "65.5"
+      },
+      "roi3_4": {
+        "roi_id": "ROI_3_4",
+        "bboxes": [
+          {
+            "label": "left_occluder",
+            "box": [
+              362,
+              438,
+              72,
+              71
+            ],
+            "state": "unfilled/inactive (gray)"
+          },
+          {
+            "label": "right_occluder",
+            "box": [
+              606,
+              429,
+              90,
+              89
+            ],
+            "state": "unfilled/inactive (gray)"
+          }
+        ]
+      },
+      "roi5": {
+        "error": "No ROI5 bboxes found in coords.json"
+      },
+      "roi7": {
+        "roi_id": "ROI7",
+        "bbox": [
+          651,
+          601,
+          294,
+          259
+        ],
+        "chart_info": "jcc_chart"
+      }
+    },
+    "frame_id": 4512,
+    "time_seconds": 180.48
+  },
+  {
+    "timestamp": "2026-01-21T12:41:58.545690",
+    "rois": {
+      "menu": {
+        "roi_id": "ROI_Menu",
+        "bbox": [
+          0,
+          0,
+          1050,
+          92
+        ],
+        "ocr_text": "fj TOPCON CV-5000PC - x\nFile Course Examination Reference Data f\n\n5 Ss Jaithul is controlling your computer (RS Rey\na 2a Pe Loop CC COCOOOOCOUCUlUlUllee\n"
+      },
+      "roi1": {
+        "cell_bboxes_on_roi0": [
+          [
+            253,
+            156,
+            459,
+            204
+          ],
+          [
+            459,
+            156,
+            589,
+            204
+          ],
+          [
+            589,
+            156,
+            794,
+            204
+          ],
+          [
+            253,
+            204,
+            459,
+            253
+          ],
+          [
+            459,
+            204,
+            589,
+            253
+          ],
+          [
+            589,
+            204,
+            794,
+            253
+          ],
+          [
+            253,
+            253,
+            459,
+            303
+          ],
+          [
+            459,
+            253,
+            589,
+            303
+          ],
+          [
+            589,
+            253,
+            794,
+            303
+          ],
+          [
+            253,
+            303,
+            459,
+            352
+          ],
+          [
+            459,
+            303,
+            589,
+            352
+          ],
+          [
+            589,
+            303,
+            794,
+            352
+          ],
+          [
+            253,
+            352,
+            459,
+            404
+          ],
+          [
+            459,
+            352,
+            589,
+            404
+          ],
+          [
+            589,
+            352,
+            794,
+            404
+          ]
+        ]
+      },
+      "roi1_ocr": {
+        "R_Sph": "0.00",
+        "S_Anchor": "S",
+        "L_Sph": "0.00",
+        "R_Cyl": "0.00",
+        "C_Anchor": "C",
+        "L_Cyl": "-0.25",
+        "R_Axis": "180",
+        "A_Anchor": "A",
+        "L_Axis": "180",
+        "R_Add": "0.00",
+        "ADD_Anchor": "ADD",
+        "L_Add": "0.00",
+        "R_blank": null,
+        "blank_anchor": null,
+        "L_blank": null
+      },
+      "roi2": {
+        "roi_id": "ROI_2",
+        "pd_value_bbox": [
+          472,
+          463,
+          102,
+          44
+        ],
+        "pd_value": "65.5"
+      },
+      "roi3_4": {
+        "roi_id": "ROI_3_4",
+        "bboxes": [
+          {
+            "label": "left_occluder",
+            "box": [
+              362,
+              438,
+              72,
+              71
+            ],
+            "state": "unfilled/inactive (gray)"
+          },
+          {
+            "label": "right_occluder",
+            "box": [
+              618,
+              439,
+              70,
+              69
+            ],
+            "state": "unfilled/inactive (gray)"
+          }
+        ]
+      },
+      "roi5": {
+        "error": "No ROI5 bboxes found in coords.json"
+      },
+      "roi7": {
+        "roi_id": "ROI7",
+        "bbox": [
+          651,
+          601,
+          294,
+          259
+        ],
+        "chart_info": "jcc_chart"
+      }
+    },
+    "frame_id": 4620,
+    "time_seconds": 184.8
+  },
+  {
+    "timestamp": "2026-01-21T12:42:00.439280",
+    "rois": {
+      "menu": {
+        "roi_id": "ROI_Menu",
+        "bbox": [
+          0,
+          0,
+          1050,
+          92
+        ],
+        "ocr_text": "fj TOPCON CV-5000PC - x\nFile Course Examination Reference Data\n\n; So Jaithul is controlling your computer (RS Rey\na 2a Pe Loop CC COCOOOOCOUCUlUlUllee\n"
+      },
+      "roi1": {
+        "cell_bboxes_on_roi0": [
+          [
+            253,
+            156,
+            459,
+            204
+          ],
+          [
+            459,
+            156,
+            589,
+            204
+          ],
+          [
+            589,
+            156,
+            794,
+            204
+          ],
+          [
+            253,
+            204,
+            459,
+            253
+          ],
+          [
+            459,
+            204,
+            589,
+            253
+          ],
+          [
+            589,
+            204,
+            794,
+            253
+          ],
+          [
+            253,
+            253,
+            459,
+            303
+          ],
+          [
+            459,
+            253,
+            589,
+            303
+          ],
+          [
+            589,
+            253,
+            794,
+            303
+          ],
+          [
+            253,
+            303,
+            459,
+            352
+          ],
+          [
+            459,
+            303,
+            589,
+            352
+          ],
+          [
+            589,
+            303,
+            794,
+            352
+          ],
+          [
+            253,
+            352,
+            459,
+            404
+          ],
+          [
+            459,
+            352,
+            589,
+            404
+          ],
+          [
+            589,
+            352,
+            794,
+            404
+          ]
+        ]
+      },
+      "roi1_ocr": {
+        "R_Sph": "0.00",
+        "S_Anchor": "S",
+        "L_Sph": "0.00",
+        "R_Cyl": "0.00",
+        "C_Anchor": "C",
+        "L_Cyl": "-0.25",
+        "R_Axis": "180",
+        "A_Anchor": "A",
+        "L_Axis": "9",
+        "R_Add": "0.00",
+        "ADD_Anchor": "ADD",
+        "L_Add": "0.00",
+        "R_blank": null,
+        "blank_anchor": null,
+        "L_blank": null
+      },
+      "roi2": {
+        "roi_id": "ROI_2",
+        "pd_value_bbox": [
+          472,
+          463,
+          102,
+          44
+        ],
+        "pd_value": "65.5"
+      },
+      "roi3_4": {
+        "roi_id": "ROI_3_4",
+        "bboxes": [
+          {
+            "label": "left_occluder",
+            "box": [
+              362,
+              438,
+              72,
+              71
+            ],
+            "state": "unfilled/inactive (gray)"
+          },
+          {
+            "label": "right_occluder",
+            "box": [
+              611,
+              432,
+              83,
+              83
+            ],
+            "state": "unfilled/inactive (gray)"
+          }
+        ]
+      },
+      "roi5": {
+        "error": "No ROI5 bboxes found in coords.json"
+      },
+      "roi7": {
+        "roi_id": "ROI7",
+        "bbox": [
+          651,
+          601,
+          294,
+          259
+        ],
+        "chart_info": "jcc_chart"
+      }
+    },
+    "frame_id": 4692,
+    "time_seconds": 187.68
+  },
+  {
+    "timestamp": "2026-01-21T12:42:04.339831",
+    "rois": {
+      "menu": {
+        "roi_id": "ROI_Menu",
+        "bbox": [
+          0,
+          0,
+          1050,
+          92
+        ],
+        "ocr_text": "4: TOPCON Cv-5000PC - x\nFile Course Examination ReferenceData * 5 c ;\n\n\u2014\u2014  \u2014\u2014_ #_Jaithul is controlling your computer oo \u2014\u2014\na 2a Pe Loop CC COCOOOOCOUCUlUlUllee\n"
+      },
+      "roi1": {
+        "cell_bboxes_on_roi0": [
+          [
+            253,
+            156,
+            459,
+            204
+          ],
+          [
+            459,
+            156,
+            589,
+            204
+          ],
+          [
+            589,
+            156,
+            794,
+            204
+          ],
+          [
+            253,
+            204,
+            459,
+            253
+          ],
+          [
+            459,
+            204,
+            589,
+            253
+          ],
+          [
+            589,
+            204,
+            794,
+            253
+          ],
+          [
+            253,
+            253,
+            459,
+            303
+          ],
+          [
+            459,
+            253,
+            589,
+            303
+          ],
+          [
+            589,
+            253,
+            794,
+            303
+          ],
+          [
+            253,
+            303,
+            459,
+            352
+          ],
+          [
+            459,
+            303,
+            589,
+            352
+          ],
+          [
+            589,
+            303,
+            794,
+            352
+          ],
+          [
+            253,
+            352,
+            459,
+            404
+          ],
+          [
+            459,
+            352,
+            589,
+            404
+          ],
+          [
+            589,
+            352,
+            794,
+            404
+          ]
+        ]
+      },
+      "roi1_ocr": {
+        "R_Sph": "0.00",
+        "S_Anchor": "S",
+        "L_Sph": "0.00",
+        "R_Cyl": "0.00",
+        "C_Anchor": "C",
+        "L_Cyl": "-0.25",
+        "R_Axis": "180",
+        "A_Anchor": "A",
+        "L_Axis": "180",
+        "R_Add": "0.00",
+        "ADD_Anchor": "ADD",
+        "L_Add": "0.00",
+        "R_blank": null,
+        "blank_anchor": null,
+        "L_blank": null
+      },
+      "roi2": {
+        "roi_id": "ROI_2",
+        "pd_value_bbox": [
+          472,
+          463,
+          102,
+          44
+        ],
+        "pd_value": "65.5"
+      },
+      "roi3_4": {
+        "roi_id": "ROI_3_4",
+        "bboxes": [
+          {
+            "label": "left_occluder",
+            "box": [
+              362,
+              438,
+              72,
+              71
+            ],
+            "state": "unfilled/inactive (gray)"
+          },
+          {
+            "label": "right_occluder",
+            "box": [
+              611,
+              431,
+              83,
+              83
+            ],
+            "state": "unfilled/inactive (gray)"
+          }
+        ]
+      },
+      "roi5": {
+        "error": "No ROI5 bboxes found in coords.json"
+      },
+      "roi7": {
+        "roi_id": "ROI7",
+        "bbox": [
+          651,
+          601,
+          294,
+          259
+        ],
+        "chart_info": "jcc_chart"
+      }
+    },
+    "frame_id": 4716,
+    "time_seconds": 188.64
+  },
+  {
+    "timestamp": "2026-01-21T12:42:11.733922",
+    "rois": {
+      "menu": {
+        "roi_id": "ROI_Menu",
+        "bbox": [
+          0,
+          0,
+          1050,
+          92
+        ],
+        "ocr_text": "4: TOPCON Cv-5000PC - x\nFile Course Examination ReferenceData * 5 c ;\n\n\u2014\u2014\u2014\u2014 \u2014\u2014\u2014\u2014_ # _Jaithul is controlling your computer oo \u2014\u2014\na2 2a Poop - \u2014CCOOOOCOUCUlUlle\n"
+      },
+      "roi1": {
+        "cell_bboxes_on_roi0": [
+          [
+            253,
+            156,
+            459,
+            204
+          ],
+          [
+            459,
+            156,
+            589,
+            204
+          ],
+          [
+            589,
+            156,
+            794,
+            204
+          ],
+          [
+            253,
+            204,
+            459,
+            253
+          ],
+          [
+            459,
+            204,
+            589,
+            253
+          ],
+          [
+            589,
+            204,
+            794,
+            253
+          ],
+          [
+            253,
+            253,
+            459,
+            303
+          ],
+          [
+            459,
+            253,
+            589,
+            303
+          ],
+          [
+            589,
+            253,
+            794,
+            303
+          ],
+          [
+            253,
+            303,
+            459,
+            352
+          ],
+          [
+            459,
+            303,
+            589,
+            352
+          ],
+          [
+            589,
+            303,
+            794,
+            352
+          ],
+          [
+            253,
+            352,
+            459,
+            404
+          ],
+          [
+            459,
+            352,
+            589,
+            404
+          ],
+          [
+            589,
+            352,
+            794,
+            404
+          ]
+        ]
+      },
+      "roi1_ocr": {
+        "R_Sph": "0.00",
+        "S_Anchor": "S",
+        "L_Sph": "0.00",
+        "R_Cyl": "0.00",
+        "C_Anchor": "C",
+        "L_Cyl": "0.00",
+        "R_Axis": "180",
+        "A_Anchor": "A",
+        "L_Axis": "180",
+        "R_Add": "0.00",
+        "ADD_Anchor": "ADD",
+        "L_Add": "0.00",
+        "R_blank": null,
+        "blank_anchor": null,
+        "L_blank": null
+      },
+      "roi2": {
+        "roi_id": "ROI_2",
+        "pd_value_bbox": [
+          472,
+          463,
+          102,
+          44
+        ],
+        "pd_value": "65.5"
+      },
+      "roi3_4": {
+        "roi_id": "ROI_3_4",
+        "bboxes": [
+          {
+            "label": "left_occluder",
+            "box": [
+              362,
+              438,
+              72,
+              71
+            ],
+            "state": "unfilled/inactive (gray)"
+          },
+          {
+            "label": "right_occluder",
+            "box": [
+              608,
+              429,
+              90,
+              89
+            ],
+            "state": "unfilled/inactive (gray)"
+          }
+        ]
+      },
+      "roi5": {
+        "error": "No ROI5 bboxes found in coords.json"
+      },
+      "roi7": {
+        "roi_id": "ROI7",
+        "bbox": [
+          651,
+          601,
+          294,
+          259
+        ],
+        "chart_info": "jcc_chart"
+      }
+    },
+    "frame_id": 4836,
+    "time_seconds": 193.44
+  },
+  {
+    "timestamp": "2026-01-21T12:42:13.523353",
+    "rois": {
+      "menu": {
+        "roi_id": "ROI_Menu",
+        "bbox": [
+          0,
+          0,
+          1050,
+          92
+        ],
+        "ocr_text": "4: TOPCON Cv-5000PC - x\nFile Course Examination ReferenceData * 5 c ;\n\n\u2014\u2014\u2014\u2014 \u2014\u2014\u2014\u2014_ # _Jaithul is controlling your computer oo \u2014\u2014\na2 2a Poop - \u2014CCOOOOCOUCUlUlle\n"
+      },
+      "roi1": {
+        "cell_bboxes_on_roi0": [
+          [
+            253,
+            156,
+            459,
+            204
+          ],
+          [
+            459,
+            156,
+            589,
+            204
+          ],
+          [
+            589,
+            156,
+            794,
+            204
+          ],
+          [
+            253,
+            204,
+            459,
+            253
+          ],
+          [
+            459,
+            204,
+            589,
+            253
+          ],
+          [
+            589,
+            204,
+            794,
+            253
+          ],
+          [
+            253,
+            253,
+            459,
+            303
+          ],
+          [
+            459,
+            253,
+            589,
+            303
+          ],
+          [
+            589,
+            253,
+            794,
+            303
+          ],
+          [
+            253,
+            303,
+            459,
+            352
+          ],
+          [
+            459,
+            303,
+            589,
+            352
+          ],
+          [
+            589,
+            303,
+            794,
+            352
+          ],
+          [
+            253,
+            352,
+            459,
+            404
+          ],
+          [
+            459,
+            352,
+            589,
+            404
+          ],
+          [
+            589,
+            352,
+            794,
+            404
+          ]
+        ]
+      },
+      "roi1_ocr": {
+        "R_Sph": "0.00",
+        "S_Anchor": "S",
+        "L_Sph": "0.00",
+        "R_Cyl": "0.00",
+        "C_Anchor": "C",
+        "L_Cyl": "0.00",
+        "R_Axis": "180",
+        "A_Anchor": "A",
+        "L_Axis": "180",
+        "R_Add": "0.00",
+        "ADD_Anchor": "ADD",
+        "L_Add": "0.00",
+        "R_blank": null,
+        "blank_anchor": null,
+        "L_blank": null
+      },
+      "roi2": {
+        "roi_id": "ROI_2",
+        "pd_value_bbox": [
+          472,
+          463,
+          102,
+          44
+        ],
+        "pd_value": "65.5"
+      },
+      "roi3_4": {
+        "roi_id": "ROI_3_4",
+        "bboxes": [
+          {
+            "label": "left_occluder",
+            "box": [
+              362,
+              438,
+              72,
+              71
+            ],
+            "state": "unfilled/inactive (gray)"
+          },
+          {
+            "label": "right_occluder",
+            "box": [
+              608,
+              429,
+              90,
+              89
+            ],
+            "state": "unfilled/inactive (gray)"
+          }
+        ]
+      },
+      "roi5": {
+        "error": "No ROI5 bboxes found in coords.json"
+      },
+      "roi7": {
+        "roi_id": "ROI7",
+        "bbox": [
+          651,
+          601,
+          294,
+          259
+        ],
+        "chart_info": "duochrome_chart"
+      }
+    },
+    "frame_id": 4872,
+    "time_seconds": 194.88
+  },
+  {
+    "timestamp": "2026-01-21T12:42:15.267100",
+    "rois": {
+      "menu": {
+        "roi_id": "ROI_Menu",
+        "bbox": [
+          0,
+          0,
+          1050,
+          92
+        ],
+        "ocr_text": "4: TOPCON Cv-5000PC - x\nFile Course Examination ReferenceData * 5 c ;\n\n\u2014\u2014\u2014\u2014 \u2014\u2014\u2014\u2014_ # _Jaithul is controlling your computer oo \u2014\u2014\na2 2a Poop - \u2014CCOOOOCOUCUlUlle\n"
+      },
+      "roi1": {
+        "cell_bboxes_on_roi0": [
+          [
+            253,
+            156,
+            459,
+            204
+          ],
+          [
+            459,
+            156,
+            589,
+            204
+          ],
+          [
+            589,
+            156,
+            794,
+            204
+          ],
+          [
+            253,
+            204,
+            459,
+            253
+          ],
+          [
+            459,
+            204,
+            589,
+            253
+          ],
+          [
+            589,
+            204,
+            794,
+            253
+          ],
+          [
+            253,
+            253,
+            459,
+            303
+          ],
+          [
+            459,
+            253,
+            589,
+            303
+          ],
+          [
+            589,
+            253,
+            794,
+            303
+          ],
+          [
+            253,
+            303,
+            459,
+            352
+          ],
+          [
+            459,
+            303,
+            589,
+            352
+          ],
+          [
+            589,
+            303,
+            794,
+            352
+          ],
+          [
+            253,
+            352,
+            459,
+            404
+          ],
+          [
+            459,
+            352,
+            589,
+            404
+          ],
+          [
+            589,
+            352,
+            794,
+            404
+          ]
+        ]
+      },
+      "roi1_ocr": {
+        "R_Sph": "0.00",
+        "S_Anchor": "S",
+        "L_Sph": "0.00",
+        "R_Cyl": "0.00",
+        "C_Anchor": "C",
+        "L_Cyl": "0.00",
+        "R_Axis": "180",
+        "A_Anchor": "A",
+        "L_Axis": "180",
+        "R_Add": "0.00",
+        "ADD_Anchor": "ADD",
+        "L_Add": "0.00",
+        "R_blank": null,
+        "blank_anchor": null,
+        "L_blank": null
+      },
+      "roi2": {
+        "roi_id": "ROI_2",
+        "pd_value_bbox": [
+          472,
+          463,
+          102,
+          44
+        ],
+        "pd_value": "65.5"
+      },
+      "roi3_4": {
+        "roi_id": "ROI_3_4",
+        "bboxes": [
+          {
+            "label": "left_occluder",
+            "box": [
+              362,
+              438,
+              72,
+              71
+            ],
+            "state": "unfilled/inactive (gray)"
+          },
+          {
+            "label": "right_occluder",
+            "box": [
+              619,
+              439,
+              70,
+              69
+            ],
+            "state": "filled/active (blue)"
+          }
+        ]
+      },
+      "roi5": {
+        "error": "No ROI5 bboxes found in coords.json"
+      },
+      "roi7": {
+        "roi_id": "ROI7",
+        "bbox": [
+          651,
+          601,
+          294,
+          259
+        ],
+        "chart_info": "duochrome_chart"
+      }
+    },
+    "frame_id": 4896,
+    "time_seconds": 195.84
+  },
+  {
+    "timestamp": "2026-01-21T12:42:19.219606",
+    "rois": {
+      "menu": {
+        "roi_id": "ROI_Menu",
+        "bbox": [
+          0,
+          0,
+          1050,
+          92
+        ],
+        "ocr_text": "4: TOPCON Cv-5000PC - x\nFile Course Examination ReferenceData * 5 c ;\nSo Jaithul is controlling your computer oo \u2014\u2014\na2 2a Poop Cll! lee\n"
+      },
+      "roi1": {
+        "cell_bboxes_on_roi0": [
+          [
+            253,
+            156,
+            459,
+            204
+          ],
+          [
+            459,
+            156,
+            589,
+            204
+          ],
+          [
+            589,
+            156,
+            794,
+            204
+          ],
+          [
+            253,
+            204,
+            459,
+            253
+          ],
+          [
+            459,
+            204,
+            589,
+            253
+          ],
+          [
+            589,
+            204,
+            794,
+            253
+          ],
+          [
+            253,
+            253,
+            459,
+            303
+          ],
+          [
+            459,
+            253,
+            589,
+            303
+          ],
+          [
+            589,
+            253,
+            794,
+            303
+          ],
+          [
+            253,
+            303,
+            459,
+            352
+          ],
+          [
+            459,
+            303,
+            589,
+            352
+          ],
+          [
+            589,
+            303,
+            794,
+            352
+          ],
+          [
+            253,
+            352,
+            459,
+            404
+          ],
+          [
+            459,
+            352,
+            589,
+            404
+          ],
+          [
+            589,
+            352,
+            794,
+            404
+          ]
+        ]
+      },
+      "roi1_ocr": {
+        "R_Sph": "0.00",
+        "S_Anchor": "S",
+        "L_Sph": "0.00",
+        "R_Cyl": "0.00",
+        "C_Anchor": "C",
+        "L_Cyl": "0.00",
+        "R_Axis": "180",
+        "A_Anchor": "A",
+        "L_Axis": "180",
+        "R_Add": "0.00",
+        "ADD_Anchor": "ADD",
+        "L_Add": "0.00",
+        "R_blank": null,
+        "blank_anchor": null,
+        "L_blank": null
+      },
+      "roi2": {
+        "roi_id": "ROI_2",
+        "pd_value_bbox": [
+          472,
+          463,
+          102,
+          44
+        ],
+        "pd_value": "65.5"
+      },
+      "roi3_4": {
+        "roi_id": "ROI_3_4",
+        "bboxes": [
+          {
+            "label": "left_occluder",
+            "box": [
+              362,
+              438,
+              72,
+              71
+            ],
+            "state": "unfilled/inactive (gray)"
+          },
+          {
+            "label": "right_occluder",
+            "box": [
+              613,
+              433,
+              81,
+              80
+            ],
+            "state": "filled/active (blue)"
+          }
+        ]
+      },
+      "roi5": {
+        "error": "No ROI5 bboxes found in coords.json"
+      },
+      "roi7": {
+        "roi_id": "ROI7",
+        "bbox": [
+          651,
+          601,
+          294,
+          259
+        ],
+        "chart_info": "alphabetic_chart"
+      }
+    },
+    "frame_id": 5256,
+    "time_seconds": 210.24
+  },
+  {
+    "timestamp": "2026-01-21T12:42:25.196156",
+    "rois": {
+      "menu": {
+        "roi_id": "ROI_Menu",
+        "bbox": [
+          0,
+          0,
+          1050,
+          92
+        ],
+        "ocr_text": "fi TOPCON Cv-S000PC = ms\nFile Course Examination Reference Data $\n5 eee Jaithul is controlling your computer stop Control [iia\na2 eae Loop -\u00b0 OCCU\n"
+      },
+      "roi1": {
+        "cell_bboxes_on_roi0": [
+          [
+            253,
+            156,
+            459,
+            204
+          ],
+          [
+            459,
+            156,
+            589,
+            204
+          ],
+          [
+            589,
+            156,
+            794,
+            204
+          ],
+          [
+            253,
+            204,
+            459,
+            253
+          ],
+          [
+            459,
+            204,
+            589,
+            253
+          ],
+          [
+            589,
+            204,
+            794,
+            253
+          ],
+          [
+            253,
+            253,
+            459,
+            303
+          ],
+          [
+            459,
+            253,
+            589,
+            303
+          ],
+          [
+            589,
+            253,
+            794,
+            303
+          ],
+          [
+            253,
+            303,
+            459,
+            352
+          ],
+          [
+            459,
+            303,
+            589,
+            352
+          ],
+          [
+            589,
+            303,
+            794,
+            352
+          ],
+          [
+            253,
+            352,
+            459,
+            404
+          ],
+          [
+            459,
+            352,
+            589,
+            404
+          ],
+          [
+            589,
+            352,
+            794,
+            404
+          ]
+        ]
+      },
+      "roi1_ocr": {
+        "R_Sph": "0.00",
+        "S_Anchor": "S",
+        "L_Sph": "0.00",
+        "R_Cyl": "0.00",
+        "C_Anchor": "C",
+        "L_Cyl": "0.00",
+        "R_Axis": "180",
+        "A_Anchor": "A",
+        "L_Axis": "7",
+        "R_Add": "0.00",
+        "ADD_Anchor": "ADD",
+        "L_Add": "0.00",
+        "R_blank": null,
+        "blank_anchor": null,
+        "L_blank": null
+      },
+      "roi2": {
+        "roi_id": "ROI_2",
+        "pd_value_bbox": [
+          472,
+          463,
+          102,
+          44
+        ],
+        "pd_value": "65.5"
+      },
+      "roi3_4": {
+        "roi_id": "ROI_3_4",
+        "bboxes": [
+          {
+            "label": "left_occluder",
+            "box": [
+              362,
+              438,
+              72,
+              71
+            ],
+            "state": "filled/active (blue)"
+          },
+          {
+            "label": "right_occluder",
+            "box": [
+              611,
+              432,
+              83,
+              83
+            ],
+            "state": "unfilled/inactive (gray)"
+          }
+        ]
+      },
+      "roi5": {
+        "error": "No ROI5 bboxes found in coords.json"
+      },
+      "roi7": {
+        "roi_id": "ROI7",
+        "bbox": [
+          651,
+          601,
+          294,
+          259
+        ],
+        "chart_info": "alphabetic_chart"
+      }
+    },
+    "frame_id": 5448,
+    "time_seconds": 217.92
+  },
+  {
+    "timestamp": "2026-01-21T12:42:27.028707",
+    "rois": {
+      "menu": {
+        "roi_id": "ROI_Menu",
+        "bbox": [
+          0,
+          0,
+          1050,
+          92
+        ],
+        "ocr_text": "4: TOPCON CV-5000PC ane x\nFile Course Examination ReferenceData * 5 c ;\na2 2a Poop -  CCCUll lee\n"
+      },
+      "roi1": {
+        "cell_bboxes_on_roi0": [
+          [
+            253,
+            156,
+            459,
+            204
+          ],
+          [
+            459,
+            156,
+            589,
+            204
+          ],
+          [
+            589,
+            156,
+            794,
+            204
+          ],
+          [
+            253,
+            204,
+            459,
+            253
+          ],
+          [
+            459,
+            204,
+            589,
+            253
+          ],
+          [
+            589,
+            204,
+            794,
+            253
+          ],
+          [
+            253,
+            253,
+            459,
+            303
+          ],
+          [
+            459,
+            253,
+            589,
+            303
+          ],
+          [
+            589,
+            253,
+            794,
+            303
+          ],
+          [
+            253,
+            303,
+            459,
+            352
+          ],
+          [
+            459,
+            303,
+            589,
+            352
+          ],
+          [
+            589,
+            303,
+            794,
+            352
+          ],
+          [
+            253,
+            352,
+            459,
+            404
+          ],
+          [
+            459,
+            352,
+            589,
+            404
+          ],
+          [
+            589,
+            352,
+            794,
+            404
+          ]
+        ]
+      },
+      "roi1_ocr": {
+        "R_Sph": "0.00",
+        "S_Anchor": "S",
+        "L_Sph": "0.00",
+        "R_Cyl": "0.00",
+        "C_Anchor": "C",
+        "L_Cyl": "0.00",
+        "R_Axis": "180",
+        "A_Anchor": "A",
+        "L_Axis": "180",
+        "R_Add": "0.00",
+        "ADD_Anchor": "ADD",
+        "L_Add": "0.00",
+        "R_blank": null,
+        "blank_anchor": null,
+        "L_blank": null
+      },
+      "roi2": {
+        "roi_id": "ROI_2",
+        "pd_value_bbox": [
+          472,
+          463,
+          102,
+          44
+        ],
+        "pd_value": "65.5"
+      },
+      "roi3_4": {
+        "roi_id": "ROI_3_4",
+        "bboxes": [
+          {
+            "label": "left_occluder",
+            "box": [
+              362,
+              438,
+              72,
+              71
+            ],
+            "state": "filled/active (blue)"
+          },
+          {
+            "label": "right_occluder",
+            "box": [
+              611,
+              432,
+              83,
+              83
+            ],
+            "state": "unfilled/inactive (gray)"
+          }
+        ]
+      },
+      "roi5": {
+        "error": "No ROI5 bboxes found in coords.json"
+      },
+      "roi7": {
+        "roi_id": "ROI7",
+        "bbox": [
+          651,
+          601,
+          294,
+          259
+        ],
+        "chart_info": "jcc_chart"
+      }
+    },
+    "frame_id": 5484,
+    "time_seconds": 219.36
+  },
+  {
+    "timestamp": "2026-01-21T12:42:28.956933",
+    "rois": {
+      "menu": {
+        "roi_id": "ROI_Menu",
+        "bbox": [
+          0,
+          0,
+          1050,
+          92
+        ],
+        "ocr_text": "4: TOPCON CV-5000PC = x\nFile Course Examination ReferenceData * 5 c ;\na2 2a Pe Loop  COOOOCOUCUlUllee\n"
+      },
+      "roi1": {
+        "cell_bboxes_on_roi0": [
+          [
+            253,
+            156,
+            459,
+            204
+          ],
+          [
+            459,
+            156,
+            589,
+            204
+          ],
+          [
+            589,
+            156,
+            794,
+            204
+          ],
+          [
+            253,
+            204,
+            459,
+            253
+          ],
+          [
+            459,
+            204,
+            589,
+            253
+          ],
+          [
+            589,
+            204,
+            794,
+            253
+          ],
+          [
+            253,
+            253,
+            459,
+            303
+          ],
+          [
+            459,
+            253,
+            589,
+            303
+          ],
+          [
+            589,
+            253,
+            794,
+            303
+          ],
+          [
+            253,
+            303,
+            459,
+            352
+          ],
+          [
+            459,
+            303,
+            589,
+            352
+          ],
+          [
+            589,
+            303,
+            794,
+            352
+          ],
+          [
+            253,
+            352,
+            459,
+            404
+          ],
+          [
+            459,
+            352,
+            589,
+            404
+          ],
+          [
+            589,
+            352,
+            794,
+            404
+          ]
+        ]
+      },
+      "roi1_ocr": {
+        "R_Sph": "0.00",
+        "S_Anchor": "S",
+        "L_Sph": "0.00",
+        "R_Cyl": "0.00",
+        "C_Anchor": "C",
+        "L_Cyl": "0.00",
+        "R_Axis": "180",
+        "A_Anchor": "A",
+        "L_Axis": "180",
+        "R_Add": "0.00",
+        "ADD_Anchor": "ADD",
+        "L_Add": "0.00",
+        "R_blank": null,
+        "blank_anchor": null,
+        "L_blank": null
+      },
+      "roi2": {
+        "roi_id": "ROI_2",
+        "pd_value_bbox": [
+          472,
+          463,
+          102,
+          44
+        ],
+        "pd_value": "65.5"
+      },
+      "roi3_4": {
+        "roi_id": "ROI_3_4",
+        "bboxes": [
+          {
+            "label": "left_occluder",
+            "box": [
+              353,
+              429,
+              90,
+              89
+            ],
+            "state": "unfilled/inactive (gray)"
+          },
+          {
+            "label": "right_occluder",
+            "box": [
+              611,
+              432,
+              83,
+              83
+            ],
+            "state": "unfilled/inactive (gray)"
+          }
+        ]
+      },
+      "roi5": {
+        "error": "No ROI5 bboxes found in coords.json"
+      },
+      "roi7": {
+        "roi_id": "ROI7",
+        "bbox": [
+          651,
+          601,
+          294,
+          259
+        ],
+        "chart_info": "jcc_chart"
+      }
+    },
+    "frame_id": 5508,
+    "time_seconds": 220.32
+  },
+  {
+    "timestamp": "2026-01-21T12:42:33.231011",
+    "rois": {
+      "menu": {
+        "roi_id": "ROI_Menu",
+        "bbox": [
+          0,
+          0,
+          1050,
+          92
+        ],
+        "ocr_text": "4: TOPCON CV-5000PC = x\nFile Course Examination ReferenceData * 5 c ;\na2 2a PLD op CC COOOOUUlFllee\n"
+      },
+      "roi1": {
+        "cell_bboxes_on_roi0": [
+          [
+            253,
+            156,
+            459,
+            204
+          ],
+          [
+            459,
+            156,
+            589,
+            204
+          ],
+          [
+            589,
+            156,
+            794,
+            204
+          ],
+          [
+            253,
+            204,
+            459,
+            253
+          ],
+          [
+            459,
+            204,
+            589,
+            253
+          ],
+          [
+            589,
+            204,
+            794,
+            253
+          ],
+          [
+            253,
+            253,
+            459,
+            303
+          ],
+          [
+            459,
+            253,
+            589,
+            303
+          ],
+          [
+            589,
+            253,
+            794,
+            303
+          ],
+          [
+            253,
+            303,
+            459,
+            352
+          ],
+          [
+            459,
+            303,
+            589,
+            352
+          ],
+          [
+            589,
+            303,
+            794,
+            352
+          ],
+          [
+            253,
+            352,
+            459,
+            404
+          ],
+          [
+            459,
+            352,
+            589,
+            404
+          ],
+          [
+            589,
+            352,
+            794,
+            404
+          ]
+        ]
+      },
+      "roi1_ocr": {
+        "R_Sph": "0.00",
+        "S_Anchor": "S",
+        "L_Sph": "0.00",
+        "R_Cyl": "0.00",
+        "C_Anchor": "C",
+        "L_Cyl": "0.00",
+        "R_Axis": "165",
+        "A_Anchor": "A",
+        "L_Axis": "180",
+        "R_Add": "0.00",
+        "ADD_Anchor": "ADD",
+        "L_Add": "0.00",
+        "R_blank": null,
+        "blank_anchor": null,
+        "L_blank": null
+      },
+      "roi2": {
+        "roi_id": "ROI_2",
+        "pd_value_bbox": [
+          472,
+          463,
+          102,
+          44
+        ],
+        "pd_value": "65.5"
+      },
+      "roi3_4": {
+        "roi_id": "ROI_3_4",
+        "bboxes": [
+          {
+            "label": "left_occluder",
+            "box": [
+              353,
+              429,
+              90,
+              89
+            ],
+            "state": "unfilled/inactive (gray)"
+          },
+          {
+            "label": "right_occluder",
+            "box": [
+              611,
+              432,
+              83,
+              83
+            ],
+            "state": "unfilled/inactive (gray)"
+          }
+        ]
+      },
+      "roi5": {
+        "error": "No ROI5 bboxes found in coords.json"
+      },
+      "roi7": {
+        "roi_id": "ROI7",
+        "bbox": [
+          651,
+          601,
+          294,
+          259
+        ],
+        "chart_info": "jcc_chart"
+      }
+    },
+    "frame_id": 5580,
+    "time_seconds": 223.2
+  },
+  {
+    "timestamp": "2026-01-21T12:42:34.981623",
+    "rois": {
+      "menu": {
+        "roi_id": "ROI_Menu",
+        "bbox": [
+          0,
+          0,
+          1050,
+          92
+        ],
+        "ocr_text": "4: TOPCON CV-5000PC = x\nFile Course Examination ReferenceData * 5 c ;\na2 2a PLD op CC COOOOUUlFllee\n"
+      },
+      "roi1": {
+        "cell_bboxes_on_roi0": [
+          [
+            253,
+            156,
+            459,
+            204
+          ],
+          [
+            459,
+            156,
+            589,
+            204
+          ],
+          [
+            589,
+            156,
+            794,
+            204
+          ],
+          [
+            253,
+            204,
+            459,
+            253
+          ],
+          [
+            459,
+            204,
+            589,
+            253
+          ],
+          [
+            589,
+            204,
+            794,
+            253
+          ],
+          [
+            253,
+            253,
+            459,
+            303
+          ],
+          [
+            459,
+            253,
+            589,
+            303
+          ],
+          [
+            589,
+            253,
+            794,
+            303
+          ],
+          [
+            253,
+            303,
+            459,
+            352
+          ],
+          [
+            459,
+            303,
+            589,
+            352
+          ],
+          [
+            589,
+            303,
+            794,
+            352
+          ],
+          [
+            253,
+            352,
+            459,
+            404
+          ],
+          [
+            459,
+            352,
+            589,
+            404
+          ],
+          [
+            589,
+            352,
+            794,
+            404
+          ]
+        ]
+      },
+      "roi1_ocr": {
+        "R_Sph": "0.00",
+        "S_Anchor": "S",
+        "L_Sph": "0.00",
+        "R_Cyl": "-0.25",
+        "C_Anchor": "C",
+        "L_Cyl": "0.00",
+        "R_Axis": "165",
+        "A_Anchor": "A",
+        "L_Axis": "180",
+        "R_Add": "0.00",
+        "ADD_Anchor": "ADD",
+        "L_Add": "0.00",
+        "R_blank": null,
+        "blank_anchor": null,
+        "L_blank": null
+      },
+      "roi2": {
+        "roi_id": "ROI_2",
+        "pd_value_bbox": [
+          472,
+          463,
+          102,
+          44
+        ],
+        "pd_value": "65.5"
+      },
+      "roi3_4": {
+        "roi_id": "ROI_3_4",
+        "bboxes": [
+          {
+            "label": "left_occluder",
+            "box": [
+              353,
+              429,
+              90,
+              89
+            ],
+            "state": "unfilled/inactive (gray)"
+          },
+          {
+            "label": "right_occluder",
+            "box": [
+              611,
+              432,
+              83,
+              83
+            ],
+            "state": "unfilled/inactive (gray)"
+          }
+        ]
+      },
+      "roi5": {
+        "error": "No ROI5 bboxes found in coords.json"
+      },
+      "roi7": {
+        "roi_id": "ROI7",
+        "bbox": [
+          651,
+          601,
+          294,
+          259
+        ],
+        "chart_info": "jcc_chart"
+      }
+    },
+    "frame_id": 5592,
+    "time_seconds": 223.68
+  },
+  {
+    "timestamp": "2026-01-21T12:42:40.140241",
+    "rois": {
+      "menu": {
+        "roi_id": "ROI_Menu",
+        "bbox": [
+          0,
+          0,
+          1050,
+          92
+        ],
+        "ocr_text": "4: TOPCON CV-5000PC = x\nFile Course Examination ReferenceData \u00b0 5 c ;\na2 2a PLD op CC COOOOUUlFllee\n"
+      },
+      "roi1": {
+        "cell_bboxes_on_roi0": [
+          [
+            253,
+            156,
+            459,
+            204
+          ],
+          [
+            459,
+            156,
+            589,
+            204
+          ],
+          [
+            589,
+            156,
+            794,
+            204
+          ],
+          [
+            253,
+            204,
+            459,
+            253
+          ],
+          [
+            459,
+            204,
+            589,
+            253
+          ],
+          [
+            589,
+            204,
+            794,
+            253
+          ],
+          [
+            253,
+            253,
+            459,
+            303
+          ],
+          [
+            459,
+            253,
+            589,
+            303
+          ],
+          [
+            589,
+            253,
+            794,
+            303
+          ],
+          [
+            253,
+            303,
+            459,
+            352
+          ],
+          [
+            459,
+            303,
+            589,
+            352
+          ],
+          [
+            589,
+            303,
+            794,
+            352
+          ],
+          [
+            253,
+            352,
+            459,
+            404
+          ],
+          [
+            459,
+            352,
+            589,
+            404
+          ],
+          [
+            589,
+            352,
+            794,
+            404
+          ]
+        ]
+      },
+      "roi1_ocr": {
+        "R_Sph": "0.00",
+        "S_Anchor": "S",
+        "L_Sph": "0.00",
+        "R_Cyl": "-0.25",
+        "C_Anchor": "C",
+        "L_Cyl": "0.00",
+        "R_Axis": "160",
+        "A_Anchor": "A",
+        "L_Axis": "180",
+        "R_Add": "0.00",
+        "ADD_Anchor": "ADD",
+        "L_Add": "0.00",
+        "R_blank": null,
+        "blank_anchor": null,
+        "L_blank": null
+      },
+      "roi2": {
+        "roi_id": "ROI_2",
+        "pd_value_bbox": [
+          472,
+          463,
+          102,
+          44
+        ],
+        "pd_value": "65.5"
+      },
+      "roi3_4": {
+        "roi_id": "ROI_3_4",
+        "bboxes": [
+          {
+            "label": "left_occluder",
+            "box": [
+              358,
+              433,
+              81,
+              80
+            ],
+            "state": "unfilled/inactive (gray)"
+          },
+          {
+            "label": "right_occluder",
+            "box": [
+              611,
+              432,
+              83,
+              83
+            ],
+            "state": "unfilled/inactive (gray)"
+          }
+        ]
+      },
+      "roi5": {
+        "error": "No ROI5 bboxes found in coords.json"
+      },
+      "roi7": {
+        "roi_id": "ROI7",
+        "bbox": [
+          651,
+          601,
+          294,
+          259
+        ],
+        "chart_info": "jcc_chart"
+      }
+    },
+    "frame_id": 5712,
+    "time_seconds": 228.48
+  },
+  {
+    "timestamp": "2026-01-21T12:42:46.685914",
+    "rois": {
+      "menu": {
+        "roi_id": "ROI_Menu",
+        "bbox": [
+          0,
+          0,
+          1050,
+          92
+        ],
+        "ocr_text": "4: TOPCON CV-5000PC = x\nFile Course Examination ReferenceData * 5 c ;\na2 2a Poop -\u00b0 \u2014COOOOCUCUUlUllee\n"
+      },
+      "roi1": {
+        "cell_bboxes_on_roi0": [
+          [
+            253,
+            156,
+            459,
+            204
+          ],
+          [
+            459,
+            156,
+            589,
+            204
+          ],
+          [
+            589,
+            156,
+            794,
+            204
+          ],
+          [
+            253,
+            204,
+            459,
+            253
+          ],
+          [
+            459,
+            204,
+            589,
+            253
+          ],
+          [
+            589,
+            204,
+            794,
+            253
+          ],
+          [
+            253,
+            253,
+            459,
+            303
+          ],
+          [
+            459,
+            253,
+            589,
+            303
+          ],
+          [
+            589,
+            253,
+            794,
+            303
+          ],
+          [
+            253,
+            303,
+            459,
+            352
+          ],
+          [
+            459,
+            303,
+            589,
+            352
+          ],
+          [
+            589,
+            303,
+            794,
+            352
+          ],
+          [
+            253,
+            352,
+            459,
+            404
+          ],
+          [
+            459,
+            352,
+            589,
+            404
+          ],
+          [
+            589,
+            352,
+            794,
+            404
+          ]
+        ]
+      },
+      "roi1_ocr": {
+        "R_Sph": "0.00",
+        "S_Anchor": "S",
+        "L_Sph": "0.00",
+        "R_Cyl": "-0.25",
+        "C_Anchor": "C",
+        "L_Cyl": "0.00",
+        "R_Axis": "160",
+        "A_Anchor": "A",
+        "L_Axis": "180",
+        "R_Add": "0.00",
+        "ADD_Anchor": "ADD",
+        "L_Add": "0.00",
+        "R_blank": null,
+        "blank_anchor": null,
+        "L_blank": null
+      },
+      "roi2": {
+        "roi_id": "ROI_2",
+        "pd_value_bbox": [
+          472,
+          463,
+          102,
+          44
+        ],
+        "pd_value": "65.5"
+      },
+      "roi3_4": {
+        "roi_id": "ROI_3_4",
+        "bboxes": [
+          {
+            "label": "left_occluder",
+            "box": [
+              358,
+              433,
+              81,
+              80
+            ],
+            "state": "unfilled/inactive (gray)"
+          },
+          {
+            "label": "right_occluder",
+            "box": [
+              611,
+              432,
+              83,
+              83
+            ],
+            "state": "unfilled/inactive (gray)"
+          }
+        ]
+      },
+      "roi5": {
+        "error": "No ROI5 bboxes found in coords.json"
+      },
+      "roi7": {
+        "roi_id": "ROI7",
+        "bbox": [
+          651,
+          601,
+          294,
+          259
+        ],
+        "chart_info": "duochrome_chart"
+      }
+    },
+    "frame_id": 5976,
+    "time_seconds": 239.04
+  },
+  {
+    "timestamp": "2026-01-21T12:42:48.372442",
+    "rois": {
+      "menu": {
+        "roi_id": "ROI_Menu",
+        "bbox": [
+          0,
+          0,
+          1050,
+          92
+        ],
+        "ocr_text": "4: TOPCON Cv-5000PC = x\nFile Course Examination ReferenceData * 5 c ;\nme Jaithul is controlling your computer oo \u2014\u2014\na2 2a Poop OCCU\n"
+      },
+      "roi1": {
+        "cell_bboxes_on_roi0": [
+          [
+            253,
+            156,
+            459,
+            204
+          ],
+          [
+            459,
+            156,
+            589,
+            204
+          ],
+          [
+            589,
+            156,
+            794,
+            204
+          ],
+          [
+            253,
+            204,
+            459,
+            253
+          ],
+          [
+            459,
+            204,
+            589,
+            253
+          ],
+          [
+            589,
+            204,
+            794,
+            253
+          ],
+          [
+            253,
+            253,
+            459,
+            303
+          ],
+          [
+            459,
+            253,
+            589,
+            303
+          ],
+          [
+            589,
+            253,
+            794,
+            303
+          ],
+          [
+            253,
+            303,
+            459,
+            352
+          ],
+          [
+            459,
+            303,
+            589,
+            352
+          ],
+          [
+            589,
+            303,
+            794,
+            352
+          ],
+          [
+            253,
+            352,
+            459,
+            404
+          ],
+          [
+            459,
+            352,
+            589,
+            404
+          ],
+          [
+            589,
+            352,
+            794,
+            404
+          ]
+        ]
+      },
+      "roi1_ocr": {
+        "R_Sph": "0.00",
+        "S_Anchor": "S",
+        "L_Sph": "0.00",
+        "R_Cyl": "-0.25",
+        "C_Anchor": "C",
+        "L_Cyl": "0.00",
+        "R_Axis": "160",
+        "A_Anchor": "A",
+        "L_Axis": "180",
+        "R_Add": "0.00",
+        "ADD_Anchor": "ADD",
+        "L_Add": "0.00",
+        "R_blank": null,
+        "blank_anchor": null,
+        "L_blank": null
+      },
+      "roi2": {
+        "roi_id": "ROI_2",
+        "pd_value_bbox": [
+          472,
+          463,
+          102,
+          44
+        ],
+        "pd_value": "65.5"
+      },
+      "roi3_4": {
+        "roi_id": "ROI_3_4",
+        "bboxes": [
+          {
+            "label": "left_occluder",
+            "box": [
+              362,
+              438,
+              72,
+              71
+            ],
+            "state": "filled/active (blue)"
+          },
+          {
+            "label": "right_occluder",
+            "box": [
+              611,
+              432,
+              83,
+              83
+            ],
+            "state": "unfilled/inactive (gray)"
+          }
+        ]
+      },
+      "roi5": {
+        "error": "No ROI5 bboxes found in coords.json"
+      },
+      "roi7": {
+        "roi_id": "ROI7",
+        "bbox": [
+          651,
+          601,
+          294,
+          259
+        ],
+        "chart_info": "duochrome_chart"
+      }
+    },
+    "frame_id": 6024,
+    "time_seconds": 240.96
+  },
+  {
+    "timestamp": "2026-01-21T12:42:50.242838",
+    "rois": {
+      "menu": {
+        "roi_id": "ROI_Menu",
+        "bbox": [
+          0,
+          0,
+          1050,
+          92
+        ],
+        "ocr_text": "4: TOPCON Cv-5000PC - x\nFile Course Examination ReferenceData * 5 c ;\nme Jaithul is controlling your computer oo \u2014\u2014\na2 2a Pe Loop - OCCU\n"
+      },
+      "roi1": {
+        "cell_bboxes_on_roi0": [
+          [
+            253,
+            156,
+            459,
+            204
+          ],
+          [
+            459,
+            156,
+            589,
+            204
+          ],
+          [
+            589,
+            156,
+            794,
+            204
+          ],
+          [
+            253,
+            204,
+            459,
+            253
+          ],
+          [
+            459,
+            204,
+            589,
+            253
+          ],
+          [
+            589,
+            204,
+            794,
+            253
+          ],
+          [
+            253,
+            253,
+            459,
+            303
+          ],
+          [
+            459,
+            253,
+            589,
+            303
+          ],
+          [
+            589,
+            253,
+            794,
+            303
+          ],
+          [
+            253,
+            303,
+            459,
+            352
+          ],
+          [
+            459,
+            303,
+            589,
+            352
+          ],
+          [
+            589,
+            303,
+            794,
+            352
+          ],
+          [
+            253,
+            352,
+            459,
+            404
+          ],
+          [
+            459,
+            352,
+            589,
+            404
+          ],
+          [
+            589,
+            352,
+            794,
+            404
+          ]
+        ]
+      },
+      "roi1_ocr": {
+        "R_Sph": "0.00",
+        "S_Anchor": "S",
+        "L_Sph": "0.00",
+        "R_Cyl": "-0.25",
+        "C_Anchor": "C",
+        "L_Cyl": "0.00",
+        "R_Axis": "160",
+        "A_Anchor": "A",
+        "L_Axis": "180",
+        "R_Add": "0.00",
+        "ADD_Anchor": "ADD",
+        "L_Add": "0.00",
+        "R_blank": null,
+        "blank_anchor": null,
+        "L_blank": null
+      },
+      "roi2": {
+        "roi_id": "ROI_2",
+        "pd_value_bbox": [
+          472,
+          463,
+          102,
+          44
+        ],
+        "pd_value": "65.5"
+      },
+      "roi3_4": {
+        "roi_id": "ROI_3_4",
+        "bboxes": [
+          {
+            "label": "left_occluder",
+            "box": [
+              362,
+              438,
+              72,
+              71
+            ],
+            "state": "filled/active (blue)"
+          },
+          {
+            "label": "right_occluder",
+            "box": [
+              611,
+              432,
+              83,
+              83
+            ],
+            "state": "unfilled/inactive (gray)"
+          }
+        ]
+      },
+      "roi5": {
+        "error": "No ROI5 bboxes found in coords.json"
+      },
+      "roi7": {
+        "roi_id": "ROI7",
+        "bbox": [
+          651,
+          601,
+          294,
+          259
+        ],
+        "chart_info": "alphabetic_chart"
+      }
+    },
+    "frame_id": 6156,
+    "time_seconds": 246.24
+  },
+  {
+    "timestamp": "2026-01-21T12:42:57.213103",
+    "rois": {
+      "menu": {
+        "roi_id": "ROI_Menu",
+        "bbox": [
+          0,
+          0,
+          1050,
+          92
+        ],
+        "ocr_text": "4: TOPCON CV-5000PC on x\nFile Course Examination ReferenceData * 5 c ;\na2 2a Poop \u00b0\u00b0  hCOUCUOlee\n"
+      },
+      "roi1": {
+        "cell_bboxes_on_roi0": [
+          [
+            253,
+            156,
+            459,
+            204
+          ],
+          [
+            459,
+            156,
+            589,
+            204
+          ],
+          [
+            589,
+            156,
+            794,
+            204
+          ],
+          [
+            253,
+            204,
+            459,
+            253
+          ],
+          [
+            459,
+            204,
+            589,
+            253
+          ],
+          [
+            589,
+            204,
+            794,
+            253
+          ],
+          [
+            253,
+            253,
+            459,
+            303
+          ],
+          [
+            459,
+            253,
+            589,
+            303
+          ],
+          [
+            589,
+            253,
+            794,
+            303
+          ],
+          [
+            253,
+            303,
+            459,
+            352
+          ],
+          [
+            459,
+            303,
+            589,
+            352
+          ],
+          [
+            589,
+            303,
+            794,
+            352
+          ],
+          [
+            253,
+            352,
+            459,
+            404
+          ],
+          [
+            459,
+            352,
+            589,
+            404
+          ],
+          [
+            589,
+            352,
+            794,
+            404
+          ]
+        ]
+      },
+      "roi1_ocr": {
+        "R_Sph": "0.00",
+        "S_Anchor": "S",
+        "L_Sph": "0.00",
+        "R_Cyl": "0.00",
+        "C_Anchor": "C",
+        "L_Cyl": "0.00",
+        "R_Axis": "160",
+        "A_Anchor": "A",
+        "L_Axis": "180",
+        "R_Add": "0.00",
+        "ADD_Anchor": "ADD",
+        "L_Add": "0.00",
+        "R_blank": null,
+        "blank_anchor": null,
+        "L_blank": null
+      },
+      "roi2": {
+        "roi_id": "ROI_2",
+        "pd_value_bbox": [
+          472,
+          463,
+          102,
+          44
+        ],
+        "pd_value": "65.5"
+      },
+      "roi3_4": {
+        "roi_id": "ROI_3_4",
+        "bboxes": [
+          {
+            "label": "left_occluder",
+            "box": [
+              362,
+              438,
+              72,
+              71
+            ],
+            "state": "filled/active (blue)"
+          },
+          {
+            "label": "right_occluder",
+            "box": [
+              611,
+              432,
+              83,
+              83
+            ],
+            "state": "unfilled/inactive (gray)"
+          }
+        ]
+      },
+      "roi5": {
+        "error": "No ROI5 bboxes found in coords.json"
+      },
+      "roi7": {
+        "roi_id": "ROI7",
+        "bbox": [
+          651,
+          601,
+          294,
+          259
+        ],
+        "chart_info": "alphabetic_chart"
+      }
+    },
+    "frame_id": 6312,
+    "time_seconds": 252.48
+  },
+  {
+    "timestamp": "2026-01-21T12:43:00.676115",
+    "rois": {
+      "menu": {
+        "roi_id": "ROI_Menu",
+        "bbox": [
+          0,
+          0,
+          1050,
+          92
+        ],
+        "ocr_text": "#& TOPCON Cv-5000PC = x\nFile Course Examination Reference Data = c ;\n\n\u2014\u2014 > _Jaithul is controlling your computer re\na2 2g Poop CCU\n"
+      },
+      "roi1": {
+        "cell_bboxes_on_roi0": [
+          [
+            253,
+            156,
+            459,
+            204
+          ],
+          [
+            459,
+            156,
+            589,
+            204
+          ],
+          [
+            589,
+            156,
+            794,
+            204
+          ],
+          [
+            253,
+            204,
+            459,
+            253
+          ],
+          [
+            459,
+            204,
+            589,
+            253
+          ],
+          [
+            589,
+            204,
+            794,
+            253
+          ],
+          [
+            253,
+            253,
+            459,
+            303
+          ],
+          [
+            459,
+            253,
+            589,
+            303
+          ],
+          [
+            589,
+            253,
+            794,
+            303
+          ],
+          [
+            253,
+            303,
+            459,
+            352
+          ],
+          [
+            459,
+            303,
+            589,
+            352
+          ],
+          [
+            589,
+            303,
+            794,
+            352
+          ],
+          [
+            253,
+            352,
+            459,
+            404
+          ],
+          [
+            459,
+            352,
+            589,
+            404
+          ],
+          [
+            589,
+            352,
+            794,
+            404
+          ]
+        ]
+      },
+      "roi1_ocr": {
+        "R_Sph": "0.00",
+        "S_Anchor": "S",
+        "L_Sph": "0.00",
+        "R_Cyl": "0.00",
+        "C_Anchor": "C",
+        "L_Cyl": "0.00",
+        "R_Axis": "160",
+        "A_Anchor": "A",
+        "L_Axis": "2",
+        "R_Add": "0.00",
+        "ADD_Anchor": "ADD",
+        "L_Add": "0.00",
+        "R_blank": null,
+        "blank_anchor": null,
+        "L_blank": null
+      },
+      "roi2": {
+        "roi_id": "ROI_2",
+        "pd_value_bbox": [
+          472,
+          463,
+          102,
+          44
+        ],
+        "pd_value": "65.5"
+      },
+      "roi3_4": {
+        "roi_id": "ROI_3_4",
+        "bboxes": [
+          {
+            "label": "left_occluder",
+            "box": [
+              362,
+              438,
+              72,
+              71
+            ],
+            "state": "filled/active (blue)"
+          },
+          {
+            "label": "right_occluder",
+            "box": [
+              613,
+              433,
+              81,
+              80
+            ],
+            "state": "filled/active (blue)"
+          }
+        ]
+      },
+      "roi5": {
+        "error": "No ROI5 bboxes found in coords.json"
+      },
+      "roi7": {
+        "roi_id": "ROI7",
+        "bbox": [
+          651,
+          601,
+          294,
+          259
+        ],
+        "chart_info": "alphabetic_chart"
+      }
+    },
+    "frame_id": 6396,
+    "time_seconds": 255.84
+  },
+  {
+    "timestamp": "2026-01-21T12:43:02.545438",
+    "rois": {
+      "menu": {
+        "roi_id": "ROI_Menu",
+        "bbox": [
+          0,
+          0,
+          1050,
+          92
+        ],
+        "ocr_text": "4: TOPCON CV-5000PC a x\nFile Course Examination ReferenceData * 5 c ;\na2 2g Poop CCU\n"
+      },
+      "roi1": {
+        "cell_bboxes_on_roi0": [
+          [
+            253,
+            156,
+            459,
+            204
+          ],
+          [
+            459,
+            156,
+            589,
+            204
+          ],
+          [
+            589,
+            156,
+            794,
+            204
+          ],
+          [
+            253,
+            204,
+            459,
+            253
+          ],
+          [
+            459,
+            204,
+            589,
+            253
+          ],
+          [
+            589,
+            204,
+            794,
+            253
+          ],
+          [
+            253,
+            253,
+            459,
+            303
+          ],
+          [
+            459,
+            253,
+            589,
+            303
+          ],
+          [
+            589,
+            253,
+            794,
+            303
+          ],
+          [
+            253,
+            303,
+            459,
+            352
+          ],
+          [
+            459,
+            303,
+            589,
+            352
+          ],
+          [
+            589,
+            303,
+            794,
+            352
+          ],
+          [
+            253,
+            352,
+            459,
+            404
+          ],
+          [
+            459,
+            352,
+            589,
+            404
+          ],
+          [
+            589,
+            352,
+            794,
+            404
+          ]
+        ]
+      },
+      "roi1_ocr": {
+        "R_Sph": "+9.00",
+        "S_Anchor": "S",
+        "L_Sph": "0.00",
+        "R_Cyl": "0.00",
+        "C_Anchor": "C",
+        "L_Cyl": "0.00",
+        "R_Axis": "160",
+        "A_Anchor": "A",
+        "L_Axis": "180",
+        "R_Add": "0.00",
+        "ADD_Anchor": "ADD",
+        "L_Add": "0.00",
+        "R_blank": null,
+        "blank_anchor": null,
+        "L_blank": null
+      },
+      "roi2": {
+        "roi_id": "ROI_2",
+        "pd_value_bbox": [
+          472,
+          463,
+          102,
+          44
+        ],
+        "pd_value": "65.5"
+      },
+      "roi3_4": {
+        "roi_id": "ROI_3_4",
+        "bboxes": [
+          {
+            "label": "left_occluder",
+            "box": [
+              362,
+              438,
+              72,
+              71
+            ],
+            "state": "filled/active (blue)"
+          },
+          {
+            "label": "right_occluder",
+            "box": [
+              619,
+              439,
+              70,
+              69
+            ],
+            "state": "filled/active (blue)"
+          }
+        ]
+      },
+      "roi5": {
+        "error": "No ROI5 bboxes found in coords.json"
+      },
+      "roi7": {
+        "roi_id": "ROI7",
+        "bbox": [
+          651,
+          601,
+          294,
+          259
+        ],
+        "chart_info": "alphabetic_chart"
+      }
+    },
+    "frame_id": 6504,
+    "time_seconds": 260.16
+  },
+  {
+    "timestamp": "2026-01-21T12:43:05.325557",
+    "rois": {
+      "menu": {
+        "roi_id": "ROI_Menu",
+        "bbox": [
+          0,
+          0,
+          1050,
+          92
+        ],
+        "ocr_text": "4: TOPCON CV-5000PC a x\nFile Course Examination ReferenceData * 5 c ;\na2 2a PLD oap -\u00b0  COOOOCOUCUlUllee\n"
+      },
+      "roi1": {
+        "cell_bboxes_on_roi0": [
+          [
+            253,
+            156,
+            459,
+            204
+          ],
+          [
+            459,
+            156,
+            589,
+            204
+          ],
+          [
+            589,
+            156,
+            794,
+            204
+          ],
+          [
+            253,
+            204,
+            459,
+            253
+          ],
+          [
+            459,
+            204,
+            589,
+            253
+          ],
+          [
+            589,
+            204,
+            794,
+            253
+          ],
+          [
+            253,
+            253,
+            459,
+            303
+          ],
+          [
+            459,
+            253,
+            589,
+            303
+          ],
+          [
+            589,
+            253,
+            794,
+            303
+          ],
+          [
+            253,
+            303,
+            459,
+            352
+          ],
+          [
+            459,
+            303,
+            589,
+            352
+          ],
+          [
+            589,
+            303,
+            794,
+            352
+          ],
+          [
+            253,
+            352,
+            459,
+            404
+          ],
+          [
+            459,
+            352,
+            589,
+            404
+          ],
+          [
+            589,
+            352,
+            794,
+            404
+          ]
+        ]
+      },
+      "roi1_ocr": {
+        "R_Sph": "0.00",
+        "S_Anchor": "S",
+        "L_Sph": "0.00",
+        "R_Cyl": "0.00",
+        "C_Anchor": "C",
+        "L_Cyl": "0.00",
+        "R_Axis": "160",
+        "A_Anchor": "A",
+        "L_Axis": "180",
+        "R_Add": "0.00",
+        "ADD_Anchor": "ADD",
+        "L_Add": "0.00",
+        "R_blank": null,
+        "blank_anchor": null,
+        "L_blank": null
+      },
+      "roi2": {
+        "roi_id": "ROI_2",
+        "pd_value_bbox": [
+          472,
+          463,
+          102,
+          44
+        ],
+        "pd_value": "65.5"
+      },
+      "roi3_4": {
+        "roi_id": "ROI_3_4",
+        "bboxes": [
+          {
+            "label": "left_occluder",
+            "box": [
+              362,
+              438,
+              72,
+              71
+            ],
+            "state": "filled/active (blue)"
+          },
+          {
+            "label": "right_occluder",
+            "box": [
+              619,
+              439,
+              70,
+              69
+            ],
+            "state": "filled/active (blue)"
+          }
+        ]
+      },
+      "roi5": {
+        "error": "No ROI5 bboxes found in coords.json"
+      },
+      "roi7": {
+        "roi_id": "ROI7",
+        "bbox": [
+          651,
+          601,
+          294,
+          259
+        ],
+        "chart_info": "alphabetic_chart"
+      }
+    },
+    "frame_id": 6516,
+    "time_seconds": 260.64
+  },
+  {
+    "timestamp": "2026-01-21T12:43:08.891485",
+    "rois": {
+      "menu": {
+        "roi_id": "ROI_Menu",
+        "bbox": [
+          0,
+          0,
+          1050,
+          92
+        ],
+        "ocr_text": "4: TOPCON CV-5000PC a x\nFile Course Examination ReferenceData * 5 c ;\na2 2g Poop lll Oe\n"
+      },
+      "roi1": {
+        "cell_bboxes_on_roi0": [
+          [
+            253,
+            156,
+            459,
+            204
+          ],
+          [
+            459,
+            156,
+            589,
+            204
+          ],
+          [
+            589,
+            156,
+            794,
+            204
+          ],
+          [
+            253,
+            204,
+            459,
+            253
+          ],
+          [
+            459,
+            204,
+            589,
+            253
+          ],
+          [
+            589,
+            204,
+            794,
+            253
+          ],
+          [
+            253,
+            253,
+            459,
+            303
+          ],
+          [
+            459,
+            253,
+            589,
+            303
+          ],
+          [
+            589,
+            253,
+            794,
+            303
+          ],
+          [
+            253,
+            303,
+            459,
+            352
+          ],
+          [
+            459,
+            303,
+            589,
+            352
+          ],
+          [
+            589,
+            303,
+            794,
+            352
+          ],
+          [
+            253,
+            352,
+            459,
+            404
+          ],
+          [
+            459,
+            352,
+            589,
+            404
+          ],
+          [
+            589,
+            352,
+            794,
+            404
+          ]
+        ]
+      },
+      "roi1_ocr": {
+        "R_Sph": "0.00",
+        "S_Anchor": "S",
+        "L_Sph": "0.00",
+        "R_Cyl": "0.00",
+        "C_Anchor": "C",
+        "L_Cyl": "0.00",
+        "R_Axis": "160",
+        "A_Anchor": "A",
+        "L_Axis": "180",
+        "R_Add": "0.00",
+        "ADD_Anchor": "ADD",
+        "L_Add": "0.00",
+        "R_blank": null,
+        "blank_anchor": null,
+        "L_blank": null
+      },
+      "roi2": {
+        "roi_id": "ROI_2",
+        "pd_value_bbox": [
+          472,
+          463,
+          102,
+          44
+        ],
+        "pd_value": ""
+      },
+      "roi3_4": {
+        "roi_id": "ROI_3_4",
+        "bboxes": [
+          {
+            "label": "left_occluder",
+            "box": [
+              362,
+              438,
+              72,
+              71
+            ],
+            "state": "filled/active (blue)"
+          },
+          {
+            "label": "right_occluder",
+            "box": [
+              619,
+              439,
+              70,
+              69
+            ],
+            "state": "filled/active (blue)"
+          }
+        ]
+      },
+      "roi5": {
+        "error": "No ROI5 bboxes found in coords.json"
+      },
+      "roi7": {
+        "roi_id": "ROI7",
+        "bbox": [
+          651,
+          601,
+          294,
+          259
+        ],
+        "chart_info": "alphabetic_chart"
+      }
+    },
+    "frame_id": 6576,
+    "time_seconds": 263.04
+  },
+  {
+    "timestamp": "2026-01-21T12:43:11.068003",
+    "rois": {
+      "menu": {
+        "roi_id": "ROI_Menu",
+        "bbox": [
+          0,
+          0,
+          1050,
+          92
+        ],
+        "ocr_text": "#& TOPCON Cv-5000PC = x\nFile Course Examination Reference Data $ C I\n\n\u2014\u2014 3 Jaithul is controlling your computer re\na2 2a Poon \u00b0\u00b0 COCO\n"
+      },
+      "roi1": {
+        "cell_bboxes_on_roi0": [
+          [
+            253,
+            156,
+            459,
+            204
+          ],
+          [
+            459,
+            156,
+            589,
+            204
+          ],
+          [
+            589,
+            156,
+            794,
+            204
+          ],
+          [
+            253,
+            204,
+            459,
+            253
+          ],
+          [
+            459,
+            204,
+            589,
+            253
+          ],
+          [
+            589,
+            204,
+            794,
+            253
+          ],
+          [
+            253,
+            253,
+            459,
+            303
+          ],
+          [
+            459,
+            253,
+            589,
+            303
+          ],
+          [
+            589,
+            253,
+            794,
+            303
+          ],
+          [
+            253,
+            303,
+            459,
+            352
+          ],
+          [
+            459,
+            303,
+            589,
+            352
+          ],
+          [
+            589,
+            303,
+            794,
+            352
+          ],
+          [
+            253,
+            352,
+            459,
+            404
+          ],
+          [
+            459,
+            352,
+            589,
+            404
+          ],
+          [
+            589,
+            352,
+            794,
+            404
+          ]
+        ]
+      },
+      "roi1_ocr": {
+        "R_Sph": "0.00",
+        "S_Anchor": "S",
+        "L_Sph": "0.00",
+        "R_Cyl": "0.00",
+        "C_Anchor": "C",
+        "L_Cyl": "0.00",
+        "R_Axis": "160",
+        "A_Anchor": "A",
+        "L_Axis": "180",
+        "R_Add": "0.00",
+        "ADD_Anchor": "ADD",
+        "L_Add": "0.00",
+        "R_blank": null,
+        "blank_anchor": null,
+        "L_blank": null
+      },
+      "roi2": {
+        "roi_id": "ROI_2",
+        "pd_value_bbox": [
+          472,
+          463,
+          102,
+          44
+        ],
+        "pd_value": ""
+      },
+      "roi3_4": {
+        "roi_id": "ROI_3_4",
+        "bboxes": [
+          {
+            "label": "left_occluder",
+            "box": [
+              362,
+              438,
+              72,
+              71
+            ],
+            "state": "filled/active (blue)"
+          },
+          {
+            "label": "right_occluder",
+            "box": [
+              619,
+              439,
+              70,
+              69
+            ],
+            "state": "unfilled/inactive (gray)"
+          }
+        ]
+      },
+      "roi5": {
+        "error": "No ROI5 bboxes found in coords.json"
+      },
+      "roi7": {
+        "roi_id": "ROI7",
+        "bbox": [
+          651,
+          601,
+          294,
+          259
+        ],
+        "chart_info": "alphabetic_chart"
+      }
+    },
+    "frame_id": 6732,
+    "time_seconds": 269.28
+  },
+  {
+    "timestamp": "2026-01-21T12:43:14.690889",
+    "rois": {
+      "menu": {
+        "roi_id": "ROI_Menu",
+        "bbox": [
+          0,
+          0,
+          1050,
+          92
+        ],
+        "ocr_text": "fj TOPCON CV-5000PC - x\nFile Course Examination ReferenceData [ 5 c ;\n\nom @ ee ee et. Zaithul is controlling your computer EEE\na2 PeLooan \u00b0\u00b0 lCOUCOCClS\n"
+      },
+      "roi1": {
+        "cell_bboxes_on_roi0": [
+          [
+            253,
+            156,
+            459,
+            204
+          ],
+          [
+            459,
+            156,
+            589,
+            204
+          ],
+          [
+            589,
+            156,
+            794,
+            204
+          ],
+          [
+            253,
+            204,
+            459,
+            253
+          ],
+          [
+            459,
+            204,
+            589,
+            253
+          ],
+          [
+            589,
+            204,
+            794,
+            253
+          ],
+          [
+            253,
+            253,
+            459,
+            303
+          ],
+          [
+            459,
+            253,
+            589,
+            303
+          ],
+          [
+            589,
+            253,
+            794,
+            303
+          ],
+          [
+            253,
+            303,
+            459,
+            352
+          ],
+          [
+            459,
+            303,
+            589,
+            352
+          ],
+          [
+            589,
+            303,
+            794,
+            352
+          ],
+          [
+            253,
+            352,
+            459,
+            404
+          ],
+          [
+            459,
+            352,
+            589,
+            404
+          ],
+          [
+            589,
+            352,
+            794,
+            404
+          ]
+        ]
+      },
+      "roi1_ocr": {
+        "R_Sph": "0.00",
+        "S_Anchor": "S",
+        "L_Sph": "0.00",
+        "R_Cyl": "0.00",
+        "C_Anchor": "C",
+        "L_Cyl": "0.00",
+        "R_Axis": "160",
+        "A_Anchor": "A",
+        "L_Axis": "180",
+        "R_Add": "0.00",
+        "ADD_Anchor": "ADD",
+        "L_Add": "0.00",
+        "R_blank": null,
+        "blank_anchor": null,
+        "L_blank": null
+      },
+      "roi2": {
+        "roi_id": "ROI_2",
+        "pd_value_bbox": [
+          472,
+          463,
+          102,
+          44
+        ],
+        "pd_value": ""
+      },
+      "roi3_4": {
+        "roi_id": "ROI_3_4",
+        "bboxes": [
+          {
+            "label": "left_occluder",
+            "box": [
+              362,
+              438,
+              72,
+              71
+            ],
+            "state": "unfilled/inactive (gray)"
+          },
+          {
+            "label": "right_occluder",
+            "box": [
+              611,
+              432,
+              83,
+              83
+            ],
+            "state": "filled/active (blue)"
+          }
+        ]
+      },
+      "roi5": {
+        "error": "No ROI5 bboxes found in coords.json"
+      },
+      "roi7": {
+        "roi_id": "ROI7",
+        "bbox": [
+          651,
+          601,
+          294,
+          259
+        ],
+        "chart_info": "alphabetic_chart"
+      }
+    },
+    "frame_id": 6960,
+    "time_seconds": 278.4
+  },
+  {
+    "timestamp": "2026-01-21T12:43:16.552037",
+    "rois": {
+      "menu": {
+        "roi_id": "ROI_Menu",
+        "bbox": [
+          0,
+          0,
+          1050,
+          92
+        ],
+        "ocr_text": "fj TOPCON CV-5000PC - x\nFile Course Examination ReferenceData [ 5 c ;\n\nom @ ee ee et. Zaithul is controlling your computer EEE\na2 PeLooan \u00b0\u00b0 lCOUCOCClS\n"
+      },
+      "roi1": {
+        "cell_bboxes_on_roi0": [
+          [
+            253,
+            156,
+            459,
+            204
+          ],
+          [
+            459,
+            156,
+            589,
+            204
+          ],
+          [
+            589,
+            156,
+            794,
+            204
+          ],
+          [
+            253,
+            204,
+            459,
+            253
+          ],
+          [
+            459,
+            204,
+            589,
+            253
+          ],
+          [
+            589,
+            204,
+            794,
+            253
+          ],
+          [
+            253,
+            253,
+            459,
+            303
+          ],
+          [
+            459,
+            253,
+            589,
+            303
+          ],
+          [
+            589,
+            253,
+            794,
+            303
+          ],
+          [
+            253,
+            303,
+            459,
+            352
+          ],
+          [
+            459,
+            303,
+            589,
+            352
+          ],
+          [
+            589,
+            303,
+            794,
+            352
+          ],
+          [
+            253,
+            352,
+            459,
+            404
+          ],
+          [
+            459,
+            352,
+            589,
+            404
+          ],
+          [
+            589,
+            352,
+            794,
+            404
+          ]
+        ]
+      },
+      "roi1_ocr": {
+        "R_Sph": "0.00",
+        "S_Anchor": "S",
+        "L_Sph": "0.00",
+        "R_Cyl": "0.00",
+        "C_Anchor": "C",
+        "L_Cyl": "0.00",
+        "R_Axis": "160",
+        "A_Anchor": "A",
+        "L_Axis": "180",
+        "R_Add": "0.00",
+        "ADD_Anchor": "ADD",
+        "L_Add": "0.00",
+        "R_blank": null,
+        "blank_anchor": null,
+        "L_blank": null
+      },
+      "roi2": {
+        "roi_id": "ROI_2",
+        "pd_value_bbox": [
+          472,
+          463,
+          102,
+          44
+        ],
+        "pd_value": ""
+      },
+      "roi3_4": {
+        "roi_id": "ROI_3_4",
+        "bboxes": [
+          {
+            "label": "left_occluder",
+            "box": [
+              362,
+              438,
+              72,
+              71
+            ],
+            "state": "filled/active (blue)"
+          },
+          {
+            "label": "right_occluder",
+            "box": [
+              613,
+              433,
+              81,
+              80
+            ],
+            "state": "filled/active (blue)"
+          }
+        ]
+      },
+      "roi5": {
+        "error": "No ROI5 bboxes found in coords.json"
+      },
+      "roi7": {
+        "roi_id": "ROI7",
+        "bbox": [
+          651,
+          601,
+          294,
+          259
+        ],
+        "chart_info": "alphabetic_chart"
+      }
+    },
+    "frame_id": 7140,
+    "time_seconds": 285.6
+  },
+  {
+    "timestamp": "2026-01-21T12:43:19.942432",
+    "rois": {
+      "menu": {
+        "roi_id": "ROI_Menu",
+        "bbox": [
+          0,
+          0,
+          1050,
+          92
+        ],
+        "ocr_text": "4: TOPCON Cv-5000PC - x\nFile Course Examination ReferenceData * 5 c ;\n\n\u2014\u2014\u2014\u2014\u2014 \u2014\u2014\u2014_ #_Jaithul is controlling your computer oo \u2014\u2014\na2 ei Pecan \u00b0\u00b0  }  02.CCCCCCC\n"
+      },
+      "roi1": {
+        "cell_bboxes_on_roi0": [
+          [
+            253,
+            156,
+            459,
+            204
+          ],
+          [
+            459,
+            156,
+            589,
+            204
+          ],
+          [
+            589,
+            156,
+            794,
+            204
+          ],
+          [
+            253,
+            204,
+            459,
+            253
+          ],
+          [
+            459,
+            204,
+            589,
+            253
+          ],
+          [
+            589,
+            204,
+            794,
+            253
+          ],
+          [
+            253,
+            253,
+            459,
+            303
+          ],
+          [
+            459,
+            253,
+            589,
+            303
+          ],
+          [
+            589,
+            253,
+            794,
+            303
+          ],
+          [
+            253,
+            303,
+            459,
+            352
+          ],
+          [
+            459,
+            303,
+            589,
+            352
+          ],
+          [
+            589,
+            303,
+            794,
+            352
+          ],
+          [
+            253,
+            352,
+            459,
+            404
+          ],
+          [
+            459,
+            352,
+            589,
+            404
+          ],
+          [
+            589,
+            352,
+            794,
+            404
+          ]
+        ]
+      },
+      "roi1_ocr": {
+        "R_Sph": "0.00",
+        "S_Anchor": "S",
+        "L_Sph": "0.00",
+        "R_Cyl": "0.00",
+        "C_Anchor": "C",
+        "L_Cyl": "0.00",
+        "R_Axis": "160",
+        "A_Anchor": "A",
+        "L_Axis": "180",
+        "R_Add": "0.00",
+        "ADD_Anchor": "ADD",
+        "L_Add": "0.00",
+        "R_blank": null,
+        "blank_anchor": null,
+        "L_blank": null
+      },
+      "roi2": {
+        "roi_id": "ROI_2",
+        "pd_value_bbox": [
+          472,
+          463,
+          102,
+          44
+        ],
+        "pd_value": "65.5"
+      },
+      "roi3_4": {
+        "roi_id": "ROI_3_4",
+        "bboxes": [
+          {
+            "label": "left_occluder",
+            "box": [
+              362,
+              438,
+              72,
+              71
+            ],
+            "state": "filled/active (blue)"
+          },
+          {
+            "label": "right_occluder",
+            "box": [
+              613,
+              433,
+              81,
+              80
+            ],
+            "state": "filled/active (blue)"
+          }
+        ]
+      },
+      "roi5": {
+        "error": "No ROI5 bboxes found in coords.json"
+      },
+      "roi7": {
+        "roi_id": "ROI7",
+        "bbox": [
+          651,
+          601,
+          294,
+          259
+        ],
+        "chart_info": "alphabetic_chart"
+      }
+    },
+    "frame_id": 7260,
+    "time_seconds": 290.4
+  }
+]
