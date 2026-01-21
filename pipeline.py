@@ -178,7 +178,7 @@ def extract_all_rois(roi0_img, gpu_available=False, save_debug=True, output_dir=
                         video_basename = os.path.splitext(os.path.basename(filename))[0]
                 else:
                     video_basename = os.path.splitext(os.path.basename(filename))[0] if filename else 'roi0'
-                print(f"[DEBUG] video_basename: {video_basename}")
+                # print(f"[DEBUG] video_basename: {video_basename}")
                 coords_json_path = None
                 for search_dir in [output_dir, '.']:
                     candidate = os.path.join(search_dir, f'{video_basename}_coords.json')
@@ -382,7 +382,32 @@ def append_to_csv(csv_path, frame_data):
         chart_num += 1  # 1-based index (so 0→1, 1→2, ... 4→5)
     
     # 4. Occluder State (ROI-3/4)
-    occ_state = rois.get('roi3_4', {}).get('occluder_state', 'Unknown')
+    # Logic:
+    # Both Blue (filled) -> BINO
+    # Left Grey (unfilled) -> Left_Occluded
+    # Right Grey (unfilled) -> Right_Occluded
+    # Both Grey (unfilled) -> Both_Occluded
+    
+    occ_state = "Unknown"
+    if 'roi3_4' in rois and 'bboxes' in rois['roi3_4']:
+        occs = rois['roi3_4']['bboxes']
+        left_active = False
+        right_active = False
+        for occ in occs:
+            state = occ.get('state', '').lower()
+            is_active = "(blue)" in state
+            if occ.get('label') == 'left_occluder':
+                left_active = is_active
+            elif occ.get('label') == 'right_occluder':
+                right_active = is_active
+        if left_active and right_active:
+            occ_state = "BINO"
+        elif not left_active and not right_active:
+            occ_state = "Both_Occluded"
+        elif not left_active:
+            occ_state = "Left_Occluded"
+        elif not right_active:
+            occ_state = "Right_Occluded"
 
     # 5. Chart Display (ROI-7)
     chart_display = rois.get('roi7', {}).get('chart_info', '')
@@ -565,7 +590,26 @@ def main():
             if chart_num != -1:
                 chart_num += 1  # 1-based index (so 0→1, 1→2, ... 4→5)
             
-            occ_state = rois.get('roi3_4', {}).get('occluder_state', 'Unknown')
+            occ_state = "Unknown"
+            if 'roi3_4' in rois and 'bboxes' in rois['roi3_4']:
+                occs = rois['roi3_4']['bboxes']
+                left_active = False
+                right_active = False
+                for occ in occs:
+                    state = occ.get('state', '').lower()
+                    is_active = "(blue)" in state
+                    if occ.get('label') == 'left_occluder':
+                        left_active = is_active
+                    elif occ.get('label') == 'right_occluder':
+                        right_active = is_active
+                if left_active and right_active:
+                    occ_state = "BINO"
+                elif not left_active and not right_active:
+                    occ_state = "Both_Occluded"
+                elif not left_active:
+                    occ_state = "Left_Occluded"
+                elif not right_active:
+                    occ_state = "Right_Occluded"
             
             # 5. Chart Info (ROI-7)
             chart_display = rois.get('roi7', {}).get('chart_info', '')
@@ -619,7 +663,7 @@ def main():
             if frame_count % sampling_interval_frames != 0:
                 continue
 
-            print(f"\r→ Frame {frame_count} / {total_frames} (t={time_seconds:.2f}s)", end="")
+            print(f"\rFrame {frame_count} (t={time_seconds:.2f}s)   ", end="")
 
             try:
                 # 1. Frame-to-Frame Change Detection

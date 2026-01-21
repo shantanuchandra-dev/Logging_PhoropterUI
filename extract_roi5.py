@@ -207,9 +207,9 @@ def extract_roi5_sc_v2(roi0_img, output_dir, prefix):
     viz_path = os.path.join(output_dir, f'{prefix}_{now}_final_contours.png')
     cv2.imwrite(viz_path, viz)
     
-    print(f"Final contours detected: {len(labeled_contours)}")
-    for lc in labeled_contours:
-        print(f"Label {lc['label']}: x={lc['x']}, y={lc['y']}, w={lc['w']}, h={lc['h']}")
+    # print(f"Final contours detected: {len(labeled_contours)}")
+    # for lc in labeled_contours:
+    #     print(f"Label {lc['label']}: x={lc['x']}, y={lc['y']}, w={lc['w']}, h={lc['h']}")
         
     return labeled_contours, viz_path
 
@@ -268,8 +268,8 @@ def extract(image, save_debug=False, output_dir='ROI_5', filename=None):
     if save_debug:
         if results:
             print(f"Success! Final debug image: {final_viz}")
-            for lc in results:
-                print(f"Label {lc['label']}: x={lc['x']}, y={lc['y']}, w={lc['w']}, h={lc['h']}")
+            # for lc in results:
+            #     print(f"Label {lc['label']}: x={lc['x']}, y={lc['y']}, w={lc['w']}, h={lc['h']}")
             print(f"Selected tab (max yellow): {selected_tab}")
         else:
             print("Failed to extract contours.")

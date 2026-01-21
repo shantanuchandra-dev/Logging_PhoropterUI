@@ -84,11 +84,12 @@ def extract(roi0_path, roi0_dir='ROI_0', roi_menu_dir='ROI_Menu', output_dir='RO
     with open(abs_bbox_path, 'w') as f:
         for bbox in abs_bboxes:
             f.write(f'{bbox}\n')
-    print(f'ROI-1 cell bboxes on ROI-0 saved to {abs_bbox_path}')
-    print(f'Overlay image saved to {abs_overlay_path}')
-    print(f'Pipeline completed for {roi0_path}')
-    print(f'ROI1 image: {roi1_path}')
-    print(f'Bounding boxes: {bbox_path}')
+    # print(f'ROI-1 cell bboxes on ROI-0 saved to {abs_bbox_path}')
+    # print(f'Overlay image saved to {abs_overlay_path}')
+    # print(f'Pipeline completed for ROI1 {roi0_path}')
+    # print(f'ROI1 image: {roi1_path}')
+    # print(f'Bounding boxes: {bbox_path}')
+
     # Return bounding boxes of each cell (in ROI-0 coordinates) in the result
     return {
         'roi_id': 'ROI1',
@@ -134,7 +135,7 @@ def draw_and_save_grid_visualization(roi1_img, col_peaks, row_peaks, bboxes, out
     prefix = base[:4]
     vis_path = os.path.join(output_dir, f'{prefix}_{now}_grid.png')
     cv2.imwrite(vis_path, vis_img)
-    print(f'ROI-1 with grid lines saved to {vis_path}')
+    # print(f'ROI-1 with grid lines saved to {vis_path}')
     return vis_path
 def filter_bboxes_by_content(roi1_img, bboxes, n_cols=3):
     """
@@ -237,7 +238,7 @@ def calculate_and_save_bboxes(col_peaks, row_peaks, roi1_img=None, output_dir='R
     with open(bbox_path, 'w') as f:
         for bbox in bboxes:
             f.write(f'{bbox}\n')
-    print(f'ROI-1 cell bounding boxes saved to {bbox_path}')
+    # print(f'ROI-1 cell bounding boxes saved to {bbox_path}')
     return bboxes, bbox_path
 def detect_grid_lines_hough(roi1_img, n_cols=3, n_rows=5, output_dir='ROI_1', basename='roi1'):
     """
@@ -280,7 +281,7 @@ def detect_grid_lines_hough(roi1_img, n_cols=3, n_rows=5, output_dir='ROI_1', ba
     for px in v_peaks:
         cv2.line(overlay, (px, 0), (px, height), (255, 255, 0), 2)
     cv2.imwrite(os.path.join(output_dir, f'{prefix}_{now}_grid_overlay.png'), overlay)
-    print(f'Intermediate images saved: bin, hlines, vlines, grid overlay')
+    # print(f'Intermediate images saved: bin, hlines, vlines, grid overlay')
     # Return peaks as grid lines
     return v_peaks, h_peaks
 def extract_and_save_table_region(cropped_img, table_rect, output_dir='ROI_1', basename='roi1'):
@@ -310,7 +311,7 @@ def extract_and_save_table_region(cropped_img, table_rect, output_dir='ROI_1', b
     prefix = basename[:4]
     roi1_path = os.path.join(output_dir, f'{prefix}_{now}_roi1.png')
     cv2.imwrite(roi1_path, roi1)
-    print(f'ROI-1 (table) saved to {roi1_path}')
+    # print(f'ROI-1 (table) saved to {roi1_path}')
     # Return found_top as well for offset correction
     return roi1, roi1_path, found_top
 def detect_centered_table(cropped_img):
@@ -419,7 +420,7 @@ def crop_and_subtract_menu(img_path, roi_menu_path=None, output_dir='ROI_1'):
     prefix = basename[:4]
     crop_path = os.path.join(output_dir, f'{prefix}_{now}_half.png')
     cv2.imwrite(crop_path, cropped_half)
-    print(f'Cropped image saved to {crop_path}')
+    # print(f'Cropped image saved to {crop_path}')
     return cropped_half, crop_path
 
 
