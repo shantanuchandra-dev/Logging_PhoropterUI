@@ -42,7 +42,7 @@ def extract(roi0_path, roi0_dir='ROI_0', roi_menu_dir='ROI_Menu', output_dir='RO
     # Step 3: Extract and save table region
     roi1_img, roi1_path, found_top = extract_and_save_table_region(cropped_img, table_rect, output_dir, basename=prefix)
     # Step 4: Detect grid lines
-    col_peaks, row_peaks = detect_grid_lines_hough(roi1_img, n_cols=3, n_rows=5)
+    col_peaks, row_peaks = detect_grid_lines_hough(roi1_img, n_cols=3, n_rows=5, output_dir=output_dir, basename=prefix)
     # Step 5: Calculate and save bounding boxes (with filtering if needed)
     bboxes, bbox_path = calculate_and_save_bboxes(col_peaks, row_peaks, roi1_img, output_dir, basename=prefix)
     # Step 6: Draw and save grid visualization
