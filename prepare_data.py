@@ -6,8 +6,8 @@ from PIL import Image
 
 def prepare_data(source_dir="Charts_Processed", output_dir="chart_dataset", train_split=0.8):
     """
-    Organizes images from _Charts into a standard train/val split.
-    Normalizes folder names.
+    Organizes images from source_dir into a standard train/val split.
+    Classes are defined by the immediate parent folder of each image.
     """
     source_path = Path(source_dir)
     output_path = Path(output_dir)
@@ -15,21 +15,27 @@ def prepare_data(source_dir="Charts_Processed", output_dir="chart_dataset", trai
     if output_path.exists():
         shutil.rmtree(output_path)
     
-    classes = [d for d in source_path.iterdir() if d.is_dir()]
-    print(f"Found {len(classes)} classes.")
+    # Collect all images and their immediate parent (class)
+    image_groups = {}
     
-    for class_path in classes:
-        # Normalize class name: strip spaces and convert to lowercase
-        class_name = class_path.name.strip().lower().replace(" ", "_")
-        print(f"Processing class: {class_path.name} -> {class_name}")
-        
-        # Get all images recursively
-        images = []
-        for root, dirs, files in os.walk(class_path):
-            for file in files:
-                if file.lower().endswith(('.png', '.jpg', '.jpeg')):
-                    images.append(Path(root) / file)
-        
+    for root, dirs, files in os.walk(source_dir):
+        # Skip if the directory itself is hidden or special
+        if any(part.startswith('.') for part in Path(root).parts):
+            continue
+            
+        for file in files:
+            if file.lower().endswith(('.png', '.jpg', '.jpeg')):
+                img_path = Path(root) / file
+                # Class name is the immediate parent directory
+                class_name = Path(root).name.strip().lower().replace(" ", "_")
+                
+                if class_name not in image_groups:
+                    image_groups[class_name] = []
+                image_groups[class_name].append(img_path)
+
+    print(f"Found {len(image_groups)} granular classes.")
+    
+    for class_name, images in image_groups.items():
         random.shuffle(images)
         
         if len(images) == 1:

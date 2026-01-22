@@ -43,7 +43,7 @@ def load_chart_model():
         print(f"[ROI7] Error loading model: {e}")
         return None, None
 
-def classify_chart(roi_img, threshold=0.6):
+def classify_chart(roi_img, threshold=0.1):
     """Classifies the given chart image using the trained model.
     Returns empty string if below confidence threshold or error occurs.
     """
@@ -53,7 +53,7 @@ def classify_chart(roi_img, threshold=0.6):
         
     try:
         preprocess = transforms.Compose([
-            transforms.Resize((224, 224)),
+            transforms.Resize((64, 64)),
             transforms.ToTensor(),
             transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
         ])
