@@ -108,12 +108,12 @@ def extract(roi0_img, save_debug=False, output_dir='ROI_3', filename=None):
         'roi_id': 'ROI_3_4',
         'bboxes': [
             {
-                'label': 'left_occluder',
+                'label': 'right_occluder',
                 'box': [lx_abs, ly_abs, lw_abs, lh_abs],  # x, y, w, h
                 'state': state3
             },
             {
-                'label': 'right_occluder',
+                'label': 'left_occluder',
                 'box': [rx_abs, ry_abs, rw_abs, rh_abs],
                 'state': state4
             }

@@ -3,7 +3,7 @@ This script extracts the menu panel (top bar) from the latest ROI-0 image and sa
 """
 import cv2
 import numpy as np
-import pytesseract
+# import pytesseract
 import os
 import datetime
 
@@ -45,12 +45,12 @@ if __name__ == '__main__':
     print(f'Menu panel saved to {menu_path}')
 
     # OCR the Menu panel (optional)
-    ocr_config = '--psm 6'
-    txt = pytesseract.image_to_string(menu, config=ocr_config)
-    ocr_txt_path = os.path.join(output_dir, f'{prefix}_{now}_ocr.txt')
-    with open(ocr_txt_path, 'w') as f:
-        f.write(txt)
-    print(f'OCR result saved to {ocr_txt_path}')
+    # ocr_config = '--psm 6'
+    # txt = pytesseract.image_to_string(menu, config=ocr_config)
+    # ocr_txt_path = os.path.join(output_dir, f'{prefix}_{now}_ocr.txt')
+    # with open(ocr_txt_path, 'w') as f:
+    #     f.write(txt)
+    # print(f'OCR result saved to {ocr_txt_path}')
 
 def extract(roi0_img, save_debug=False, output_dir='ROI_Menu', filename=None):
     """
@@ -61,8 +61,9 @@ def extract(roi0_img, save_debug=False, output_dir='ROI_Menu', filename=None):
     menu_height = max(40, img_h // 10)
     menu = roi0_img[0:menu_height, :]
     bbox = [0, 0, img_w, menu_height]
-    ocr_config = '--psm 6'
-    ocr_text = pytesseract.image_to_string(menu, config=ocr_config)
+    # ocr_config = '--psm 6'
+    # ocr_text = pytesseract.image_to_string(menu, config=ocr_config)
+    ocr_text = ''
     if save_debug:
         now = datetime.datetime.now().strftime('%d%m_%H%M%S')
         os.makedirs(output_dir, exist_ok=True)
@@ -73,9 +74,9 @@ def extract(roi0_img, save_debug=False, output_dir='ROI_Menu', filename=None):
             prefix = 'menu'
         menu_path = os.path.join(output_dir, f'{prefix}_{now}_menu.png')
         cv2.imwrite(menu_path, menu)
-        ocr_txt_path = os.path.join(output_dir, f'{prefix}_{now}_ocr.txt')
-        with open(ocr_txt_path, 'w') as f:
-            f.write(ocr_text)
+        # ocr_txt_path = os.path.join(output_dir, f'{prefix}_{now}_ocr.txt')
+        # with open(ocr_txt_path, 'w') as f:
+        #     f.write(ocr_text)
     return {
         'roi_id': 'ROI_Menu',
         'bbox': bbox,

@@ -264,11 +264,10 @@ def extract_roi1_ocr(img, bboxes):
                     cv2.imwrite(f'ROI_1/{k}_failed_crop.png', img[by1:by2, bx1:bx2])
         except:
             pass
-        print(f"[WARNING] extract_roi1_ocr: {blank_count}/8 fields blank. Accuracy might be low.")
+            print(f"[WARNING] extract_roi1_ocr: {blank_count}/8 fields blank. Accuracy might be low.")
         # We don't exit in Phase 3 to avoid stopping the whole pipeline, 
         # but we should definitely log it.
     
-    return results
     return results
 
 
@@ -282,7 +281,7 @@ if __name__ == '__main__':
         if img is not None:
             # If it's a full ROI-0 image
             if img.shape[0] > 600:
-                res = extract(img, save_debug=True)
+                res = extract_roi1_ocr(img, save_debug=True)
                 # Removed debug print
             else:
                 # If it's just the table crop
@@ -295,5 +294,3 @@ if __name__ == '__main__':
                         bboxes = [parse_bbox_line(line) for line in f]
                     res = extract_roi1_ocr(img, bboxes)
                     # Removed debug print
-
-

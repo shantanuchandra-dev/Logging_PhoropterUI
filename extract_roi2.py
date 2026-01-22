@@ -14,13 +14,13 @@ def extract_pd_value(pd_crop_img):
     if pd_crop_img is None or pd_crop_img.size == 0:
         return None
 
-    # Save the first 20 crops for debugging
-    if not hasattr(extract_pd_value, "_debug_count"):
-        extract_pd_value._debug_count = 0
-    if extract_pd_value._debug_count < 20:
-        os.makedirs("ROI_2", exist_ok=True)
-        cv2.imwrite(f"ROI_2/pd_crop_debug_{extract_pd_value._debug_count+1:02d}.png", pd_crop_img)
-        extract_pd_value._debug_count += 1
+    # Save the first 20 crops for debugging (disabled)
+    # if not hasattr(extract_pd_value, "_debug_count"):
+    #     extract_pd_value._debug_count = 0
+    # if extract_pd_value._debug_count < 20:
+    #     os.makedirs("ROI_2", exist_ok=True)
+    #     cv2.imwrite(f"ROI_2/pd_crop_debug_{extract_pd_value._debug_count+1:02d}.png", pd_crop_img)
+    #     extract_pd_value._debug_count += 1
 
     # Preprocess for OCR (similar to logic in extract())
     pd_gray = cv2.cvtColor(pd_crop_img, cv2.COLOR_BGR2GRAY)
