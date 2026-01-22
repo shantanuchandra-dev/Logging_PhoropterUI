@@ -5,6 +5,8 @@ MatchedScreens/
 firstFrame/
 firstFrame_JSON/
 __pycache__/
+__pycache__
+
     
 temp/
 settings.json

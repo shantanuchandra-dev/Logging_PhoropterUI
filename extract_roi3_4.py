@@ -59,41 +59,10 @@ def extract(roi0_img, save_debug=False, output_dir='ROI_3', filename=None):
             'error': f'Found {len(detected_circles)} circles, need at least 2'
         }
 
-    # Selection logic: Find the best pair of circles based on Y-alignment and X-symmetry
-    best_pair = None
-    best_score = float('inf')
-    
-    # We need at least 2 circles
-    if len(detected_circles) >= 2:
-        for i in range(len(detected_circles)):
-            for j in range(i + 1, len(detected_circles)):
-                c1 = detected_circles[i]
-                c2 = detected_circles[j]
-                
-                # Vertical alignment score (lower is better)
-                y_diff = abs(int(c1[1]) - int(c2[1]))
-                
-                # Horizontal symmetry score (midpoint should be near x_center, lower is better)
-                mid_x = (int(c1[0]) + int(c2[0])) / 2.0
-                x_center = w / 2.0
-                symmetry_err = abs(mid_x - x_center)
-                
-                # Total score: prioritize vertical alignment, then symmetry
-                # Weighted score: y_diff * 1.5 + symmetry_err
-                score = y_diff * 2.0 + symmetry_err
-                
-                if score < best_score:
-                    best_score = score
-                    best_pair = [c1, c2]
-
-    if best_pair is None:
-        return {
-            'roi_id': 'ROI_3_4',
-            'bboxes': [],
-            'error': 'Could not find a valid pair of occluders'
-        }
-
-    left_right = sorted(best_pair, key=lambda c: c[0])
+    # Find the two circles closest to the center vertically
+    mid_y = h / 2
+    candidates = sorted(detected_circles, key=lambda c: abs(c[1] - mid_y))
+    left_right = sorted(candidates[:2], key=lambda c: c[0])
     
     left_circle = left_right[0]
     right_circle = left_right[1]
@@ -139,12 +108,12 @@ def extract(roi0_img, save_debug=False, output_dir='ROI_3', filename=None):
         'roi_id': 'ROI_3_4',
         'bboxes': [
             {
-                'label': 'left_occluder',
+                'label': 'right_occluder',
                 'box': [lx_abs, ly_abs, lw_abs, lh_abs],  # x, y, w, h
                 'state': state3
             },
             {
-                'label': 'right_occluder',
+                'label': 'left_occluder',
                 'box': [rx_abs, ry_abs, rw_abs, rh_abs],
                 'state': state4
             }

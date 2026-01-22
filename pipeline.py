@@ -599,7 +599,7 @@ def main():
                     state = occ.get('state', '').lower()
                     is_active = "(blue)" in state
                     if occ.get('label') == 'left_occluder':
-                        left_active = is_active
+                        left_active: bool = is_active
                     elif occ.get('label') == 'right_occluder':
                         right_active = is_active
                 if left_active and right_active:
