@@ -247,8 +247,11 @@ def extract_roi1_ocr(img, bboxes):
             value = extract_value_with_ensemble(cell_img, label)
             results[label] = value
 
-    # Only print summary if there is a warning (too many blanks)
+    # PRINT SUMMARY
     main_keys = ['R_Sph', 'L_Sph', 'R_Cyl', 'L_Cyl', 'R_Axis', 'L_Axis', 'R_Add', 'L_Add']
+    print(' | '.join(str(results.get(k) or '') for k in main_keys))
+
+    # Error handling for too many blanks
     blank_count = sum(1 for k in main_keys if not results.get(k))
     if blank_count >= 5:
         # Save crops for debugging
@@ -261,12 +264,10 @@ def extract_roi1_ocr(img, bboxes):
                     cv2.imwrite(f'ROI_1/{k}_failed_crop.png', img[by1:by2, bx1:bx2])
         except:
             pass
-        print(' | '.join(str(results.get(k) or '') for k in main_keys))
         print(f"[WARNING] extract_roi1_ocr: {blank_count}/8 fields blank. Accuracy might be low.")
         # We don't exit in Phase 3 to avoid stopping the whole pipeline, 
         # but we should definitely log it.
     
-    return results
     return results
 
 
@@ -293,5 +294,3 @@ if __name__ == '__main__':
                         bboxes = [parse_bbox_line(line) for line in f]
                     res = extract_roi1_ocr(img, bboxes)
                     # Removed debug print
-
-

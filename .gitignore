@@ -1,7 +1,7 @@
 # Ignore all video files
 Sample/videos*/
 ROI_*/
-pipeline_output/
+MatchedScreens/
 firstFrame/
 firstFrame_JSON/
 __pycache__/
