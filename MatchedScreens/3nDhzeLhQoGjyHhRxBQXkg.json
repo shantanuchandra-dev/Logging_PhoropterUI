@@ -1,6 +1,6 @@
 [
   {
-    "timestamp": "2026-01-21T17:04:41.403560",
+    "timestamp": "2026-01-22T08:18:55.643280",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -106,9 +106,9 @@
             402
           ]
         ],
-        "roi1_image": "ROI_1/3nDh_2101_170443_roi1.png",
-        "overlay_image": "ROI_1/3nDh_2101_170443_roi1_cells_on_roi0.png",
-        "bbox_file": "ROI_1/3nDh_2101_170443_roi1_cells_on_roi0_bboxes.txt"
+        "roi1_image": "ROI_1/3nDh_2201_081857_roi1.png",
+        "overlay_image": "ROI_1/3nDh_2201_081857_roi1_cells_on_roi0.png",
+        "bbox_file": "ROI_1/3nDh_2201_081857_roi1_cells_on_roi0_bboxes.txt"
       },
       "roi1_ocr": {
         "R_Sph": "+1.50",
@@ -137,7 +137,7 @@
         ],
         "pd_value": "",
         "confidence": null,
-        "image_path": "ROI_2/3nDh_2101_170446_pd_debug.png"
+        "image_path": "ROI_2/3nDh_2201_081901_pd_debug.png"
       },
       "roi3_4": {
         "roi_id": "ROI_3_4",
@@ -164,8 +164,8 @@
           }
         ],
         "image_paths": [
-          "ROI_3/3nDh_2101_170446_roi3.png",
-          "ROI_4/3nDh_2101_170446_roi4.png"
+          "ROI_3/3nDh_2201_081901_roi3.png",
+          "ROI_4/3nDh_2201_081901_roi4.png"
         ]
       },
       "roi5": {
@@ -226,15 +226,15 @@
           294,
           259
         ],
-        "chart_info": "",
-        "debug_image": "ROI_7/3nDh_2101_170447_labeled_roi7.png"
+        "chart_info": "snellen_chart__20_15_15",
+        "debug_image": "ROI_7/3nDh_2201_081901_labeled_roi7.png"
       }
     },
     "frame_id": 2312,
     "time_seconds": 92.48
   },
   {
-    "timestamp": "2026-01-21T17:04:47.854591",
+    "timestamp": "2026-01-22T08:19:02.075941",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -450,14 +450,14 @@
           294,
           259
         ],
-        "chart_info": ""
+        "chart_info": "snellen_chart__20_15_15"
       }
     },
     "frame_id": 2832,
     "time_seconds": 113.28
   },
   {
-    "timestamp": "2026-01-21T17:04:59.987572",
+    "timestamp": "2026-01-22T08:19:13.959311",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -673,14 +673,14 @@
           294,
           259
         ],
-        "chart_info": ""
+        "chart_info": "snellen_chart__20_15_15"
       }
     },
     "frame_id": 3228,
     "time_seconds": 129.12
   },
   {
-    "timestamp": "2026-01-21T17:05:03.891810",
+    "timestamp": "2026-01-22T08:19:17.729520",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -896,14 +896,14 @@
           294,
           259
         ],
-        "chart_info": ""
+        "chart_info": "snellen_chart__20_15_15"
       }
     },
     "frame_id": 3252,
     "time_seconds": 130.08
   },
   {
-    "timestamp": "2026-01-21T17:05:12.456786",
+    "timestamp": "2026-01-22T08:19:25.980327",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -1119,14 +1119,14 @@
           294,
           259
         ],
-        "chart_info": ""
+        "chart_info": "snellen_chart__20_15_15"
       }
     },
     "frame_id": 3288,
     "time_seconds": 131.52
   },
   {
-    "timestamp": "2026-01-21T17:05:16.642494",
+    "timestamp": "2026-01-22T08:19:30.007838",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -1342,14 +1342,14 @@
           294,
           259
         ],
-        "chart_info": "e_charts"
+        "chart_info": "echart_400"
       }
     },
     "frame_id": 3540,
     "time_seconds": 141.6
   },
   {
-    "timestamp": "2026-01-21T17:05:21.189508",
+    "timestamp": "2026-01-22T08:19:34.066920",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -1565,14 +1565,14 @@
           294,
           259
         ],
-        "chart_info": "e_charts"
+        "chart_info": "echart_400"
       }
     },
     "frame_id": 3552,
     "time_seconds": 142.08
   },
   {
-    "timestamp": "2026-01-21T17:05:26.977559",
+    "timestamp": "2026-01-22T08:19:39.808209",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -1788,14 +1788,14 @@
           294,
           259
         ],
-        "chart_info": "e_charts"
+        "chart_info": "echart_400"
       }
     },
     "frame_id": 5340,
     "time_seconds": 213.6
   },
   {
-    "timestamp": "2026-01-21T17:05:28.744273",
+    "timestamp": "2026-01-22T08:19:41.555931",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -2011,14 +2011,14 @@
           294,
           259
         ],
-        "chart_info": "e_charts"
+        "chart_info": "echart_400"
       }
     },
     "frame_id": 5568,
     "time_seconds": 222.72
   },
   {
-    "timestamp": "2026-01-21T17:05:34.054405",
+    "timestamp": "2026-01-22T08:19:46.781423",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -2234,14 +2234,14 @@
           294,
           259
         ],
-        "chart_info": "e_charts"
+        "chart_info": "echart_400"
       }
     },
     "frame_id": 5652,
     "time_seconds": 226.08
   },
   {
-    "timestamp": "2026-01-21T17:05:37.188151",
+    "timestamp": "2026-01-22T08:19:49.869886",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -2457,14 +2457,14 @@
           294,
           259
         ],
-        "chart_info": "e_charts"
+        "chart_info": "echart_400"
       }
     },
     "frame_id": 5700,
     "time_seconds": 228.0
   },
   {
-    "timestamp": "2026-01-21T17:05:40.780327",
+    "timestamp": "2026-01-22T08:19:53.453768",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -2680,14 +2680,14 @@
           294,
           259
         ],
-        "chart_info": "e_charts"
+        "chart_info": "echart_400"
       }
     },
     "frame_id": 5724,
     "time_seconds": 228.96
   },
   {
-    "timestamp": "2026-01-21T17:05:42.532294",
+    "timestamp": "2026-01-22T08:19:55.194564",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -2903,14 +2903,14 @@
           294,
           259
         ],
-        "chart_info": "e_charts"
+        "chart_info": "echart_400"
       }
     },
     "frame_id": 5760,
     "time_seconds": 230.4
   },
   {
-    "timestamp": "2026-01-21T17:05:44.347685",
+    "timestamp": "2026-01-22T08:19:56.982740",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -3126,14 +3126,14 @@
           294,
           259
         ],
-        "chart_info": "e_charts"
+        "chart_info": "echart_400"
       }
     },
     "frame_id": 5844,
     "time_seconds": 233.76
   },
   {
-    "timestamp": "2026-01-21T17:05:49.473286",
+    "timestamp": "2026-01-22T08:20:02.025224",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -3349,14 +3349,14 @@
           294,
           259
         ],
-        "chart_info": "e_charts"
+        "chart_info": "echart_400"
       }
     },
     "frame_id": 6000,
     "time_seconds": 240.0
   },
   {
-    "timestamp": "2026-01-21T17:05:52.010998",
+    "timestamp": "2026-01-22T08:20:04.551284",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -3572,14 +3572,14 @@
           294,
           259
         ],
-        "chart_info": "e_charts"
+        "chart_info": "echart_400"
       }
     },
     "frame_id": 6012,
     "time_seconds": 240.48
   },
   {
-    "timestamp": "2026-01-21T17:05:57.317102",
+    "timestamp": "2026-01-22T08:20:09.847871",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -3795,14 +3795,14 @@
           294,
           259
         ],
-        "chart_info": "e_charts"
+        "chart_info": "echart_400"
       }
     },
     "frame_id": 6252,
     "time_seconds": 250.08
   },
   {
-    "timestamp": "2026-01-21T17:05:59.425735",
+    "timestamp": "2026-01-22T08:20:11.956464",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -4018,14 +4018,237 @@
           294,
           259
         ],
-        "chart_info": ""
+        "chart_info": "snellen_chart_20_20_20"
       }
     },
     "frame_id": 6396,
     "time_seconds": 255.84
   },
   {
-    "timestamp": "2026-01-21T17:06:10.703139",
+    "timestamp": "2026-01-22T08:20:18.545450",
+    "rois": {
+      "menu": {
+        "roi_id": "ROI_Menu",
+        "bbox": [
+          0,
+          0,
+          1051,
+          92
+        ],
+        "ocr_text": "\"LA TOPCON Cv-5000PC x\nFile Course Examination Reference Data DataSet ce * Test KOL-MIH iscontrolling your computer\nSB \u00a32 sera eamRArAanmnwrmaeASee & Ziel!\n"
+      },
+      "roi1": {
+        "cell_bboxes_on_roi0": [
+          [
+            255,
+            155,
+            460,
+            204
+          ],
+          [
+            460,
+            155,
+            589,
+            204
+          ],
+          [
+            589,
+            155,
+            795,
+            204
+          ],
+          [
+            255,
+            204,
+            460,
+            253
+          ],
+          [
+            460,
+            204,
+            589,
+            253
+          ],
+          [
+            589,
+            204,
+            795,
+            253
+          ],
+          [
+            255,
+            253,
+            460,
+            302
+          ],
+          [
+            460,
+            253,
+            589,
+            302
+          ],
+          [
+            589,
+            253,
+            795,
+            302
+          ],
+          [
+            255,
+            302,
+            460,
+            351
+          ],
+          [
+            460,
+            302,
+            589,
+            351
+          ],
+          [
+            589,
+            302,
+            795,
+            351
+          ],
+          [
+            255,
+            351,
+            460,
+            402
+          ],
+          [
+            460,
+            351,
+            589,
+            402
+          ],
+          [
+            589,
+            351,
+            795,
+            402
+          ]
+        ]
+      },
+      "roi1_ocr": {
+        "R_Sph": "-2.00",
+        "S_Anchor": "S",
+        "L_Sph": "-2.25",
+        "R_Cyl": "-0.75",
+        "C_Anchor": "C",
+        "L_Cyl": "-0.25",
+        "R_Axis": "40",
+        "A_Anchor": "A",
+        "L_Axis": "150",
+        "R_Add": "0.00",
+        "ADD_Anchor": "ADD",
+        "L_Add": "0.00",
+        "R_blank": null,
+        "blank_anchor": null,
+        "L_blank": null
+      },
+      "roi2": {
+        "roi_id": "ROI_2",
+        "pd_value_bbox": [
+          472,
+          461,
+          102,
+          46
+        ],
+        "pd_value": "60.0"
+      },
+      "roi3_4": {
+        "roi_id": "ROI_3_4",
+        "bboxes": [
+          {
+            "label": "left_occluder",
+            "box": [
+              358,
+              432,
+              81,
+              80
+            ],
+            "state": "filled/active (blue)"
+          },
+          {
+            "label": "right_occluder",
+            "box": [
+              613,
+              432,
+              81,
+              80
+            ],
+            "state": "filled/active (blue)"
+          }
+        ]
+      },
+      "roi5": {
+        "selected_tab": 0,
+        "bboxes": [
+          {
+            "label": 1,
+            "x": 0,
+            "y": 609,
+            "w": 92,
+            "h": 54,
+            "rel_x": 0,
+            "rel_y": 0
+          },
+          {
+            "label": 2,
+            "x": 92,
+            "y": 609,
+            "w": 92,
+            "h": 54,
+            "rel_x": 92,
+            "rel_y": 0
+          },
+          {
+            "label": 3,
+            "x": 185,
+            "y": 609,
+            "w": 92,
+            "h": 54,
+            "rel_x": 185,
+            "rel_y": 0
+          },
+          {
+            "label": 4,
+            "x": 278,
+            "y": 609,
+            "w": 92,
+            "h": 54,
+            "rel_x": 278,
+            "rel_y": 0
+          },
+          {
+            "label": 5,
+            "x": 370,
+            "y": 609,
+            "w": 92,
+            "h": 54,
+            "rel_x": 370,
+            "rel_y": 0
+          }
+        ]
+      },
+      "roi7": {
+        "roi_id": "ROI7",
+        "bbox": [
+          651,
+          601,
+          294,
+          259
+        ],
+        "chart_info": "echart_40"
+      }
+    },
+    "frame_id": 6816,
+    "time_seconds": 272.64
+  },
+  {
+    "timestamp": "2026-01-22T08:20:23.171757",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -4241,14 +4464,14 @@
           294,
           259
         ],
-        "chart_info": ""
+        "chart_info": "echart_40"
       }
     },
     "frame_id": 7224,
     "time_seconds": 288.96
   },
   {
-    "timestamp": "2026-01-21T17:06:13.280303",
+    "timestamp": "2026-01-22T08:20:25.730716",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -4464,14 +4687,683 @@
           294,
           259
         ],
-        "chart_info": ""
+        "chart_info": "echart_40"
       }
     },
     "frame_id": 7428,
     "time_seconds": 297.12
   },
   {
-    "timestamp": "2026-01-21T17:06:21.495721",
+    "timestamp": "2026-01-22T08:20:28.213725",
+    "rois": {
+      "menu": {
+        "roi_id": "ROI_Menu",
+        "bbox": [
+          0,
+          0,
+          1050,
+          92
+        ],
+        "ocr_text": "\"M3 TOPCON Cv-so00PC ca\nFile Course Examination Reference Data DataSet J Test KOL-MIH is controlling your computer\nBt 2 era aPRRAMmaeaSse@ & fw!\n"
+      },
+      "roi1": {
+        "cell_bboxes_on_roi0": [
+          [
+            255,
+            155,
+            460,
+            204
+          ],
+          [
+            460,
+            155,
+            589,
+            204
+          ],
+          [
+            589,
+            155,
+            795,
+            204
+          ],
+          [
+            255,
+            204,
+            460,
+            253
+          ],
+          [
+            460,
+            204,
+            589,
+            253
+          ],
+          [
+            589,
+            204,
+            795,
+            253
+          ],
+          [
+            255,
+            253,
+            460,
+            302
+          ],
+          [
+            460,
+            253,
+            589,
+            302
+          ],
+          [
+            589,
+            253,
+            795,
+            302
+          ],
+          [
+            255,
+            302,
+            460,
+            351
+          ],
+          [
+            460,
+            302,
+            589,
+            351
+          ],
+          [
+            589,
+            302,
+            795,
+            351
+          ],
+          [
+            255,
+            351,
+            460,
+            402
+          ],
+          [
+            460,
+            351,
+            589,
+            402
+          ],
+          [
+            589,
+            351,
+            795,
+            402
+          ]
+        ]
+      },
+      "roi1_ocr": {
+        "R_Sph": "-2.00",
+        "S_Anchor": "S",
+        "L_Sph": "-2.25",
+        "R_Cyl": "-0.75",
+        "C_Anchor": "C",
+        "L_Cyl": "-0.25",
+        "R_Axis": "40",
+        "A_Anchor": "A",
+        "L_Axis": "150",
+        "R_Add": "0.00",
+        "ADD_Anchor": "ADD",
+        "L_Add": "0.00",
+        "R_blank": null,
+        "blank_anchor": null,
+        "L_blank": null
+      },
+      "roi2": {
+        "roi_id": "ROI_2",
+        "pd_value_bbox": [
+          472,
+          461,
+          102,
+          46
+        ],
+        "pd_value": "60.0"
+      },
+      "roi3_4": {
+        "roi_id": "ROI_3_4",
+        "bboxes": [
+          {
+            "label": "left_occluder",
+            "box": [
+              359,
+              433,
+              83,
+              83
+            ],
+            "state": "filled/active (blue)"
+          },
+          {
+            "label": "right_occluder",
+            "box": [
+              618,
+              438,
+              72,
+              72
+            ],
+            "state": "unfilled/inactive (gray)"
+          }
+        ]
+      },
+      "roi5": {
+        "selected_tab": 0,
+        "bboxes": [
+          {
+            "label": 1,
+            "x": 0,
+            "y": 609,
+            "w": 92,
+            "h": 54,
+            "rel_x": 0,
+            "rel_y": 0
+          },
+          {
+            "label": 2,
+            "x": 92,
+            "y": 609,
+            "w": 92,
+            "h": 54,
+            "rel_x": 92,
+            "rel_y": 0
+          },
+          {
+            "label": 3,
+            "x": 185,
+            "y": 609,
+            "w": 92,
+            "h": 54,
+            "rel_x": 185,
+            "rel_y": 0
+          },
+          {
+            "label": 4,
+            "x": 278,
+            "y": 609,
+            "w": 92,
+            "h": 54,
+            "rel_x": 278,
+            "rel_y": 0
+          },
+          {
+            "label": 5,
+            "x": 370,
+            "y": 609,
+            "w": 92,
+            "h": 54,
+            "rel_x": 370,
+            "rel_y": 0
+          }
+        ]
+      },
+      "roi7": {
+        "roi_id": "ROI7",
+        "bbox": [
+          651,
+          601,
+          294,
+          259
+        ],
+        "chart_info": "echart_50"
+      }
+    },
+    "frame_id": 7716,
+    "time_seconds": 308.64
+  },
+  {
+    "timestamp": "2026-01-22T08:20:29.995710",
+    "rois": {
+      "menu": {
+        "roi_id": "ROI_Menu",
+        "bbox": [
+          0,
+          0,
+          1050,
+          92
+        ],
+        "ocr_text": "F 48 TOPCON CV-5000PC San\nFile Course Examination Reference Data DataSet _ Tc # Test KOL-MIH is controlling your computer\nBt 2am aRRAMmaeaSse@ & / fw!\n"
+      },
+      "roi1": {
+        "cell_bboxes_on_roi0": [
+          [
+            255,
+            155,
+            460,
+            204
+          ],
+          [
+            460,
+            155,
+            589,
+            204
+          ],
+          [
+            589,
+            155,
+            795,
+            204
+          ],
+          [
+            255,
+            204,
+            460,
+            253
+          ],
+          [
+            460,
+            204,
+            589,
+            253
+          ],
+          [
+            589,
+            204,
+            795,
+            253
+          ],
+          [
+            255,
+            253,
+            460,
+            302
+          ],
+          [
+            460,
+            253,
+            589,
+            302
+          ],
+          [
+            589,
+            253,
+            795,
+            302
+          ],
+          [
+            255,
+            302,
+            460,
+            351
+          ],
+          [
+            460,
+            302,
+            589,
+            351
+          ],
+          [
+            589,
+            302,
+            795,
+            351
+          ],
+          [
+            255,
+            351,
+            460,
+            402
+          ],
+          [
+            460,
+            351,
+            589,
+            402
+          ],
+          [
+            589,
+            351,
+            795,
+            402
+          ]
+        ]
+      },
+      "roi1_ocr": {
+        "R_Sph": "-2.00",
+        "S_Anchor": "S",
+        "L_Sph": "-2.25",
+        "R_Cyl": "-0.75",
+        "C_Anchor": "C",
+        "L_Cyl": "-0.25",
+        "R_Axis": "40",
+        "A_Anchor": "A",
+        "L_Axis": "150",
+        "R_Add": "0.00",
+        "ADD_Anchor": "ADD",
+        "L_Add": "0.00",
+        "R_blank": null,
+        "blank_anchor": null,
+        "L_blank": null
+      },
+      "roi2": {
+        "roi_id": "ROI_2",
+        "pd_value_bbox": [
+          472,
+          461,
+          102,
+          46
+        ],
+        "pd_value": "60.0"
+      },
+      "roi3_4": {
+        "roi_id": "ROI_3_4",
+        "bboxes": [
+          {
+            "label": "left_occluder",
+            "box": [
+              359,
+              433,
+              83,
+              83
+            ],
+            "state": "filled/active (blue)"
+          },
+          {
+            "label": "right_occluder",
+            "box": [
+              618,
+              438,
+              72,
+              72
+            ],
+            "state": "unfilled/inactive (gray)"
+          }
+        ]
+      },
+      "roi5": {
+        "selected_tab": 0,
+        "bboxes": [
+          {
+            "label": 1,
+            "x": 0,
+            "y": 609,
+            "w": 92,
+            "h": 54,
+            "rel_x": 0,
+            "rel_y": 0
+          },
+          {
+            "label": 2,
+            "x": 92,
+            "y": 609,
+            "w": 92,
+            "h": 54,
+            "rel_x": 92,
+            "rel_y": 0
+          },
+          {
+            "label": 3,
+            "x": 185,
+            "y": 609,
+            "w": 92,
+            "h": 54,
+            "rel_x": 185,
+            "rel_y": 0
+          },
+          {
+            "label": 4,
+            "x": 278,
+            "y": 609,
+            "w": 92,
+            "h": 54,
+            "rel_x": 278,
+            "rel_y": 0
+          },
+          {
+            "label": 5,
+            "x": 370,
+            "y": 609,
+            "w": 92,
+            "h": 54,
+            "rel_x": 370,
+            "rel_y": 0
+          }
+        ]
+      },
+      "roi7": {
+        "roi_id": "ROI7",
+        "bbox": [
+          651,
+          601,
+          294,
+          259
+        ],
+        "chart_info": "jcc_chart"
+      }
+    },
+    "frame_id": 7764,
+    "time_seconds": 310.56
+  },
+  {
+    "timestamp": "2026-01-22T08:20:32.041296",
+    "rois": {
+      "menu": {
+        "roi_id": "ROI_Menu",
+        "bbox": [
+          0,
+          0,
+          1050,
+          92
+        ],
+        "ocr_text": "F 48 TOPCON CV-5000PC San\nFile Course Examination Reference Data DataSet Tc # Test KOL-MIH is controlling your computer\nBt 2am aRRAMmaeaSse@ & / fw!\n"
+      },
+      "roi1": {
+        "cell_bboxes_on_roi0": [
+          [
+            255,
+            155,
+            460,
+            204
+          ],
+          [
+            460,
+            155,
+            589,
+            204
+          ],
+          [
+            589,
+            155,
+            795,
+            204
+          ],
+          [
+            255,
+            204,
+            460,
+            253
+          ],
+          [
+            460,
+            204,
+            589,
+            253
+          ],
+          [
+            589,
+            204,
+            795,
+            253
+          ],
+          [
+            255,
+            253,
+            460,
+            302
+          ],
+          [
+            460,
+            253,
+            589,
+            302
+          ],
+          [
+            589,
+            253,
+            795,
+            302
+          ],
+          [
+            255,
+            302,
+            460,
+            351
+          ],
+          [
+            460,
+            302,
+            589,
+            351
+          ],
+          [
+            589,
+            302,
+            795,
+            351
+          ],
+          [
+            255,
+            351,
+            460,
+            402
+          ],
+          [
+            460,
+            351,
+            589,
+            402
+          ],
+          [
+            589,
+            351,
+            795,
+            402
+          ]
+        ]
+      },
+      "roi1_ocr": {
+        "R_Sph": "-2.00",
+        "S_Anchor": "S",
+        "L_Sph": "-2.25",
+        "R_Cyl": "-0.75",
+        "C_Anchor": "C",
+        "L_Cyl": "-0.25",
+        "R_Axis": "40",
+        "A_Anchor": "A",
+        "L_Axis": "150",
+        "R_Add": "0.00",
+        "ADD_Anchor": "ADD",
+        "L_Add": "0.00",
+        "R_blank": null,
+        "blank_anchor": null,
+        "L_blank": null
+      },
+      "roi2": {
+        "roi_id": "ROI_2",
+        "pd_value_bbox": [
+          472,
+          461,
+          102,
+          46
+        ],
+        "pd_value": "60.0"
+      },
+      "roi3_4": {
+        "roi_id": "ROI_3_4",
+        "bboxes": [
+          {
+            "label": "left_occluder",
+            "box": [
+              359,
+              433,
+              83,
+              83
+            ],
+            "state": "filled/active (blue)"
+          },
+          {
+            "label": "right_occluder",
+            "box": [
+              618,
+              438,
+              72,
+              72
+            ],
+            "state": "unfilled/inactive (gray)"
+          }
+        ]
+      },
+      "roi5": {
+        "selected_tab": 0,
+        "bboxes": [
+          {
+            "label": 1,
+            "x": 0,
+            "y": 609,
+            "w": 92,
+            "h": 54,
+            "rel_x": 0,
+            "rel_y": 0
+          },
+          {
+            "label": 2,
+            "x": 92,
+            "y": 609,
+            "w": 92,
+            "h": 54,
+            "rel_x": 92,
+            "rel_y": 0
+          },
+          {
+            "label": 3,
+            "x": 185,
+            "y": 609,
+            "w": 92,
+            "h": 54,
+            "rel_x": 185,
+            "rel_y": 0
+          },
+          {
+            "label": 4,
+            "x": 278,
+            "y": 609,
+            "w": 92,
+            "h": 54,
+            "rel_x": 278,
+            "rel_y": 0
+          },
+          {
+            "label": 5,
+            "x": 370,
+            "y": 609,
+            "w": 92,
+            "h": 54,
+            "rel_x": 370,
+            "rel_y": 0
+          }
+        ]
+      },
+      "roi7": {
+        "roi_id": "ROI7",
+        "bbox": [
+          651,
+          601,
+          294,
+          259
+        ],
+        "chart_info": ""
+      }
+    },
+    "frame_id": 8136,
+    "time_seconds": 325.44
+  },
+  {
+    "timestamp": "2026-01-22T08:20:33.919240",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -4694,7 +5586,7 @@
     "time_seconds": 330.72
   },
   {
-    "timestamp": "2026-01-21T17:06:23.335439",
+    "timestamp": "2026-01-22T08:20:35.752913",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -4917,7 +5809,7 @@
     "time_seconds": 336.0
   },
   {
-    "timestamp": "2026-01-21T17:06:25.109405",
+    "timestamp": "2026-01-22T08:20:37.482987",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -5140,7 +6032,7 @@
     "time_seconds": 336.96
   },
   {
-    "timestamp": "2026-01-21T17:06:26.930764",
+    "timestamp": "2026-01-22T08:20:39.307800",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -5356,14 +6248,14 @@
           294,
           259
         ],
-        "chart_info": ""
+        "chart_info": "echart_50"
       }
     },
     "frame_id": 8472,
     "time_seconds": 338.88
   },
   {
-    "timestamp": "2026-01-21T17:06:28.838941",
+    "timestamp": "2026-01-22T08:20:41.269203",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -5579,14 +6471,460 @@
           294,
           259
         ],
-        "chart_info": ""
+        "chart_info": "snellen_chart_20_20_20"
       }
     },
     "frame_id": 8616,
     "time_seconds": 344.64
   },
   {
-    "timestamp": "2026-01-21T17:06:37.002245",
+    "timestamp": "2026-01-22T08:20:43.843303",
+    "rois": {
+      "menu": {
+        "roi_id": "ROI_Menu",
+        "bbox": [
+          0,
+          0,
+          1051,
+          92
+        ],
+        "ocr_text": "\"Lf TOPCON Cv-5000PC x\nFile Course Examination Reference Data DataSet Jo * Test KOL-MIH iscontrolling your computer\nSBS 2&2 sera eamArAnwrmaeAee & Ze!\n"
+      },
+      "roi1": {
+        "cell_bboxes_on_roi0": [
+          [
+            255,
+            155,
+            460,
+            204
+          ],
+          [
+            460,
+            155,
+            589,
+            204
+          ],
+          [
+            589,
+            155,
+            795,
+            204
+          ],
+          [
+            255,
+            204,
+            460,
+            253
+          ],
+          [
+            460,
+            204,
+            589,
+            253
+          ],
+          [
+            589,
+            204,
+            795,
+            253
+          ],
+          [
+            255,
+            253,
+            460,
+            302
+          ],
+          [
+            460,
+            253,
+            589,
+            302
+          ],
+          [
+            589,
+            253,
+            795,
+            302
+          ],
+          [
+            255,
+            302,
+            460,
+            351
+          ],
+          [
+            460,
+            302,
+            589,
+            351
+          ],
+          [
+            589,
+            302,
+            795,
+            351
+          ],
+          [
+            255,
+            351,
+            460,
+            402
+          ],
+          [
+            460,
+            351,
+            589,
+            402
+          ],
+          [
+            589,
+            351,
+            795,
+            402
+          ]
+        ]
+      },
+      "roi1_ocr": {
+        "R_Sph": "-2.00",
+        "S_Anchor": "S",
+        "L_Sph": "-2.25",
+        "R_Cyl": "-0.75",
+        "C_Anchor": "C",
+        "L_Cyl": "-0.25",
+        "R_Axis": "40",
+        "A_Anchor": "A",
+        "L_Axis": "150",
+        "R_Add": "0.00",
+        "ADD_Anchor": "ADD",
+        "L_Add": "0.00",
+        "R_blank": null,
+        "blank_anchor": null,
+        "L_blank": null
+      },
+      "roi2": {
+        "roi_id": "ROI_2",
+        "pd_value_bbox": [
+          472,
+          461,
+          102,
+          46
+        ],
+        "pd_value": "60.0"
+      },
+      "roi3_4": {
+        "roi_id": "ROI_3_4",
+        "bboxes": [
+          {
+            "label": "left_occluder",
+            "box": [
+              358,
+              433,
+              81,
+              80
+            ],
+            "state": "unfilled/inactive (gray)"
+          },
+          {
+            "label": "right_occluder",
+            "box": [
+              613,
+              431,
+              83,
+              83
+            ],
+            "state": "filled/active (blue)"
+          }
+        ]
+      },
+      "roi5": {
+        "selected_tab": 0,
+        "bboxes": [
+          {
+            "label": 1,
+            "x": 0,
+            "y": 609,
+            "w": 92,
+            "h": 54,
+            "rel_x": 0,
+            "rel_y": 0
+          },
+          {
+            "label": 2,
+            "x": 92,
+            "y": 609,
+            "w": 92,
+            "h": 54,
+            "rel_x": 92,
+            "rel_y": 0
+          },
+          {
+            "label": 3,
+            "x": 185,
+            "y": 609,
+            "w": 92,
+            "h": 54,
+            "rel_x": 185,
+            "rel_y": 0
+          },
+          {
+            "label": 4,
+            "x": 278,
+            "y": 609,
+            "w": 92,
+            "h": 54,
+            "rel_x": 278,
+            "rel_y": 0
+          },
+          {
+            "label": 5,
+            "x": 370,
+            "y": 609,
+            "w": 92,
+            "h": 54,
+            "rel_x": 370,
+            "rel_y": 0
+          }
+        ]
+      },
+      "roi7": {
+        "roi_id": "ROI7",
+        "bbox": [
+          651,
+          601,
+          294,
+          259
+        ],
+        "chart_info": "jcc_chart"
+      }
+    },
+    "frame_id": 8808,
+    "time_seconds": 352.32
+  },
+  {
+    "timestamp": "2026-01-22T08:20:46.402669",
+    "rois": {
+      "menu": {
+        "roi_id": "ROI_Menu",
+        "bbox": [
+          0,
+          0,
+          1051,
+          92
+        ],
+        "ocr_text": "\"Lf TOPCON Cv-5000PC x\nFile Course Examination Reference Data DataSet Jo * Test KOL-MIH iscontrolling your computer\nSBS 2&2 sera eamArAnwrmaeAee & Ze!\n"
+      },
+      "roi1": {
+        "cell_bboxes_on_roi0": [
+          [
+            255,
+            155,
+            460,
+            204
+          ],
+          [
+            460,
+            155,
+            589,
+            204
+          ],
+          [
+            589,
+            155,
+            795,
+            204
+          ],
+          [
+            255,
+            204,
+            460,
+            253
+          ],
+          [
+            460,
+            204,
+            589,
+            253
+          ],
+          [
+            589,
+            204,
+            795,
+            253
+          ],
+          [
+            255,
+            253,
+            460,
+            302
+          ],
+          [
+            460,
+            253,
+            589,
+            302
+          ],
+          [
+            589,
+            253,
+            795,
+            302
+          ],
+          [
+            255,
+            302,
+            460,
+            351
+          ],
+          [
+            460,
+            302,
+            589,
+            351
+          ],
+          [
+            589,
+            302,
+            795,
+            351
+          ],
+          [
+            255,
+            351,
+            460,
+            402
+          ],
+          [
+            460,
+            351,
+            589,
+            402
+          ],
+          [
+            589,
+            351,
+            795,
+            402
+          ]
+        ]
+      },
+      "roi1_ocr": {
+        "R_Sph": "-2.00",
+        "S_Anchor": "S",
+        "L_Sph": "-2.25",
+        "R_Cyl": "-0.75",
+        "C_Anchor": "C",
+        "L_Cyl": "-0.25",
+        "R_Axis": "40",
+        "A_Anchor": "A",
+        "L_Axis": "150",
+        "R_Add": "0.00",
+        "ADD_Anchor": "ADD",
+        "L_Add": "0.00",
+        "R_blank": null,
+        "blank_anchor": null,
+        "L_blank": null
+      },
+      "roi2": {
+        "roi_id": "ROI_2",
+        "pd_value_bbox": [
+          472,
+          461,
+          102,
+          46
+        ],
+        "pd_value": "60.0"
+      },
+      "roi3_4": {
+        "roi_id": "ROI_3_4",
+        "bboxes": [
+          {
+            "label": "left_occluder",
+            "box": [
+              358,
+              433,
+              81,
+              80
+            ],
+            "state": "unfilled/inactive (gray)"
+          },
+          {
+            "label": "right_occluder",
+            "box": [
+              613,
+              431,
+              83,
+              83
+            ],
+            "state": "filled/active (blue)"
+          }
+        ]
+      },
+      "roi5": {
+        "selected_tab": 0,
+        "bboxes": [
+          {
+            "label": 1,
+            "x": 0,
+            "y": 609,
+            "w": 92,
+            "h": 54,
+            "rel_x": 0,
+            "rel_y": 0
+          },
+          {
+            "label": 2,
+            "x": 92,
+            "y": 609,
+            "w": 92,
+            "h": 54,
+            "rel_x": 92,
+            "rel_y": 0
+          },
+          {
+            "label": 3,
+            "x": 185,
+            "y": 609,
+            "w": 92,
+            "h": 54,
+            "rel_x": 185,
+            "rel_y": 0
+          },
+          {
+            "label": 4,
+            "x": 278,
+            "y": 609,
+            "w": 92,
+            "h": 54,
+            "rel_x": 278,
+            "rel_y": 0
+          },
+          {
+            "label": 5,
+            "x": 370,
+            "y": 609,
+            "w": 92,
+            "h": 54,
+            "rel_x": 370,
+            "rel_y": 0
+          }
+        ]
+      },
+      "roi7": {
+        "roi_id": "ROI7",
+        "bbox": [
+          651,
+          601,
+          294,
+          259
+        ],
+        "chart_info": "snellen_chart_20_20_20"
+      }
+    },
+    "frame_id": 9048,
+    "time_seconds": 361.92
+  },
+  {
+    "timestamp": "2026-01-22T08:21:21.577062",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -5802,14 +7140,14 @@
           294,
           259
         ],
-        "chart_info": ""
+        "chart_info": "snellen_chart_20_20_20"
       }
     },
     "frame_id": 9456,
     "time_seconds": 378.24
   },
   {
-    "timestamp": "2026-01-21T17:06:39.489005",
+    "timestamp": "2026-01-22T08:21:24.056666",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -6025,14 +7363,14 @@
           294,
           259
         ],
-        "chart_info": ""
+        "chart_info": "snellen_chart_20_20_20"
       }
     },
     "frame_id": 9492,
     "time_seconds": 379.68
   },
   {
-    "timestamp": "2026-01-21T17:06:42.092877",
+    "timestamp": "2026-01-22T08:21:26.552089",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -6248,14 +7586,14 @@
           294,
           259
         ],
-        "chart_info": ""
+        "chart_info": "echart_40"
       }
     },
     "frame_id": 9516,
     "time_seconds": 380.64
   },
   {
-    "timestamp": "2026-01-21T17:06:46.014629",
+    "timestamp": "2026-01-22T08:21:30.405183",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -6471,14 +7809,14 @@
           294,
           259
         ],
-        "chart_info": ""
+        "chart_info": "snellen_chart_20_20_20"
       }
     },
     "frame_id": 9912,
     "time_seconds": 396.48
   },
   {
-    "timestamp": "2026-01-21T17:06:47.753188",
+    "timestamp": "2026-01-22T08:21:32.060904",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -6701,7 +8039,7 @@
     "time_seconds": 400.8
   },
   {
-    "timestamp": "2026-01-21T17:06:49.505632",
+    "timestamp": "2026-01-22T08:21:33.725301",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -6924,7 +8262,7 @@
     "time_seconds": 401.76
   },
   {
-    "timestamp": "2026-01-21T17:06:51.486286",
+    "timestamp": "2026-01-22T08:21:35.549443",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -7147,7 +8485,7 @@
     "time_seconds": 413.76
   },
   {
-    "timestamp": "2026-01-21T17:06:54.403925",
+    "timestamp": "2026-01-22T08:21:38.502908",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -7370,7 +8708,7 @@
     "time_seconds": 414.24
   },
   {
-    "timestamp": "2026-01-21T17:07:02.782244",
+    "timestamp": "2026-01-22T08:21:46.616863",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -7593,7 +8931,7 @@
     "time_seconds": 416.64
   },
   {
-    "timestamp": "2026-01-21T17:07:07.221843",
+    "timestamp": "2026-01-22T08:21:50.859599",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -7816,7 +9154,7 @@
     "time_seconds": 434.88
   },
   {
-    "timestamp": "2026-01-21T17:07:13.874113",
+    "timestamp": "2026-01-22T08:21:57.354491",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -8039,7 +9377,7 @@
     "time_seconds": 441.6
   },
   {
-    "timestamp": "2026-01-21T17:07:19.581669",
+    "timestamp": "2026-01-22T08:22:02.926139",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -8262,7 +9600,7 @@
     "time_seconds": 452.64
   },
   {
-    "timestamp": "2026-01-21T17:07:27.330546",
+    "timestamp": "2026-01-22T08:22:10.334088",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -8485,7 +9823,7 @@
     "time_seconds": 460.8
   },
   {
-    "timestamp": "2026-01-21T17:07:29.870216",
+    "timestamp": "2026-01-22T08:22:12.764446",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -8708,7 +10046,7 @@
     "time_seconds": 461.76
   },
   {
-    "timestamp": "2026-01-21T17:07:35.199269",
+    "timestamp": "2026-01-22T08:22:17.840773",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -8931,7 +10269,7 @@
     "time_seconds": 468.48
   },
   {
-    "timestamp": "2026-01-21T17:07:37.632368",
+    "timestamp": "2026-01-22T08:22:20.095882",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -9154,7 +10492,7 @@
     "time_seconds": 469.44
   },
   {
-    "timestamp": "2026-01-21T17:07:39.864727",
+    "timestamp": "2026-01-22T08:22:22.269531",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -9370,14 +10708,14 @@
           294,
           259
         ],
-        "chart_info": ""
+        "chart_info": "echart_80"
       }
     },
     "frame_id": 11760,
     "time_seconds": 470.4
   },
   {
-    "timestamp": "2026-01-21T17:07:42.146263",
+    "timestamp": "2026-01-22T08:22:24.434214",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -9593,14 +10931,14 @@
           294,
           259
         ],
-        "chart_info": ""
+        "chart_info": "echart_80"
       }
     },
     "frame_id": 11784,
     "time_seconds": 471.36
   },
   {
-    "timestamp": "2026-01-21T17:07:45.040659",
+    "timestamp": "2026-01-22T08:22:27.228887",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -9816,14 +11154,14 @@
           294,
           259
         ],
-        "chart_info": ""
+        "chart_info": "echart_80"
       }
     },
     "frame_id": 12192,
     "time_seconds": 487.68
   },
   {
-    "timestamp": "2026-01-21T17:07:47.334815",
+    "timestamp": "2026-01-22T08:22:29.417957",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -10039,14 +11377,14 @@
           294,
           259
         ],
-        "chart_info": ""
+        "chart_info": "echart_80"
       }
     },
     "frame_id": 12216,
     "time_seconds": 488.64
   },
   {
-    "timestamp": "2026-01-21T17:07:59.791231",
+    "timestamp": "2026-01-22T08:22:41.378324",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -10262,14 +11600,237 @@
           294,
           259
         ],
-        "chart_info": ""
+        "chart_info": "echart_80"
       }
     },
     "frame_id": 12948,
     "time_seconds": 517.92
   },
   {
-    "timestamp": "2026-01-21T17:08:08.109395",
+    "timestamp": "2026-01-22T08:22:43.956029",
+    "rois": {
+      "menu": {
+        "roi_id": "ROI_Menu",
+        "bbox": [
+          0,
+          0,
+          1051,
+          92
+        ],
+        "ocr_text": "\"LA TOPCON Cv-5000PC x\nFile Course Examination Reference Data DataSet Je * Test KOL-MIH is controlling your computer\nSB) 2&2 sera eamArAanmnmaAee & Ze!\n"
+      },
+      "roi1": {
+        "cell_bboxes_on_roi0": [
+          [
+            255,
+            155,
+            460,
+            204
+          ],
+          [
+            460,
+            155,
+            589,
+            204
+          ],
+          [
+            589,
+            155,
+            795,
+            204
+          ],
+          [
+            255,
+            204,
+            460,
+            253
+          ],
+          [
+            460,
+            204,
+            589,
+            253
+          ],
+          [
+            589,
+            204,
+            795,
+            253
+          ],
+          [
+            255,
+            253,
+            460,
+            302
+          ],
+          [
+            460,
+            253,
+            589,
+            302
+          ],
+          [
+            589,
+            253,
+            795,
+            302
+          ],
+          [
+            255,
+            302,
+            460,
+            351
+          ],
+          [
+            460,
+            302,
+            589,
+            351
+          ],
+          [
+            589,
+            302,
+            795,
+            351
+          ],
+          [
+            255,
+            351,
+            460,
+            402
+          ],
+          [
+            460,
+            351,
+            589,
+            402
+          ],
+          [
+            589,
+            351,
+            795,
+            402
+          ]
+        ]
+      },
+      "roi1_ocr": {
+        "R_Sph": "-2.00",
+        "S_Anchor": "S",
+        "L_Sph": "-2.25",
+        "R_Cyl": "-0.75",
+        "C_Anchor": "C",
+        "L_Cyl": "-0.25",
+        "R_Axis": "180",
+        "A_Anchor": "A",
+        "L_Axis": "10",
+        "R_Add": "0.00",
+        "ADD_Anchor": "ADD",
+        "L_Add": "0.00",
+        "R_blank": null,
+        "blank_anchor": null,
+        "L_blank": null
+      },
+      "roi2": {
+        "roi_id": "ROI_2",
+        "pd_value_bbox": [
+          472,
+          461,
+          102,
+          46
+        ],
+        "pd_value": "60.0"
+      },
+      "roi3_4": {
+        "roi_id": "ROI_3_4",
+        "bboxes": [
+          {
+            "label": "left_occluder",
+            "box": [
+              363,
+              438,
+              72,
+              71
+            ],
+            "state": "filled/active (blue)"
+          },
+          {
+            "label": "right_occluder",
+            "box": [
+              618,
+              439,
+              70,
+              69
+            ],
+            "state": "unfilled/inactive (gray)"
+          }
+        ]
+      },
+      "roi5": {
+        "selected_tab": 0,
+        "bboxes": [
+          {
+            "label": 1,
+            "x": 0,
+            "y": 609,
+            "w": 92,
+            "h": 54,
+            "rel_x": 0,
+            "rel_y": 0
+          },
+          {
+            "label": 2,
+            "x": 92,
+            "y": 609,
+            "w": 92,
+            "h": 54,
+            "rel_x": 92,
+            "rel_y": 0
+          },
+          {
+            "label": 3,
+            "x": 185,
+            "y": 609,
+            "w": 92,
+            "h": 54,
+            "rel_x": 185,
+            "rel_y": 0
+          },
+          {
+            "label": 4,
+            "x": 278,
+            "y": 609,
+            "w": 92,
+            "h": 54,
+            "rel_x": 278,
+            "rel_y": 0
+          },
+          {
+            "label": 5,
+            "x": 370,
+            "y": 609,
+            "w": 92,
+            "h": 54,
+            "rel_x": 370,
+            "rel_y": 0
+          }
+        ]
+      },
+      "roi7": {
+        "roi_id": "ROI7",
+        "bbox": [
+          651,
+          601,
+          294,
+          259
+        ],
+        "chart_info": "snellen_chart_40_30_25_25"
+      }
+    },
+    "frame_id": 13008,
+    "time_seconds": 520.32
+  },
+  {
+    "timestamp": "2026-01-22T08:22:49.263317",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -10485,14 +12046,14 @@
           294,
           259
         ],
-        "chart_info": ""
+        "chart_info": "snellen_chart_40_30_25_25"
       }
     },
     "frame_id": 13116,
     "time_seconds": 524.64
   },
   {
-    "timestamp": "2026-01-21T17:08:18.370539",
+    "timestamp": "2026-01-22T08:22:59.129047",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -10708,14 +12269,14 @@
           294,
           259
         ],
-        "chart_info": ""
+        "chart_info": "snellen_chart_40_30_25_25"
       }
     },
     "frame_id": 13272,
     "time_seconds": 530.88
   },
   {
-    "timestamp": "2026-01-21T17:08:20.589786",
+    "timestamp": "2026-01-22T08:23:01.319149",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -10931,14 +12492,14 @@
           294,
           259
         ],
-        "chart_info": ""
+        "chart_info": "snellen_chart_40_30_25_25"
       }
     },
     "frame_id": 13320,
     "time_seconds": 532.8
   },
   {
-    "timestamp": "2026-01-21T17:08:23.098522",
+    "timestamp": "2026-01-22T08:23:03.776586",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -11154,14 +12715,14 @@
           294,
           259
         ],
-        "chart_info": ""
+        "chart_info": "snellen_chart_40_30_25_25"
       }
     },
     "frame_id": 13380,
     "time_seconds": 535.2
   },
   {
-    "timestamp": "2026-01-21T17:08:27.394702",
+    "timestamp": "2026-01-22T08:23:08.014796",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -11377,14 +12938,14 @@
           294,
           259
         ],
-        "chart_info": ""
+        "chart_info": "snellen_chart_40_30_25_25"
       }
     },
     "frame_id": 13440,
     "time_seconds": 537.6
   },
   {
-    "timestamp": "2026-01-21T17:08:29.546224",
+    "timestamp": "2026-01-22T08:23:10.155967",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -11600,14 +13161,14 @@
           294,
           259
         ],
-        "chart_info": ""
+        "chart_info": "snellen_chart_40_30_25_25"
       }
     },
     "frame_id": 13452,
     "time_seconds": 538.08
   },
   {
-    "timestamp": "2026-01-21T17:08:36.324725",
+    "timestamp": "2026-01-22T08:23:16.905626",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -11823,14 +13384,14 @@
           294,
           259
         ],
-        "chart_info": ""
+        "chart_info": "snellen_chart_40_30_25_25"
       }
     },
     "frame_id": 13488,
     "time_seconds": 539.52
   },
   {
-    "timestamp": "2026-01-21T17:08:38.460279",
+    "timestamp": "2026-01-22T08:23:19.009205",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -12046,14 +13607,14 @@
           294,
           259
         ],
-        "chart_info": ""
+        "chart_info": "snellen_chart_40_30_25_25"
       }
     },
     "frame_id": 13524,
     "time_seconds": 540.96
   },
   {
-    "timestamp": "2026-01-21T17:08:40.755826",
+    "timestamp": "2026-01-22T08:23:21.325748",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -12269,14 +13830,14 @@
           294,
           259
         ],
-        "chart_info": ""
+        "chart_info": "snellen_chart_40_30_25_25"
       }
     },
     "frame_id": 13620,
     "time_seconds": 544.8
   },
   {
-    "timestamp": "2026-01-21T17:08:42.952340",
+    "timestamp": "2026-01-22T08:23:23.496592",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -12492,14 +14053,14 @@
           294,
           259
         ],
-        "chart_info": ""
+        "chart_info": "snellen_chart_40_30_25_25"
       }
     },
     "frame_id": 13644,
     "time_seconds": 545.76
   },
   {
-    "timestamp": "2026-01-21T17:08:45.343228",
+    "timestamp": "2026-01-22T08:23:25.883938",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -12715,14 +14276,14 @@
           294,
           259
         ],
-        "chart_info": ""
+        "chart_info": "snellen_chart_40_30_25_25"
       }
     },
     "frame_id": 13800,
     "time_seconds": 552.0
   },
   {
-    "timestamp": "2026-01-21T17:08:48.346981",
+    "timestamp": "2026-01-22T08:23:29.011323",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -12938,14 +14499,14 @@
           294,
           259
         ],
-        "chart_info": ""
+        "chart_info": "snellen_chart_40_30_25_25"
       }
     },
     "frame_id": 13812,
     "time_seconds": 552.48
   },
   {
-    "timestamp": "2026-01-21T17:08:50.399219",
+    "timestamp": "2026-01-22T08:23:31.157646",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -13161,14 +14722,14 @@
           294,
           259
         ],
-        "chart_info": ""
+        "chart_info": "snellen_chart_40_30_25_25"
       }
     },
     "frame_id": 13884,
     "time_seconds": 555.36
   },
   {
-    "timestamp": "2026-01-21T17:08:52.472410",
+    "timestamp": "2026-01-22T08:23:33.378813",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -13384,14 +14945,14 @@
           294,
           259
         ],
-        "chart_info": ""
+        "chart_info": "snellen_chart_40_30_25_25"
       }
     },
     "frame_id": 13920,
     "time_seconds": 556.8
   },
   {
-    "timestamp": "2026-01-21T17:08:54.749726",
+    "timestamp": "2026-01-22T08:23:35.775773",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -13607,14 +15168,14 @@
           294,
           259
         ],
-        "chart_info": ""
+        "chart_info": "snellen_chart_40_30_25_25"
       }
     },
     "frame_id": 13932,
     "time_seconds": 557.28
   },
   {
-    "timestamp": "2026-01-21T17:08:56.948360",
+    "timestamp": "2026-01-22T08:23:38.008528",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -13830,14 +15391,14 @@
           294,
           259
         ],
-        "chart_info": ""
+        "chart_info": "snellen_chart_20_20_20"
       }
     },
     "frame_id": 14016,
     "time_seconds": 560.64
   },
   {
-    "timestamp": "2026-01-21T17:08:59.124793",
+    "timestamp": "2026-01-22T08:23:40.175273",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -14053,14 +15614,14 @@
           294,
           259
         ],
-        "chart_info": ""
+        "chart_info": "snellen_chart_20_20_20"
       }
     },
     "frame_id": 14076,
     "time_seconds": 563.04
   },
   {
-    "timestamp": "2026-01-21T17:09:01.580047",
+    "timestamp": "2026-01-22T08:23:42.622577",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -14276,14 +15837,14 @@
           294,
           259
         ],
-        "chart_info": ""
+        "chart_info": "snellen_chart_20_20_20"
       }
     },
     "frame_id": 14100,
     "time_seconds": 564.0
   },
   {
-    "timestamp": "2026-01-21T17:09:03.660588",
+    "timestamp": "2026-01-22T08:23:44.687970",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -14499,14 +16060,14 @@
           294,
           259
         ],
-        "chart_info": ""
+        "chart_info": "snellen_chart_20_20_20"
       }
     },
     "frame_id": 14124,
     "time_seconds": 564.96
   },
   {
-    "timestamp": "2026-01-21T17:09:06.105827",
+    "timestamp": "2026-01-22T08:23:47.075572",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -14729,7 +16290,7 @@
     "time_seconds": 566.88
   },
   {
-    "timestamp": "2026-01-21T17:09:14.835159",
+    "timestamp": "2026-01-22T08:23:55.724272",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -14952,7 +16513,7 @@
     "time_seconds": 585.12
   },
   {
-    "timestamp": "2026-01-21T17:09:17.119948",
+    "timestamp": "2026-01-22T08:23:57.888799",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -15175,7 +16736,7 @@
     "time_seconds": 587.04
   },
   {
-    "timestamp": "2026-01-21T17:09:19.736594",
+    "timestamp": "2026-01-22T08:24:00.397356",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -15398,7 +16959,7 @@
     "time_seconds": 593.28
   },
   {
-    "timestamp": "2026-01-21T17:09:22.164420",
+    "timestamp": "2026-01-22T08:24:02.706884",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -15621,7 +17182,7 @@
     "time_seconds": 593.76
   },
   {
-    "timestamp": "2026-01-21T17:09:24.692081",
+    "timestamp": "2026-01-22T08:24:05.116721",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -15844,7 +17405,7 @@
     "time_seconds": 594.24
   },
   {
-    "timestamp": "2026-01-21T17:09:29.869993",
+    "timestamp": "2026-01-22T08:24:10.018205",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -16067,7 +17628,7 @@
     "time_seconds": 595.68
   },
   {
-    "timestamp": "2026-01-21T17:09:33.013236",
+    "timestamp": "2026-01-22T08:24:13.032435",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -16290,7 +17851,7 @@
     "time_seconds": 596.64
   },
   {
-    "timestamp": "2026-01-21T17:09:35.395964",
+    "timestamp": "2026-01-22T08:24:15.334205",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -16513,7 +18074,7 @@
     "time_seconds": 600.0
   },
   {
-    "timestamp": "2026-01-21T17:09:37.340703",
+    "timestamp": "2026-01-22T08:24:17.227575",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -16736,7 +18297,7 @@
     "time_seconds": 600.48
   },
   {
-    "timestamp": "2026-01-21T17:09:39.565969",
+    "timestamp": "2026-01-22T08:24:19.445233",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -16959,7 +18520,7 @@
     "time_seconds": 600.96
   },
   {
-    "timestamp": "2026-01-21T17:09:41.598936",
+    "timestamp": "2026-01-22T08:24:21.501318",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -17182,7 +18743,7 @@
     "time_seconds": 601.44
   },
   {
-    "timestamp": "2026-01-21T17:09:43.994448",
+    "timestamp": "2026-01-22T08:24:23.888150",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -17405,7 +18966,7 @@
     "time_seconds": 602.88
   },
   {
-    "timestamp": "2026-01-21T17:09:46.980270",
+    "timestamp": "2026-01-22T08:24:26.890129",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -17628,7 +19189,7 @@
     "time_seconds": 607.2
   },
   {
-    "timestamp": "2026-01-21T17:09:49.497540",
+    "timestamp": "2026-01-22T08:24:29.354643",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -17851,7 +19412,7 @@
     "time_seconds": 607.68
   },
   {
-    "timestamp": "2026-01-21T17:09:51.829751",
+    "timestamp": "2026-01-22T08:24:31.551924",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -18074,7 +19635,7 @@
     "time_seconds": 610.08
   },
   {
-    "timestamp": "2026-01-21T17:09:53.941012",
+    "timestamp": "2026-01-22T08:24:33.607217",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -18297,7 +19858,7 @@
     "time_seconds": 610.56
   },
   {
-    "timestamp": "2026-01-21T17:09:56.706324",
+    "timestamp": "2026-01-22T08:24:36.319562",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -18520,7 +20081,7 @@
     "time_seconds": 619.2
   },
   {
-    "timestamp": "2026-01-21T17:09:59.019542",
+    "timestamp": "2026-01-22T08:24:38.634056",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -18743,7 +20304,7 @@
     "time_seconds": 619.68
   },
   {
-    "timestamp": "2026-01-21T17:10:01.978414",
+    "timestamp": "2026-01-22T08:24:41.516819",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -18966,7 +20527,7 @@
     "time_seconds": 623.52
   },
   {
-    "timestamp": "2026-01-21T17:10:04.532903",
+    "timestamp": "2026-01-22T08:24:44.089656",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -19189,7 +20750,7 @@
     "time_seconds": 627.84
   },
   {
-    "timestamp": "2026-01-21T17:10:06.869845",
+    "timestamp": "2026-01-22T08:24:46.420258",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -19412,7 +20973,7 @@
     "time_seconds": 628.8
   },
   {
-    "timestamp": "2026-01-21T17:10:09.266373",
+    "timestamp": "2026-01-22T08:24:48.821204",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -19628,14 +21189,14 @@
           294,
           259
         ],
-        "chart_info": ""
+        "chart_info": "echart_80"
       }
     },
     "frame_id": 15768,
     "time_seconds": 630.72
   },
   {
-    "timestamp": "2026-01-21T17:10:11.525058",
+    "timestamp": "2026-01-22T08:24:51.080938",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -19851,14 +21412,14 @@
           294,
           259
         ],
-        "chart_info": ""
+        "chart_info": "echart_80"
       }
     },
     "frame_id": 15792,
     "time_seconds": 631.68
   },
   {
-    "timestamp": "2026-01-21T17:10:13.831928",
+    "timestamp": "2026-01-22T08:24:53.394894",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -20074,14 +21635,14 @@
           294,
           259
         ],
-        "chart_info": ""
+        "chart_info": "echart_80"
       }
     },
     "frame_id": 15816,
     "time_seconds": 632.64
   },
   {
-    "timestamp": "2026-01-21T17:10:16.023917",
+    "timestamp": "2026-01-22T08:24:55.644701",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -20297,14 +21858,14 @@
           294,
           259
         ],
-        "chart_info": ""
+        "chart_info": "echart_80"
       }
     },
     "frame_id": 15996,
     "time_seconds": 639.84
   },
   {
-    "timestamp": "2026-01-21T17:10:18.071694",
+    "timestamp": "2026-01-22T08:24:57.698054",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -20520,14 +22081,14 @@
           294,
           259
         ],
-        "chart_info": ""
+        "chart_info": "echart_80"
       }
     },
     "frame_id": 16008,
     "time_seconds": 640.32
   },
   {
-    "timestamp": "2026-01-21T17:10:19.975549",
+    "timestamp": "2026-01-22T08:24:59.645254",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -20743,14 +22304,14 @@
           294,
           259
         ],
-        "chart_info": ""
+        "chart_info": "echart_80"
       }
     },
     "frame_id": 16032,
     "time_seconds": 641.28
   },
   {
-    "timestamp": "2026-01-21T17:10:22.100100",
+    "timestamp": "2026-01-22T08:25:01.770300",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -20966,14 +22527,14 @@
           294,
           259
         ],
-        "chart_info": ""
+        "chart_info": "echart_80"
       }
     },
     "frame_id": 16044,
     "time_seconds": 641.76
   },
   {
-    "timestamp": "2026-01-21T17:10:24.019770",
+    "timestamp": "2026-01-22T08:25:03.690024",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -21189,14 +22750,14 @@
           294,
           259
         ],
-        "chart_info": ""
+        "chart_info": "echart_80"
       }
     },
     "frame_id": 16092,
     "time_seconds": 643.68
   },
   {
-    "timestamp": "2026-01-21T17:10:32.239776",
+    "timestamp": "2026-01-22T08:25:11.972550",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -21412,14 +22973,14 @@
           294,
           259
         ],
-        "chart_info": ""
+        "chart_info": "echart_80"
       }
     },
     "frame_id": 16716,
     "time_seconds": 668.64
   },
   {
-    "timestamp": "2026-01-21T17:10:34.756093",
+    "timestamp": "2026-01-22T08:25:14.499171",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -21635,14 +23196,14 @@
           294,
           259
         ],
-        "chart_info": ""
+        "chart_info": "echart_80"
       }
     },
     "frame_id": 16920,
     "time_seconds": 676.8
   },
   {
-    "timestamp": "2026-01-21T17:10:36.967608",
+    "timestamp": "2026-01-22T08:25:16.716535",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -21858,14 +23419,14 @@
           294,
           259
         ],
-        "chart_info": ""
+        "chart_info": "echart_80"
       }
     },
     "frame_id": 16956,
     "time_seconds": 678.24
   },
   {
-    "timestamp": "2026-01-21T17:10:38.929088",
+    "timestamp": "2026-01-22T08:25:18.676336",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -22081,14 +23642,14 @@
           294,
           259
         ],
-        "chart_info": ""
+        "chart_info": "echart_80"
       }
     },
     "frame_id": 16968,
     "time_seconds": 678.72
   },
   {
-    "timestamp": "2026-01-21T17:10:41.435567",
+    "timestamp": "2026-01-22T08:25:21.187204",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -22304,14 +23865,14 @@
           294,
           259
         ],
-        "chart_info": ""
+        "chart_info": "echart_80"
       }
     },
     "frame_id": 16980,
     "time_seconds": 679.2
   },
   {
-    "timestamp": "2026-01-21T17:10:43.937855",
+    "timestamp": "2026-01-22T08:25:23.713186",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -22527,14 +24088,14 @@
           294,
           259
         ],
-        "chart_info": ""
+        "chart_info": "echart_80"
       }
     },
     "frame_id": 16992,
     "time_seconds": 679.68
   },
   {
-    "timestamp": "2026-01-21T17:10:46.135909",
+    "timestamp": "2026-01-22T08:25:25.943941",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -22750,14 +24311,14 @@
           294,
           259
         ],
-        "chart_info": ""
+        "chart_info": "echart_80"
       }
     },
     "frame_id": 17004,
     "time_seconds": 680.16
   },
   {
-    "timestamp": "2026-01-21T17:10:48.282500",
+    "timestamp": "2026-01-22T08:25:28.110777",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -22973,14 +24534,14 @@
           294,
           259
         ],
-        "chart_info": ""
+        "chart_info": "snellen_chart_40_30_25_25"
       }
     },
     "frame_id": 17064,
     "time_seconds": 682.56
   },
   {
-    "timestamp": "2026-01-21T17:10:52.558455",
+    "timestamp": "2026-01-22T08:25:32.401847",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -23196,14 +24757,14 @@
           294,
           259
         ],
-        "chart_info": ""
+        "chart_info": "snellen_chart_40_30_25_25"
       }
     },
     "frame_id": 17244,
     "time_seconds": 689.76
   },
   {
-    "timestamp": "2026-01-21T17:10:55.687556",
+    "timestamp": "2026-01-22T08:25:35.506815",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -23419,14 +24980,14 @@
           294,
           259
         ],
-        "chart_info": ""
+        "chart_info": "snellen_chart_40_30_25_25"
       }
     },
     "frame_id": 17280,
     "time_seconds": 691.2
   },
   {
-    "timestamp": "2026-01-21T17:11:00.289891",
+    "timestamp": "2026-01-22T08:25:40.153333",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -23642,14 +25203,14 @@
           294,
           259
         ],
-        "chart_info": ""
+        "chart_info": "snellen_chart_40_30_25_25"
       }
     },
     "frame_id": 17388,
     "time_seconds": 695.52
   },
   {
-    "timestamp": "2026-01-21T17:11:04.461775",
+    "timestamp": "2026-01-22T08:25:44.350597",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -23865,14 +25426,14 @@
           294,
           259
         ],
-        "chart_info": ""
+        "chart_info": "snellen_chart_40_30_25_25"
       }
     },
     "frame_id": 17448,
     "time_seconds": 697.92
   },
   {
-    "timestamp": "2026-01-21T17:11:06.664907",
+    "timestamp": "2026-01-22T08:25:46.563739",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -24088,14 +25649,14 @@
           294,
           259
         ],
-        "chart_info": ""
+        "chart_info": "snellen_chart_40_30_25_25"
       }
     },
     "frame_id": 17460,
     "time_seconds": 698.4
   },
   {
-    "timestamp": "2026-01-21T17:11:10.914480",
+    "timestamp": "2026-01-22T08:25:50.804645",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -24311,14 +25872,14 @@
           294,
           259
         ],
-        "chart_info": ""
+        "chart_info": "snellen_chart_40_30_25_25"
       }
     },
     "frame_id": 17508,
     "time_seconds": 700.32
   },
   {
-    "timestamp": "2026-01-21T17:11:13.793150",
+    "timestamp": "2026-01-22T08:25:53.713966",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -24534,14 +26095,14 @@
           294,
           259
         ],
-        "chart_info": ""
+        "chart_info": "snellen_chart_40_30_25_25"
       }
     },
     "frame_id": 17592,
     "time_seconds": 703.68
   },
   {
-    "timestamp": "2026-01-21T17:11:15.999514",
+    "timestamp": "2026-01-22T08:25:55.938100",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -24757,14 +26318,14 @@
           294,
           259
         ],
-        "chart_info": ""
+        "chart_info": "snellen_chart_40_30_25_25"
       }
     },
     "frame_id": 17616,
     "time_seconds": 704.64
   },
   {
-    "timestamp": "2026-01-21T17:11:18.125197",
+    "timestamp": "2026-01-22T08:25:58.064668",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -24980,14 +26541,14 @@
           294,
           259
         ],
-        "chart_info": ""
+        "chart_info": "snellen_chart_40_30_25_25"
       }
     },
     "frame_id": 17640,
     "time_seconds": 705.6
   },
   {
-    "timestamp": "2026-01-21T17:11:20.837378",
+    "timestamp": "2026-01-22T08:26:00.797817",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -25203,14 +26764,14 @@
           294,
           259
         ],
-        "chart_info": ""
+        "chart_info": "snellen_chart_40_30_25_25"
       }
     },
     "frame_id": 17820,
     "time_seconds": 712.8
   },
   {
-    "timestamp": "2026-01-21T17:11:23.465422",
+    "timestamp": "2026-01-22T08:26:03.433524",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -25426,14 +26987,14 @@
           294,
           259
         ],
-        "chart_info": ""
+        "chart_info": "snellen_chart_40_30_25_25"
       }
     },
     "frame_id": 17904,
     "time_seconds": 716.16
   },
   {
-    "timestamp": "2026-01-21T17:11:28.821447",
+    "timestamp": "2026-01-22T08:26:08.920494",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -25649,14 +27210,14 @@
           294,
           259
         ],
-        "chart_info": ""
+        "chart_info": "near_vision"
       }
     },
     "frame_id": 18048,
     "time_seconds": 721.92
   },
   {
-    "timestamp": "2026-01-21T17:11:31.175016",
+    "timestamp": "2026-01-22T08:26:11.404982",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -25872,14 +27433,14 @@
           294,
           259
         ],
-        "chart_info": ""
+        "chart_info": "near_vision"
       }
     },
     "frame_id": 18072,
     "time_seconds": 722.88
   },
   {
-    "timestamp": "2026-01-21T17:11:34.435567",
+    "timestamp": "2026-01-22T08:26:14.773594",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -26095,14 +27656,14 @@
           294,
           259
         ],
-        "chart_info": ""
+        "chart_info": "near_vision"
       }
     },
     "frame_id": 18372,
     "time_seconds": 734.88
   },
   {
-    "timestamp": "2026-01-21T17:11:36.707182",
+    "timestamp": "2026-01-22T08:26:17.174386",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -26318,14 +27879,14 @@
           294,
           259
         ],
-        "chart_info": ""
+        "chart_info": "near_vision"
       }
     },
     "frame_id": 18384,
     "time_seconds": 735.36
   },
   {
-    "timestamp": "2026-01-21T17:11:39.268475",
+    "timestamp": "2026-01-22T08:26:19.843345",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -26541,14 +28102,14 @@
           294,
           259
         ],
-        "chart_info": ""
+        "chart_info": "near_vision"
       }
     },
     "frame_id": 18516,
     "time_seconds": 740.64
   },
   {
-    "timestamp": "2026-01-21T17:11:41.051259",
+    "timestamp": "2026-01-22T08:26:21.770342",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -26764,14 +28325,14 @@
           294,
           259
         ],
-        "chart_info": ""
+        "chart_info": "near_vision"
       }
     },
     "frame_id": 18720,
     "time_seconds": 748.8
   },
   {
-    "timestamp": "2026-01-21T17:11:42.834039",
+    "timestamp": "2026-01-22T08:26:23.630863",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -26987,14 +28548,14 @@
           294,
           259
         ],
-        "chart_info": ""
+        "chart_info": "near_vision"
       }
     },
     "frame_id": 18888,
     "time_seconds": 755.52
   },
   {
-    "timestamp": "2026-01-21T17:11:44.661956",
+    "timestamp": "2026-01-22T08:26:25.487444",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -27210,14 +28771,14 @@
           294,
           259
         ],
-        "chart_info": ""
+        "chart_info": "near_vision"
       }
     },
     "frame_id": 19152,
     "time_seconds": 766.08
   },
   {
-    "timestamp": "2026-01-21T17:11:46.373106",
+    "timestamp": "2026-01-22T08:26:27.288815",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -27433,14 +28994,237 @@
           294,
           259
         ],
-        "chart_info": ""
+        "chart_info": "near_vision"
       }
     },
     "frame_id": 19164,
     "time_seconds": 766.56
   },
   {
-    "timestamp": "2026-01-21T17:11:49.919224",
+    "timestamp": "2026-01-22T08:26:29.068583",
+    "rois": {
+      "menu": {
+        "roi_id": "ROI_Menu",
+        "bbox": [
+          0,
+          0,
+          1050,
+          92
+        ],
+        "ocr_text": "F 42 TOPCON CVv-5000PC a\nFile Course Examination Reference Data DataSet Jo * Test KOL-MIH is controlling your computer\nB82 erm a RRM maASse@ & Zia!\n"
+      },
+      "roi1": {
+        "cell_bboxes_on_roi0": [
+          [
+            255,
+            155,
+            460,
+            204
+          ],
+          [
+            460,
+            155,
+            589,
+            204
+          ],
+          [
+            589,
+            155,
+            795,
+            204
+          ],
+          [
+            255,
+            204,
+            460,
+            253
+          ],
+          [
+            460,
+            204,
+            589,
+            253
+          ],
+          [
+            589,
+            204,
+            795,
+            253
+          ],
+          [
+            255,
+            253,
+            460,
+            302
+          ],
+          [
+            460,
+            253,
+            589,
+            302
+          ],
+          [
+            589,
+            253,
+            795,
+            302
+          ],
+          [
+            255,
+            302,
+            460,
+            351
+          ],
+          [
+            460,
+            302,
+            589,
+            351
+          ],
+          [
+            589,
+            302,
+            795,
+            351
+          ],
+          [
+            255,
+            351,
+            460,
+            402
+          ],
+          [
+            460,
+            351,
+            589,
+            402
+          ],
+          [
+            589,
+            351,
+            795,
+            402
+          ]
+        ]
+      },
+      "roi1_ocr": {
+        "R_Sph": "-2.00",
+        "S_Anchor": "S",
+        "L_Sph": "-1.75",
+        "R_Cyl": "-0.75",
+        "C_Anchor": "C",
+        "L_Cyl": "-0.75",
+        "R_Axis": "180",
+        "A_Anchor": "A",
+        "L_Axis": "2",
+        "R_Add": "0.00",
+        "ADD_Anchor": "ADD",
+        "L_Add": "0.00",
+        "R_blank": null,
+        "blank_anchor": null,
+        "L_blank": null
+      },
+      "roi2": {
+        "roi_id": "ROI_2",
+        "pd_value_bbox": [
+          472,
+          461,
+          102,
+          46
+        ],
+        "pd_value": ""
+      },
+      "roi3_4": {
+        "roi_id": "ROI_3_4",
+        "bboxes": [
+          {
+            "label": "left_occluder",
+            "box": [
+              366,
+              439,
+              70,
+              69
+            ],
+            "state": "filled/active (blue)"
+          },
+          {
+            "label": "right_occluder",
+            "box": [
+              618,
+              438,
+              72,
+              72
+            ],
+            "state": "filled/active (blue)"
+          }
+        ]
+      },
+      "roi5": {
+        "selected_tab": 0,
+        "bboxes": [
+          {
+            "label": 1,
+            "x": 0,
+            "y": 609,
+            "w": 92,
+            "h": 54,
+            "rel_x": 0,
+            "rel_y": 0
+          },
+          {
+            "label": 2,
+            "x": 92,
+            "y": 609,
+            "w": 92,
+            "h": 54,
+            "rel_x": 92,
+            "rel_y": 0
+          },
+          {
+            "label": 3,
+            "x": 185,
+            "y": 609,
+            "w": 92,
+            "h": 54,
+            "rel_x": 185,
+            "rel_y": 0
+          },
+          {
+            "label": 4,
+            "x": 278,
+            "y": 609,
+            "w": 92,
+            "h": 54,
+            "rel_x": 278,
+            "rel_y": 0
+          },
+          {
+            "label": 5,
+            "x": 370,
+            "y": 609,
+            "w": 92,
+            "h": 54,
+            "rel_x": 370,
+            "rel_y": 0
+          }
+        ]
+      },
+      "roi7": {
+        "roi_id": "ROI7",
+        "bbox": [
+          651,
+          601,
+          294,
+          259
+        ],
+        "chart_info": "echart_40"
+      }
+    },
+    "frame_id": 19176,
+    "time_seconds": 767.04
+  },
+  {
+    "timestamp": "2026-01-22T08:26:31.016880",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -27663,7 +29447,7 @@
     "time_seconds": 768.96
   },
   {
-    "timestamp": "2026-01-21T17:11:51.717111",
+    "timestamp": "2026-01-22T08:26:32.923064",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -27879,14 +29663,14 @@
           294,
           259
         ],
-        "chart_info": ""
+        "chart_info": "snellen_chart_40_30_25_25"
       }
     },
     "frame_id": 19416,
     "time_seconds": 776.64
   },
   {
-    "timestamp": "2026-01-21T17:11:55.639509",
+    "timestamp": "2026-01-22T08:26:36.999951",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -28102,14 +29886,14 @@
           294,
           259
         ],
-        "chart_info": ""
+        "chart_info": "snellen_chart_40_30_25_25"
       }
     },
     "frame_id": 21216,
     "time_seconds": 848.64
   },
   {
-    "timestamp": "2026-01-21T17:11:58.511774",
+    "timestamp": "2026-01-22T08:26:39.953729",
     "rois": {
       "menu": {
         "roi_id": "ROI_Menu",
@@ -28325,7 +30109,7 @@
           294,
           259
         ],
-        "chart_info": ""
+        "chart_info": "snellen_chart_40_30_25_25"
       }
     },
     "frame_id": 22116,

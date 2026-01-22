@@ -4,7 +4,7 @@ import json
 from extract_roi7 import extract
 
 def test_on_charts():
-    img_path = "Charts_Processed/Number Chart/number chart 20/Screenshot 2026-01-20 at 1.00.41 PM.png"
+    img_path = "/Users/nitinbhatt/.gemini/antigravity/brain/1f2b0fcd-9a68-4c6e-889b-39ebb29d4fd0/debug_roi7_crop.png"
     if not os.path.exists(img_path):
         print(f"Image not found: {img_path}")
         return
