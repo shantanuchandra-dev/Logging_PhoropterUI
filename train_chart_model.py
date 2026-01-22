@@ -12,7 +12,7 @@ import copy
 # Bypass SSL for downloading pre-trained weights
 ssl._create_default_https_context = ssl._create_unverified_context
 
-def train_chart_model(data_dir="chart_dataset", model_save_path="chart_classifier.pth", epochs=50, batch_size=4):
+def train_chart_model(data_dir="chart_dataset", model_save_path="chart_classifier.pth", epochs=100, batch_size=8):
     """
     Trains a ResNet18 model on the chart dataset.
     """
@@ -22,8 +22,9 @@ def train_chart_model(data_dir="chart_dataset", model_save_path="chart_classifie
     data_transforms = {
         'train': transforms.Compose([
             transforms.Resize((64, 64)),
-            transforms.RandomRotation(5),
-            transforms.ColorJitter(brightness=0.1, contrast=0.1),
+            transforms.RandomRotation(15),
+            transforms.RandomAffine(degrees=0, translate=(0.1, 0.1), scale=(0.9, 1.1)),
+            transforms.ColorJitter(brightness=0.2, contrast=0.2),
             transforms.ToTensor(),
             transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
         ]),

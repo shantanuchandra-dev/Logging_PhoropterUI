@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-01-22T08:18:55.643280",
+  "timestamp": "2026-01-22T22:22:02.375553",
   "rois": {
     "menu": {
       "roi_id": "ROI_Menu",
@@ -105,9 +105,9 @@
           402
         ]
       ],
-      "roi1_image": "ROI_1/3nDh_2201_081857_roi1.png",
-      "overlay_image": "ROI_1/3nDh_2201_081857_roi1_cells_on_roi0.png",
-      "bbox_file": "ROI_1/3nDh_2201_081857_roi1_cells_on_roi0_bboxes.txt"
+      "roi1_image": "ROI_1/3nDh_2201_222204_roi1.png",
+      "overlay_image": "ROI_1/3nDh_2201_222204_roi1_cells_on_roi0.png",
+      "bbox_file": "ROI_1/3nDh_2201_222204_roi1_cells_on_roi0_bboxes.txt"
     },
     "roi1_ocr": {
       "R_Sph": "+1.50",
@@ -136,7 +136,7 @@
       ],
       "pd_value": "",
       "confidence": null,
-      "image_path": "ROI_2/3nDh_2201_081901_pd_debug.png"
+      "image_path": "ROI_2/3nDh_2201_222207_pd_debug.png"
     },
     "roi3_4": {
       "roi_id": "ROI_3_4",
@@ -163,8 +163,8 @@
         }
       ],
       "image_paths": [
-        "ROI_3/3nDh_2201_081901_roi3.png",
-        "ROI_4/3nDh_2201_081901_roi4.png"
+        "ROI_3/3nDh_2201_222207_roi3.png",
+        "ROI_4/3nDh_2201_222207_roi4.png"
       ]
     },
     "roi5": {
@@ -225,8 +225,8 @@
         294,
         259
       ],
-      "chart_info": "snellen_chart__20_15_15",
-      "debug_image": "ROI_7/3nDh_2201_081901_labeled_roi7.png"
+      "chart_info": "snellen_chart_6_4_5",
+      "debug_image": "ROI_7/3nDh_2201_222208_labeled_roi7.png"
     }
   },
   "frame_id": 2312,

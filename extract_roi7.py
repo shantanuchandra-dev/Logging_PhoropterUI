@@ -47,6 +47,9 @@ def classify_chart(roi_img, threshold=0.1):
     """Classifies the given chart image using the trained model.
     Returns empty string if below confidence threshold or error occurs.
     """
+    if roi_img is None or roi_img.size == 0:
+        return ""
+        
     model, mapping = load_chart_model()
     if model is None:
         return ""

@@ -4,7 +4,7 @@
     "reference_image": "topcon_ui_001.png",
     "output_dir": "MatchedScreens",
     "match_threshold": 0.4,
-    "sampling_interval_seconds": 0.5,
+    "sampling_interval_seconds": 2,
     "frame_diff_threshold": 0.0005,
     "roi0_diff_threshold": 0.005
 }

@@ -4,7 +4,7 @@ import random
 from pathlib import Path
 from PIL import Image
 
-def prepare_data(source_dir="Charts_Processed", output_dir="chart_dataset", train_split=0.8):
+def prepare_data(source_dir="all_the_charts", output_dir="chart_dataset", train_split=0.8):
     """
     Organizes images from source_dir into a standard train/val split.
     Classes are defined by the immediate parent folder of each image.
@@ -27,7 +27,13 @@ def prepare_data(source_dir="Charts_Processed", output_dir="chart_dataset", trai
             if file.lower().endswith(('.png', '.jpg', '.jpeg')):
                 img_path = Path(root) / file
                 # Class name is the immediate parent directory
-                class_name = Path(root).name.strip().lower().replace(" ", "_")
+                # Sanitize class name: lowercase, replace spaces with underscores, remove special chars
+                orig_class_name = Path(root).name.strip().lower()
+                class_name = "".join([c if c.isalnum() or c == "_" else "_" for c in orig_class_name.replace(" ", "_")])
+                # Collapse multiple underscores
+                while "__" in class_name:
+                    class_name = class_name.replace("__", "_")
+                class_name = class_name.strip("_")
                 
                 if class_name not in image_groups:
                     image_groups[class_name] = []
