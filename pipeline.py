@@ -70,7 +70,7 @@ def load_config(config_path="config.json"):
         "reference_image": "topcon_ui_001.png",
         "output_dir": "roi_all",
         "sampling_interval_seconds": 2,
-        "match_threshold": 0.8,
+        "match_threshold": 0.35,
         "max_consecutive_failures": 5,
         "save_debug_images": True
     }
@@ -606,8 +606,8 @@ def main():
         extraction_count = 1
         
         # Difference thresholds (now from config)
-        FRAME_DIFF_THRESHOLD = float(config.get('frame_diff_threshold', 0.0005))
-        ROI0_DIFF_THRESHOLD = float(config.get('roi0_diff_threshold', 0.005))
+        FRAME_DIFF_THRESHOLD = float(config.get('frame_diff_threshold', 0.0002))
+        ROI0_DIFF_THRESHOLD = float(config.get('roi0_diff_threshold', 0.0005))
 
         while True:
             ret, frame = cap.read()
@@ -621,18 +621,23 @@ def main():
             if frame_count % sampling_interval_frames != 0:
                 continue
 
-            print(f"\r→ Frame {frame_count} / {total_frames} (t={time_seconds:.2f}s)", end="")
+            print(f"\n[{time_seconds:.2f}s] Sampling Frame {frame_count}")
 
             try:
                 # 1. Frame-to-Frame Change Detection
                 frame_diff = calculate_image_difference(frame, prev_frame)
+                print(f"  > Frame Diff: {frame_diff*100:.6f}% (Thresh: {FRAME_DIFF_THRESHOLD*100:.4f}%)", end="")
+                
                 if frame_diff < FRAME_DIFF_THRESHOLD:
+                    print(" -> SKIP")
                     continue
+                print(" -> PASS")
                 
                 prev_frame = frame.copy()
 
                 # 2. Check UI presence (to ensure we are still in the valid screen)
-                is_present, _ = verify_ui_present(frame, cv2.imread(config['reference_image']), config['match_threshold'])
+                is_present, match_score = verify_ui_present(frame, cv2.imread(config['reference_image']), config['match_threshold'])
+                print(f"  > UI Presence: {'MATCH' if is_present else 'NO MATCH'} (Score: {match_score:.4f}, Thresh: {config['match_threshold']:.2f})")
                 if not is_present:
                     continue
 
@@ -641,8 +646,12 @@ def main():
                 roi0_curr = roi0_res['roi0']
                 
                 roi0_diff = calculate_image_difference(roi0_curr, prev_roi0)
+                print(f"  > ROI0 Diff: {roi0_diff*100:.6f}% (Thresh: {ROI0_DIFF_THRESHOLD*100:.4f}%)", end="")
+                
                 if roi0_diff < ROI0_DIFF_THRESHOLD:
+                    print(" -> SKIP")
                     continue
+                print(" -> PASS")
                 
                 prev_roi0 = roi0_curr.copy()
 
@@ -655,27 +664,27 @@ def main():
                     filename=ref_roi0_filename
                 )
                 
-                # Remove ROI-1, ROI-1 OCR, and ROI-5 from results for subsequent frames
-                # Note: The user said ROI-1,2,3,4,5,6,7 are valid for change detection.
-                # In the original code, some were being deleted. I'll stick to baseline for now.
-                # but I should keep value comparison.
-                
                 current_roi_data['frame_id'] = frame_count
                 current_roi_data['time_seconds'] = time_seconds
 
                 # 5. Value-to-Value Change Detection
                 curr_row = extract_csv_row(current_roi_data)
+                
+                # Verbose Value Printing
+                print(f"  > Values: {curr_row['R_SPH']} | {curr_row['R_CYL']} | {curr_row['R_AXIS']} | {curr_row['L_SPH']} | {curr_row['L_CYL']} | {curr_row['L_AXIS']} | {curr_row['Occluder_State']} | {curr_row['Chart_Display']}")
 
                 # Only log if any value has changed
                 if curr_row != prev_row:
+                    print(f"  *** CAPTURED (Extraction #{extraction_count + 1}) ***")
                     all_results.append(current_roi_data)
                     append_to_csv(video_csv_path, current_roi_data)
                     prev_row = curr_row
                     extraction_count += 1
+                else:
+                    print("  > SKIP: Values identical to previous.")
 
             except Exception as e:
-                if config.get('debug', False):
-                    print(f"\rError at frame {frame_count}: {e}")
+                print(f"\rError at frame {frame_count}: {e}")
                 continue
 
         cap.release()

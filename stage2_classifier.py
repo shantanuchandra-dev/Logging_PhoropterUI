@@ -87,10 +87,158 @@ def detect_circumference_color(roi_img):
 
 def detect_line_presence(roi_img):
     """
-    Distinguish Power Refine vs Axis Refine using dot geometry.
+    Distinguish Power Refine vs Axis Refine based on line position.
+    
+    Power Refine: Line touches/connects the two circles (joining them).
+    Axis Refine: Line does NOT touch the circles (separate from them).
+    
+    The image may be rotated, so we detect the line and normalize rotation.
+    
+    Returns:
+        bool: True if it's Power Refine (line touches circles), False if it's Axis Refine
+    """
+    if roi_img is None or roi_img.size == 0:
+        return False
+        
+    h, w = roi_img.shape[:2]
+    center_x, center_y = w // 2, h // 2
+    
+    # 1. Detect lines in the image
+    gray = cv2.cvtColor(roi_img, cv2.COLOR_BGR2GRAY)
+    edges = cv2.Canny(gray, 50, 150, apertureSize=3)
+    
+    # Use Hough Line Transform to detect lines
+    lines = cv2.HoughLinesP(edges, 1, np.pi/180, threshold=30, minLineLength=20, maxLineGap=10)
+    
+    if lines is None or len(lines) == 0:
+        # No line detected, fallback to dot-based detection
+        return detect_line_presence_fallback(roi_img)
+    
+    # 2. Find the longest/most prominent line
+    longest_line = None
+    max_length = 0
+    for line in lines:
+        x1, y1, x2, y2 = line[0]
+        length = np.sqrt((x2 - x1)**2 + (y2 - y1)**2)
+        if length > max_length:
+            max_length = length
+            longest_line = (x1, y1, x2, y2)
+    
+    if longest_line is None:
+        return detect_line_presence_fallback(roi_img)
+    
+    x1, y1, x2, y2 = longest_line
+    
+    # 3. Detect circles (dots) in the image
+    # We need to find if the line touches the circles/dots
+    hsv = cv2.cvtColor(roi_img, cv2.COLOR_BGR2HSV)
+    
+    # Detect red and white dots
+    mask_red1 = cv2.inRange(hsv, np.array([0, 50, 40]), np.array([20, 255, 255]))
+    mask_red2 = cv2.inRange(hsv, np.array([150, 50, 40]), np.array([180, 255, 255]))
+    red_dots = cv2.bitwise_or(mask_red1, mask_red2)
+    
+    white_dots = cv2.inRange(hsv, np.array([0, 0, 180]), np.array([180, 80, 255]))
+    all_dots_mask = cv2.bitwise_or(red_dots, white_dots)
+    
+    # Morphological operations to clean up
+    kernel = np.ones((3,3), np.uint8)
+    all_dots_mask = cv2.morphologyEx(all_dots_mask, cv2.MORPH_CLOSE, kernel)
+    
+    # Find dot contours
+    contours, _ = cv2.findContours(all_dots_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    
+    # Filter dot_circles: Keep only those inside the main JCC circumference
+    # The ROI is centered on the occluder, so dots must be within a certain radius from image center.
+    h, w = roi_img.shape[:2]
+    img_center_x, img_center_y = w // 2, h // 2
+    max_dist_from_center = (w / 2) * 0.85 # Allow dots within 85% of the radius
+    
+    valid_dot_circles = []
+    dropped_mask = np.zeros_like(all_dots_mask)
+    
+    # First extract all candidate dots from contours
+    all_candidate_dots = []
+    for cnt in contours:
+        area = cv2.contourArea(cnt)
+        if 10 < area < 500:  # Valid dot size
+            # Get bounding circle
+            (cx, cy), radius = cv2.minEnclosingCircle(cnt)
+            if radius > 3:  # Minimum radius
+                all_candidate_dots.append((int(cx), int(cy), int(radius)))
+    
+    # Then filter them based on distance from center
+    for cx, cy, r in all_candidate_dots:
+        dist_to_center = np.sqrt((cx - img_center_x)**2 + (cy - img_center_y)**2)
+        
+        # Check if dot is within the valid central region
+        if dist_to_center < max_dist_from_center:
+            valid_dot_circles.append((cx, cy, r))
+        else:
+            # For debug: visualize dropped dots
+            cv2.circle(dropped_mask, (cx, cy), r, 255, -1)
+            
+    dot_circles = valid_dot_circles
+    
+    if len(dot_circles) < 2:
+        # Not enough dots detected, save debug info if needed and fallback
+        # (You might want to save the dropped_mask to debug if helpful)
+        return detect_line_presence_fallback(roi_img)
+    
+    # 4. Check all detected lines and find the "best" one
+    # Heuristic: A line that touches dots (indicating Power Refine) is more likely to be the handle
+    # than a random glare/long line that touches nothing.
+    # Score = (touching_count * 1000) + line_length
+    
+    best_line = None
+    max_score = -1
+    best_touching_count = 0
+    
+    if lines is not None:
+        for line in lines:
+            x1, y1, x2, y2 = line[0]
+            length = np.sqrt((x2 - x1)**2 + (y2 - y1)**2)
+            
+            # Check how many dots this specific line touches
+            current_touches = 0
+            for cx, cy, r in dot_circles:
+                p1 = np.array([x1, y1])
+                p2 = np.array([x2, y2])
+                p3 = np.array([cx, cy])
+                
+                if np.array_equal(p1, p2):
+                    dist = np.linalg.norm(p3 - p1)
+                else:
+                    dist = np.abs(np.cross(p2-p1, p1-p3)) / np.linalg.norm(p2-p1)
+                
+                if dist <= (r + 2):
+                    current_touches += 1
+            
+            # Calculate score
+            score = (current_touches * 1000) + length
+            
+            if score > max_score:
+                max_score = score
+                best_line = (x1, y1, x2, y2)
+                best_touching_count = current_touches
+                
+    # Determine status based on best line's touching count
+    is_power = best_touching_count >= 2
+    
+    if is_power:
+        return True # Best line touches >= 2 dots -> Power Refine
+    
+    # Line analysis suggests Axis, but let's double check with geometry
+    # to handle cases where the handle is invisible/missed but dots are clearly aligned.
+    return detect_line_presence_fallback(roi_img)
+
+
+def detect_line_presence_fallback(roi_img):
+    """
+    Fallback method using dot geometry when line detection fails.
     
     Power Refine: Dots are axis-aligned (left, right, top, bottom).
-    Axis Refine: Dots are diagonal (relative to horizontal/vertical).
+    Axis Refine: Dots are diagonal.
     
     Returns:
         bool: True if it's Power Refine, False if it's Axis Refine
@@ -101,7 +249,7 @@ def detect_line_presence(roi_img):
     h, w = roi_img.shape[:2]
     center_x, center_y = w // 2, h // 2
     
-    # 1. Improved Dot Detection (Red and White)
+    # Detect dots
     hsv = cv2.cvtColor(roi_img, cv2.COLOR_BGR2HSV)
     
     # Red dots
@@ -115,9 +263,9 @@ def detect_line_presence(roi_img):
     all_dots_mask = cv2.bitwise_or(red_dots, white_dots)
     
     # 1b. Exclude the outer ring to avoid merging dots with circumference
-    # Assuming dots are within 70% of the radius from center
+    # Assuming dots are within 85% of the radius from center
     draw_mask = np.zeros((h, w), dtype=np.uint8)
-    inner_radius = int(min(center_x, center_y) * 0.75)
+    inner_radius = int(min(center_x, center_y) * 0.85)
     cv2.circle(draw_mask, (center_x, center_y), inner_radius, 255, -1)
     all_dots_mask = cv2.bitwise_and(all_dots_mask, draw_mask)
     
@@ -135,8 +283,8 @@ def detect_line_presence(roi_img):
                 cx, cy = int(M["m10"] / M["m00"]), int(M["m01"] / M["m00"])
                 if 5 < cx < w-5 and 5 < cy < h-5:
                     dots.append((cx, cy))
-                    
-    # 2. Geometric Classification
+    
+    # Geometric classification based on dot angles
     if len(dots) >= 2:
         power_votes = 0
         axis_votes = 0
@@ -154,12 +302,9 @@ def detect_line_presence(roi_img):
             else:
                 axis_votes += 1
         return power_votes >= axis_votes
-
-    # Fallback to simple line detection if dots failed
-    gray = cv2.cvtColor(roi_img, cv2.COLOR_BGR2GRAY)
-    edges = cv2.Canny(gray, 50, 150)
-    lines = cv2.HoughLinesP(edges, 1, np.pi/180, 20, minLineLength=20, maxLineGap=10)
-    return lines is not None
+    
+    # Default to False (Axis Refine) if uncertain
+    return False
 
 
 

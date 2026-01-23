@@ -1,111 +1,43 @@
 # Automated ROI Extraction Pipeline
 
-A comprehensive pipeline for extracting Regions of Interest (ROIs) from medical UI videos.
+A high-accuracy clinical data extraction pipeline for medical UI videos, specifically tuned for Phoropter interfaces.
 
-## Quick Start
-
+## 🚀 Quick Start
 ```bash
-# Run the pipeline
-python pipeline.py
+python3 pipeline.py
 ```
+Outputs are saved to the directory specified in `config.json` (default: `MatchedScreens/`).
 
-The pipeline will automatically:
-- ✅ Detect GPU availability (or run on CPU)
-- ✅ Process video from `Sample/videos/`
-- ✅ Extract all ROIs periodically
-- ✅ Save results to `roi_all/` directory
+## 🧠 Architecture: Tiered Change Detection
+The pipeline uses a three-tier "Skeptical Extraction" logic to minimize redundant processing while ensuring 100% capture of clinical changes:
 
-## GPU vs CPU
+1.  **Frame Diff:** Checks the pixel-level difference between sampled frames.
+2.  **ROI-0 Diff:** If the frame changes, it crops the main UI window (ROI-0) and compares it to the previous ROI-0. This filters out movement outside the primary interface.
+3.  **Value Comparison:** Extracted clinical points (SPH, CYL, Occluder State, etc.) are compared against the last logged entry. Data is only written to CSV if a clinical value has changed.
 
-### GPU Detected
-When a GPU is available (CUDA-enabled), the pipeline will report:
-```
-✓ GPU Available: NVIDIA GeForce RTX 3080 (PyTorch CUDA)
-  Note: Some extractors may still use CPU if GPU support is not implemented
-```
+## ⚙️ Configuration (`config.json`)
 
-### No GPU (CPU Fallback)
-**This is completely normal!** The pipeline works perfectly on CPU:
-```
-ℹ GPU Not Detected - Running on CPU
-  Note: This is normal and the pipeline will work correctly on CPU
-```
+| Parameter | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `match_threshold` | float | 0.3 | Lower = more lenient UI detection. Optimized for glare/noise. |
+| `frame_diff_threshold` | float | 0.0002 | Sensitivity for detecting frame-level motion (0.02%). |
+| `roi0_diff_threshold` | float | 0.0005 | Sensitivity for detecting UI-level changes (0.05%). |
+| `sampling_interval_seconds`| float | 2.0 | Interval between sampled frames. |
+| `reference_image` | str | "topcon_ui_001.png" | Template used to "lock on" to the UI. |
+| `save_debug_images` | bool | true | Saves annotated ROI crops for verification. |
+| `max_consecutive_failures` | int | 10 | Limit for failed extraction attempts before warning. |
 
-- All extractors are compatible with CPU-only execution
-- EasyOCR and other libraries automatically use CPU when GPU is unavailable
-- Processing may be slower, but all functionality remains intact
+## 📊 Extracted Regions
+- **ROI-1 (OCR):** Precise SPH, CYL, AXIS, and ADD values for both eyes.
+- **ROI-2:** Pupil Distance (PD) values.
+- **ROI-3/4:** Phoropter Occluder states (BINO, Left_Occluded, Axis_Flip, etc.).
+- **ROI-5:** Active Chart Tab detection.
+- **ROI-7:** Clinical Chart display identification.
 
-## Configuration
+## 🛠️ Requirements
+- **Python:** 3.8+
+- **System:** `Tesseract OCR` (must be installed on the host OS)
+- **PIPs:** `opencv-python`, `pytesseract`, `easyocr`, `numpy`, `torch`
 
-Edit `config.json` to customize:
-
-```json
-{
-  "video_source_dir": "Sample/videos",
-  "sampling_interval_seconds": 10,
-  "output_dir": "roi_all",
-  "match_threshold": 0.8,
-  "save_debug_images": true
-}
-```
-
-## Output
-
-The pipeline generates:
-
-1. **CSV Log** (`roi_all/results.csv`): Tabular data with extracted values
-2. **JSON Log** (`roi_all/results.json`): Full structured data
-3. **Visualizations** (`roi_all/frame_*.png`): Images with ROI bboxes overlaid
-
-## ROI Extractors
-
-The pipeline extracts the following ROIs:
-
-- **ROI-0**: Main application window
-- **ROI-Menu**: Top menu bar
-- **ROI-1**: S/C/A/ADD table (pending refactoring)
-- **ROI-2**: PD label and value
-- **ROI-3/4**: Left and right occluders
-- **ROI-5**: Chart tabs (Chart1-5)
-- **ROI-6**: Chart options grid
-- **ROI-7**: Big chart pane
-
-## Requirements
-
-```bash
-pip install -r requirements.txt
-```
-
-Required packages:
-- opencv-python
-- numpy
-- pytesseract
-- easyocr
-- scikit-learn
-- scipy
-
-Optional (for GPU acceleration):
-- torch (with CUDA support)
-
-## Troubleshooting
-
-### "No GPU detected" message
-This is **not an error**! The pipeline will run on CPU automatically. If you want GPU acceleration:
-1. Install PyTorch with CUDA support
-2. Ensure CUDA drivers are installed
-3. Restart the pipeline
-
-### Slow processing
-- CPU processing is slower than GPU but still functional
-- Reduce `sampling_interval_seconds` in config to process fewer frames
-- Consider using a GPU if available
-
-### Missing dependencies
-```bash
-# Install Tesseract OCR (required for pytesseract)
-# macOS:
-brew install tesseract
-
-# Ubuntu/Debian:
-sudo apt-get install tesseract-ocr
-```
+## 🖥️ GPU Support
+Identified GPUs will be utilized for JCC pattern classification. CPU fallback is automatic and fully supported.

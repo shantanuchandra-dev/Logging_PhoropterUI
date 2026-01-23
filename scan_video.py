@@ -34,7 +34,7 @@ def find_first_ui_frame(video_path, config):
     Returns: (frame, timestamp_sec, frame_idx) or (None, None, None)
     """
     reference_image_path = config.get("reference_image", "topcon_ui_001.png")
-    match_threshold = config.get("match_threshold", 0.8)
+    match_threshold = config.get("match_threshold", 0.35) #area of Topcon UI on the whole frame
     fps_config = config.get("fps", "1")
     target_fps = parse_fps(fps_config)
     output_dir = config.get("output_dir", "MatchedScreens")
