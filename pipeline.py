@@ -21,7 +21,7 @@ import extract_roi0
 import extract_roi_menu
 import extract_roi1, extract_roi1_ocr
 import extract_roi2  # Using extract_roi2 instead of extract_roi2_temp
-import extract_roi_occ_jcc_v2 as extract_roi3_4 
+import extract_roi3_4_jcc_SC as extract_roi3_4 
 
 import extract_roi5
 import extract_roi6

@@ -1,0 +1,568 @@
+============================================================
+Automated ROI Extraction Pipeline
+============================================================
+ℹ GPU Not Detected - Running on CPU
+
+Configuration:
+  Video Source: Sample/videos
+  Output Directory: MatchedScreens
+
+Found 1 videos to process.
+
+============================================================
+Processing Video: su55kM-Changes_on_screen.mp4
+============================================================
+✓ Output CSV: MatchedScreens/su55kM-Changes_on_screen.csv
+
+[PHASE 1] Scanning for first UI frame...
+ROI0 extraction failed: ROI-0 (main window) not found.
+ROI0 extraction failed: ROI-0 (main window) not found.
+ROI0 extraction failed: ROI-0 (main window) not found.
+ROI0 extraction failed: ROI-0 (main window) not found.
+ROI0 extraction failed: ROI-0 (main window) not found.
+ROI0 extraction failed: ROI-0 (main window) not found.
+ROI0 extraction failed: ROI-0 (main window) not found.
+ROI0 extraction failed: ROI-0 (main window) not found.
+ROI0 extraction failed: ROI-0 (main window) not found.
+ROI0 extraction failed: ROI-0 (main window) not found.
+ROI0 extraction failed: ROI-0 (main window) not found.
+ROI0 extraction failed: ROI-0 (main window) not found.
+ROI0 extraction failed: ROI-0 (main window) not found.
+ROI0 extraction failed: ROI-0 (main window) not found.
+ROI0 extraction failed: ROI-0 (main window) not found.
+ROI0 extraction failed: ROI-0 (main window) not found.
+ROI0 extraction failed: ROI-0 (main window) not found.
+ROI0 extraction failed: ROI-0 (main window) not found.
+ROI0 area ratio: 0.469
+
+✓ UI locked on! First frame saved to: firstFrame/su55kM-Changes_on_screen_20260123_104059_t31s.png
+
+[PHASE 2] Setting reference coordinates on first frame (t=31.00s)...
+0.00 | 0.00 | 0.00 | 0.00 | 180 | 180 | 0.00 | 0.00
+✓ Found 3 circles (unfiltered) with params: p1=100, p2=30
+✓ After edge validation: 3 circles (from 3)
+Warning: Could not find equidistant circles with similar sizes
+Found 'Chart' with CLAHE using --psm 11: 'chart'
+Chart text found at band-relative coords: x=18.0, y=58.0, w=76.0, h=18.0
+Success! Final debug image: ROI_5/su55_2301_104101_final_contours.png
+Selected tab (max yellow): 0
+  ✓ Reference coordinates stored: MatchedScreens/su55kM-Changes_on_screen_coords.json
+
+[PHASE 3] Processing video and logging changes...
+
+[32.00s] Sampling Frame 800
+  > Frame Diff: 0.000000% (Thresh: 0.0200%) -> SKIP
+
+[34.00s] Sampling Frame 850
+  > Frame Diff: 0.137084% (Thresh: 0.0200%) -> PASS
+  > UI Presence: MATCH (Score: 0.4342, Thresh: 0.30)
+  > ROI0 Diff: 0.203924% (Thresh: 0.0500%) -> PASS
+[DEBUG] video_basename: su55kM-Changes_on_screen
+0.00 | 0.00 | 0.00 | 0.00 | 180 | 180 | 0.00 | 0.00
+✓ Found 3 circles (unfiltered) with params: p1=100, p2=30
+✓ After edge validation: 3 circles (from 3)
+✓ Selected pair: dist_ratio=0.91, radius_ratio=1.00
+Stage 1 model loaded from stage1_model.pth
+Stage 1 classes: {0: 'filled', 1: 'jcc_pattern'}
+  > Values: 0.00 | 0.00 | 180 | 0.00 | 0.00 | 180 | Left_Axis_Flip1 | echart_600
+  *** CAPTURED (Extraction #2) ***
+
+[36.00s] Sampling Frame 900
+  > Frame Diff: 0.044914% (Thresh: 0.0200%) -> PASS
+  > UI Presence: MATCH (Score: 0.4341, Thresh: 0.30)
+  > ROI0 Diff: 0.081342% (Thresh: 0.0500%) -> PASS
+[DEBUG] video_basename: su55kM-Changes_on_screen
+0.00 | 0.00 | 0.00 | 0.00 | 180 | 180 | 0.00 | 0.00
+✓ Found 4 circles (unfiltered) with params: p1=100, p2=30
+✓ After edge validation: 3 circles (from 4)
+✓ Selected pair: dist_ratio=1.00, radius_ratio=0.97
+  > Values: 0.00 | 0.00 | 180 | 0.00 | 0.00 | 180 | Left_Axis_Flip1 | echart_600
+  > SKIP: Values identical to previous.
+
+[38.00s] Sampling Frame 950
+  > Frame Diff: 0.000761% (Thresh: 0.0200%) -> SKIP
+
+[40.00s] Sampling Frame 1000
+  > Frame Diff: 1.163953% (Thresh: 0.0200%) -> PASS
+  > UI Presence: MATCH (Score: 0.4397, Thresh: 0.30)
+  > ROI0 Diff: 2.043166% (Thresh: 0.0500%) -> PASS
+[DEBUG] video_basename: su55kM-Changes_on_screen
+0.00 | 0.00 | 0.00 | 0.00 | 180 | 180 | 0.00 | 0.00
+✓ Found 4 circles (unfiltered) with params: p1=100, p2=30
+✓ After edge validation: 3 circles (from 4)
+✓ Selected pair: dist_ratio=1.00, radius_ratio=0.97
+  > Values: 0.00 | 0.00 | 180 | 0.00 | 0.00 | 180 | Left_Axis_Flip1 | echart_600
+  > SKIP: Values identical to previous.
+
+[42.00s] Sampling Frame 1050
+  > Frame Diff: 0.971040% (Thresh: 0.0200%) -> PASS
+  > UI Presence: MATCH (Score: 0.4297, Thresh: 0.30)
+  > ROI0 Diff: 5.645553% (Thresh: 0.0500%) -> PASS
+[DEBUG] video_basename: su55kM-Changes_on_screen
+0.00 | 0.00 | 0.00 | 0.00 | 180 | 180 | 0.00 | 0.00
+✓ Found 3 circles (unfiltered) with params: p1=100, p2=30
+✓ After edge validation: 2 circles (from 3)
+✓ Selected pair: dist_ratio=1.00, radius_ratio=1.00
+  > Values: 0.00 | 0.00 | 180 | 0.00 | 0.00 | 180 | Left_Axis_Flip1 | echart_600
+  > SKIP: Values identical to previous.
+
+[44.00s] Sampling Frame 1100
+  > Frame Diff: 0.012604% (Thresh: 0.0200%) -> SKIP
+
+[46.00s] Sampling Frame 1150
+  > Frame Diff: 0.013692% (Thresh: 0.0200%) -> SKIP
+
+[48.00s] Sampling Frame 1200
+  > Frame Diff: 0.013692% (Thresh: 0.0200%) -> SKIP
+
+[50.00s] Sampling Frame 1250
+  > Frame Diff: 0.013692% (Thresh: 0.0200%) -> SKIP
+
+[52.00s] Sampling Frame 1300
+  > Frame Diff: 0.018882% (Thresh: 0.0200%) -> SKIP
+
+[54.00s] Sampling Frame 1350
+  > Frame Diff: 1.286665% (Thresh: 0.0200%) -> PASS
+  > UI Presence: MATCH (Score: 0.3955, Thresh: 0.30)
+  > ROI0 Diff: 4.071508% (Thresh: 0.0500%) -> PASS
+[DEBUG] video_basename: su55kM-Changes_on_screen
+0.00 | 0.00 | 0.00 | 0.00 | 180 | 180 | 0.00 | 0.00
+✓ Found 4 circles (unfiltered) with params: p1=100, p2=30
+✓ After edge validation: 3 circles (from 4)
+✓ Selected pair: dist_ratio=1.00, radius_ratio=0.97
+  > Values: 0.00 | 0.00 | 180 | 0.00 | 0.00 | 180 | Left_Axis_Flip1 | echart_600
+  > SKIP: Values identical to previous.
+
+[56.00s] Sampling Frame 1400
+  > Frame Diff: 0.011248% (Thresh: 0.0200%) -> SKIP
+
+[58.00s] Sampling Frame 1450
+  > Frame Diff: 0.012539% (Thresh: 0.0200%) -> SKIP
+
+[60.00s] Sampling Frame 1500
+  > Frame Diff: 0.013153% (Thresh: 0.0200%) -> SKIP
+
+[62.00s] Sampling Frame 1550
+  > Frame Diff: 0.933337% (Thresh: 0.0200%) -> PASS
+  > UI Presence: MATCH (Score: 0.3721, Thresh: 0.30)
+  > ROI0 Diff: 1.757510% (Thresh: 0.0500%) -> PASS
+[DEBUG] video_basename: su55kM-Changes_on_screen
+0.00 | 0.00 | 0.00 | 0.00 | 180 | 180 | 0.00 | 0.00
+✓ Found 3 circles (unfiltered) with params: p1=100, p2=30
+✓ After edge validation: 3 circles (from 3)
+✓ Selected pair: dist_ratio=0.91, radius_ratio=1.00
+  > Values: 0.00 | 0.00 | 180 | 0.00 | 0.00 | 180 | BINO | echart_600
+  *** CAPTURED (Extraction #3) ***
+
+[64.00s] Sampling Frame 1600
+  > Frame Diff: 0.223192% (Thresh: 0.0200%) -> PASS
+  > UI Presence: MATCH (Score: 0.3717, Thresh: 0.30)
+  > ROI0 Diff: 0.257530% (Thresh: 0.0500%) -> PASS
+[DEBUG] video_basename: su55kM-Changes_on_screen
+0.00 | 0.00 | 0.00 | 0.00 | 180 | 180 | 0.00 | 0.00
+✓ Found 3 circles (unfiltered) with params: p1=100, p2=30
+✓ After edge validation: 3 circles (from 3)
+✓ Selected pair: dist_ratio=1.00, radius_ratio=0.83
+  > Values: 0.00 | 0.00 | 180 | 0.00 | 0.00 | 180 | BINO | echart_600
+  > SKIP: Values identical to previous.
+
+[66.00s] Sampling Frame 1650
+  > Frame Diff: 0.650557% (Thresh: 0.0200%) -> PASS
+  > UI Presence: MATCH (Score: 0.3962, Thresh: 0.30)
+  > ROI0 Diff: 1.352816% (Thresh: 0.0500%) -> PASS
+[DEBUG] video_basename: su55kM-Changes_on_screen
+0.00 | 0.00 | 0.00 | 0.00 | 180 | 180 | 0.00 | 0.00
+✓ Found 4 circles (unfiltered) with params: p1=100, p2=30
+✓ After edge validation: 4 circles (from 4)
+✓ Selected pair: dist_ratio=1.00, radius_ratio=0.97
+  > Values: 0.00 | 0.00 | 180 | 0.00 | 0.00 | 180 | BINO | echart_600
+  > SKIP: Values identical to previous.
+
+[68.00s] Sampling Frame 1700
+  > Frame Diff: 0.671275% (Thresh: 0.0200%) -> PASS
+  > UI Presence: MATCH (Score: 0.3816, Thresh: 0.30)
+  > ROI0 Diff: 1.417725% (Thresh: 0.0500%) -> PASS
+[DEBUG] video_basename: su55kM-Changes_on_screen
+0.00 | 0.00 | 0.00 | 0.00 | 180 | 180 | 0.00 | 0.00
+✓ Found 4 circles (unfiltered) with params: p1=100, p2=30
+✓ After edge validation: 4 circles (from 4)
+✓ Selected pair: dist_ratio=1.00, radius_ratio=0.97
+  > Values: 0.00 | 0.00 | 180 | 0.00 | 0.00 | 180 | BINO | echart_600
+  > SKIP: Values identical to previous.
+
+[70.00s] Sampling Frame 1750
+  > Frame Diff: 0.125976% (Thresh: 0.0200%) -> PASS
+  > UI Presence: MATCH (Score: 0.3823, Thresh: 0.30)
+  > ROI0 Diff: 0.268106% (Thresh: 0.0500%) -> PASS
+[DEBUG] video_basename: su55kM-Changes_on_screen
+0.00 | 0.00 | 0.00 | 0.00 | 180 | 180 | 0.00 | 0.00
+✓ Found 4 circles (unfiltered) with params: p1=100, p2=30
+✓ After edge validation: 4 circles (from 4)
+✓ Selected pair: dist_ratio=1.00, radius_ratio=0.97
+  > Values: 0.00 | 0.00 | 180 | 0.00 | 0.00 | 180 | BINO | echart_600
+  > SKIP: Values identical to previous.
+
+[72.00s] Sampling Frame 1800
+  > Frame Diff: 0.003891% (Thresh: 0.0200%) -> SKIP
+
+[74.00s] Sampling Frame 1850
+  > Frame Diff: 0.005251% (Thresh: 0.0200%) -> SKIP
+
+[76.00s] Sampling Frame 1900
+  > Frame Diff: 0.005519% (Thresh: 0.0200%) -> SKIP
+
+[78.00s] Sampling Frame 1950
+  > Frame Diff: 0.005519% (Thresh: 0.0200%) -> SKIP
+
+[80.00s] Sampling Frame 2000
+  > Frame Diff: 0.005519% (Thresh: 0.0200%) -> SKIP
+
+[82.00s] Sampling Frame 2050
+  > Frame Diff: 0.005519% (Thresh: 0.0200%) -> SKIP
+
+[84.00s] Sampling Frame 2100
+  > Frame Diff: 0.605388% (Thresh: 0.0200%) -> PASS
+  > UI Presence: MATCH (Score: 0.3957, Thresh: 0.30)
+  > ROI0 Diff: 1.290737% (Thresh: 0.0500%) -> PASS
+[DEBUG] video_basename: su55kM-Changes_on_screen
+0.00 | 0.00 | 0.00 | 0.00 | 180 | 180 | 0.00 | 0.00
+✓ Found 4 circles (unfiltered) with params: p1=100, p2=30
+✓ After edge validation: 4 circles (from 4)
+✓ Selected pair: dist_ratio=1.00, radius_ratio=0.97
+  > Values: 0.00 | 0.00 | 180 | 0.00 | 0.00 | 180 | BINO | echart_600
+  > SKIP: Values identical to previous.
+
+[86.00s] Sampling Frame 2150
+  > Frame Diff: 1.033310% (Thresh: 0.0200%) -> PASS
+  > UI Presence: MATCH (Score: 0.3814, Thresh: 0.30)
+  > ROI0 Diff: 0.017724% (Thresh: 0.0500%) -> SKIP
+
+[88.00s] Sampling Frame 2200
+  > Frame Diff: 0.017090% (Thresh: 0.0200%) -> SKIP
+
+[90.00s] Sampling Frame 2250
+  > Frame Diff: 0.018447% (Thresh: 0.0200%) -> SKIP
+
+[92.00s] Sampling Frame 2300
+  > Frame Diff: 0.228613% (Thresh: 0.0200%) -> PASS
+  > UI Presence: MATCH (Score: 0.3816, Thresh: 0.30)
+  > ROI0 Diff: 0.284464% (Thresh: 0.0500%) -> PASS
+[DEBUG] video_basename: su55kM-Changes_on_screen
+0.00 | 0.00 | 0.00 | 0.00 | 180 | 180 | 0.00 | 0.00
+✓ Found 3 circles (unfiltered) with params: p1=100, p2=30
+✓ After edge validation: 3 circles (from 3)
+✓ Selected pair: dist_ratio=1.00, radius_ratio=0.83
+  > Values: 0.00 | 0.00 | 180 | 0.00 | 0.00 | 180 | BINO | echart_600
+  > SKIP: Values identical to previous.
+
+[94.00s] Sampling Frame 2350
+  > Frame Diff: 1.332689% (Thresh: 0.0200%) -> PASS
+  > UI Presence: MATCH (Score: 0.3485, Thresh: 0.30)
+  > ROI0 Diff: 2.405216% (Thresh: 0.0500%) -> PASS
+[DEBUG] video_basename: su55kM-Changes_on_screen
+0.00 | 0.00 | 0.00 | 0.00 | 180 | 180 | 0.00 | 0.00
+✓ Found 3 circles (unfiltered) with params: p1=100, p2=30
+✓ After edge validation: 3 circles (from 3)
+✓ Selected pair: dist_ratio=1.00, radius_ratio=0.97
+  > Values: 0.00 | 0.00 | 180 | 0.00 | 0.00 | 180 | BINO | echart_600
+  > SKIP: Values identical to previous.
+
+[96.00s] Sampling Frame 2400
+  > Frame Diff: 1.223664% (Thresh: 0.0200%) -> PASS
+  > UI Presence: MATCH (Score: 0.3824, Thresh: 0.30)
+  > ROI0 Diff: 2.224753% (Thresh: 0.0500%) -> PASS
+[DEBUG] video_basename: su55kM-Changes_on_screen
+-1.00 | -1.00 | 0.00 | 0.00 | 180 | 180 | 0.00 | 0.00
+✓ Found 4 circles (unfiltered) with params: p1=100, p2=30
+✓ After edge validation: 4 circles (from 4)
+✓ Selected pair: dist_ratio=1.00, radius_ratio=0.97
+  > Values: -1.00 | 0.00 | 180 | -1.00 | 0.00 | 180 | BINO | echart_600
+  *** CAPTURED (Extraction #4) ***
+
+[98.00s] Sampling Frame 2450
+  > Frame Diff: 2.040152% (Thresh: 0.0200%) -> PASS
+  > UI Presence: MATCH (Score: 0.4112, Thresh: 0.30)
+  > ROI0 Diff: 35.044294% (Thresh: 0.0500%) -> PASS
+[DEBUG] video_basename: su55kM-Changes_on_screen
+ |  |  |  |  |  |  | 
+[WARNING] extract_roi1_ocr: 8/8 fields blank. Accuracy might be low.
+Warning: No circles detected in 40-60% region with any parameter set
+  > Values: None | None | None | None | None | None | Detection_Failed | 
+  *** CAPTURED (Extraction #5) ***
+
+[100.00s] Sampling Frame 2500
+  > Frame Diff: 0.017626% (Thresh: 0.0200%) -> SKIP
+
+[102.00s] Sampling Frame 2550
+  > Frame Diff: 0.019357% (Thresh: 0.0200%) -> SKIP
+
+[104.00s] Sampling Frame 2600
+  > Frame Diff: 0.019069% (Thresh: 0.0200%) -> SKIP
+
+[106.00s] Sampling Frame 2650
+  > Frame Diff: 0.019069% (Thresh: 0.0200%) -> SKIP
+
+[108.00s] Sampling Frame 2700
+  > Frame Diff: 0.019069% (Thresh: 0.0200%) -> SKIP
+
+[110.00s] Sampling Frame 2750
+  > Frame Diff: 0.019069% (Thresh: 0.0200%) -> SKIP
+
+[112.00s] Sampling Frame 2800
+  > Frame Diff: 0.019069% (Thresh: 0.0200%) -> SKIP
+
+[114.00s] Sampling Frame 2850
+  > Frame Diff: 0.028154% (Thresh: 0.0200%) -> PASS
+  > UI Presence: MATCH (Score: 0.4115, Thresh: 0.30)
+  > ROI0 Diff: 0.000000% (Thresh: 0.0500%) -> SKIP
+
+[116.00s] Sampling Frame 2900
+  > Frame Diff: 0.050616% (Thresh: 0.0200%) -> PASS
+  > UI Presence: MATCH (Score: 0.4116, Thresh: 0.30)
+  > ROI0 Diff: 0.000000% (Thresh: 0.0500%) -> SKIP
+
+[118.00s] Sampling Frame 2950
+  > Frame Diff: 1.287016% (Thresh: 0.0200%) -> PASS
+  > UI Presence: MATCH (Score: 0.3960, Thresh: 0.30)
+  > ROI0 Diff: 35.626461% (Thresh: 0.0500%) -> PASS
+[DEBUG] video_basename: su55kM-Changes_on_screen
+-1.00 | -1.00 | 0.00 | 0.00 | 180 | 180 | 0.00 | 0.00
+✓ Found 4 circles (unfiltered) with params: p1=100, p2=30
+✓ After edge validation: 4 circles (from 4)
+✓ Selected pair: dist_ratio=1.00, radius_ratio=1.00
+  > Values: -1.00 | 0.00 | 180 | -1.00 | 0.00 | 180 | BINO | echart_600
+  *** CAPTURED (Extraction #6) ***
+
+[120.00s] Sampling Frame 3000
+  > Frame Diff: 0.065022% (Thresh: 0.0200%) -> PASS
+  > UI Presence: MATCH (Score: 0.3961, Thresh: 0.30)
+  > ROI0 Diff: 0.133965% (Thresh: 0.0500%) -> PASS
+[DEBUG] video_basename: su55kM-Changes_on_screen
+-1.00 | -1.00 | 0.00 | 0.00 | 180 | 180 | 0.00 | 0.00
+✓ Found 4 circles (unfiltered) with params: p1=100, p2=30
+✓ After edge validation: 4 circles (from 4)
+✓ Selected pair: dist_ratio=1.00, radius_ratio=1.00
+  > Values: -1.00 | 0.00 | 180 | -1.00 | 0.00 | 180 | BINO | echart_600
+  > SKIP: Values identical to previous.
+
+[122.00s] Sampling Frame 3050
+  > Frame Diff: 0.231469% (Thresh: 0.0200%) -> PASS
+  > UI Presence: MATCH (Score: 0.3963, Thresh: 0.30)
+  > ROI0 Diff: 0.353567% (Thresh: 0.0500%) -> PASS
+[DEBUG] video_basename: su55kM-Changes_on_screen
+-1.00 | -1.00 | 0.00 | 0.00 | 180 | 180 | 0.00 | 0.00
+✓ Found 3 circles (unfiltered) with params: p1=100, p2=30
+✓ After edge validation: 2 circles (from 3)
+✓ Selected pair: dist_ratio=1.00, radius_ratio=0.86
+  > Values: -1.00 | 0.00 | 180 | -1.00 | 0.00 | 180 | BINO | echart_600
+  *** CAPTURED (Extraction #7) ***
+
+[124.00s] Sampling Frame 3100
+  > Frame Diff: 0.758621% (Thresh: 0.0200%) -> PASS
+  > UI Presence: MATCH (Score: 0.3966, Thresh: 0.30)
+  > ROI0 Diff: 1.493071% (Thresh: 0.0500%) -> PASS
+[DEBUG] video_basename: su55kM-Changes_on_screen
+-1.00 | -1.00 | 0.00 | 0.00 | 180 | 180 | 0.00 | 0.00
+✓ Found 3 circles (unfiltered) with params: p1=100, p2=30
+✓ After edge validation: 3 circles (from 3)
+✓ Selected pair: dist_ratio=1.00, radius_ratio=0.83
+  > Values: -1.00 | 0.00 | 180 | -1.00 | 0.00 | 180 | BINO | echart_600
+  *** CAPTURED (Extraction #8) ***
+
+[126.00s] Sampling Frame 3150
+  > Frame Diff: 0.105089% (Thresh: 0.0200%) -> PASS
+  > UI Presence: MATCH (Score: 0.3967, Thresh: 0.30)
+  > ROI0 Diff: 0.193908% (Thresh: 0.0500%) -> PASS
+[DEBUG] video_basename: su55kM-Changes_on_screen
+-1.00 | -1.00 | 0.00 | 0.00 | 180 | 180 | 0.00 | 0.00
+✓ Found 4 circles (unfiltered) with params: p1=100, p2=30
+✓ After edge validation: 4 circles (from 4)
+✓ Selected pair: dist_ratio=1.00, radius_ratio=0.97
+  > Values: -1.00 | 0.00 | 180 | -1.00 | 0.00 | 180 | BINO | echart_600
+  > SKIP: Values identical to previous.
+
+[128.00s] Sampling Frame 3200
+  > Frame Diff: 1.016524% (Thresh: 0.0200%) -> PASS
+  > UI Presence: MATCH (Score: 0.3597, Thresh: 0.30)
+  > ROI0 Diff: 4.341441% (Thresh: 0.0500%) -> PASS
+[DEBUG] video_basename: su55kM-Changes_on_screen
+-1.00 | -1.00 | 0.00 | 0.00 | 180 | 180 | 0.00 | 0.00
+✓ Found 4 circles (unfiltered) with params: p1=100, p2=30
+✓ After edge validation: 4 circles (from 4)
+✓ Selected pair: dist_ratio=0.90, radius_ratio=0.97
+  > Values: -1.00 | 0.00 | 180 | -1.00 | 0.00 | 180 | BINO | echart_600
+  > SKIP: Values identical to previous.
+
+[130.00s] Sampling Frame 3250
+  > Frame Diff: 0.968367% (Thresh: 0.0200%) -> PASS
+  > UI Presence: MATCH (Score: 0.3966, Thresh: 0.30)
+  > ROI0 Diff: 4.244000% (Thresh: 0.0500%) -> PASS
+[DEBUG] video_basename: su55kM-Changes_on_screen
+-1.00 | -1.00 | 0.00 | 0.00 | 180 | 180 | 0.00 | 0.00
+✓ Found 4 circles (unfiltered) with params: p1=100, p2=30
+✓ After edge validation: 4 circles (from 4)
+✓ Selected pair: dist_ratio=1.00, radius_ratio=0.97
+  > Values: -1.00 | 0.00 | 180 | -1.00 | 0.00 | 180 | BINO | echart_600
+  > SKIP: Values identical to previous.
+
+[132.00s] Sampling Frame 3300
+  > Frame Diff: 0.961309% (Thresh: 0.0200%) -> PASS
+  > UI Presence: MATCH (Score: 0.4005, Thresh: 0.30)
+  > ROI0 Diff: 2.023473% (Thresh: 0.0500%) -> PASS
+[DEBUG] video_basename: su55kM-Changes_on_screen
+-1.00 | -1.00 | 0.00 | 0.00 | 180 | 180 | 0.00 | 0.00
+✓ Found 4 circles (unfiltered) with params: p1=50, p2=18
+✓ After edge validation: 2 circles (from 4)
+Warning: Could not find equidistant circles with similar sizes
+  > Values: -1.00 | 0.00 | 180 | -1.00 | 0.00 | 180 | Detection_Failed | echart_600
+  *** CAPTURED (Extraction #9) ***
+
+[134.00s] Sampling Frame 3350
+  > Frame Diff: 0.109235% (Thresh: 0.0200%) -> PASS
+  > UI Presence: MATCH (Score: 0.4003, Thresh: 0.30)
+  > ROI0 Diff: 0.208102% (Thresh: 0.0500%) -> PASS
+[DEBUG] video_basename: su55kM-Changes_on_screen
+-1.00 | -1.00 | 0.00 | 0.00 | 180 | 180 | 0.00 | 0.00
+✓ Found 3 circles (unfiltered) with params: p1=50, p2=18
+✓ After edge validation: 2 circles (from 3)
+Warning: Could not find equidistant circles with similar sizes
+  > Values: -1.00 | 0.00 | 180 | -1.00 | 0.00 | 180 | Detection_Failed | echart_600
+  > SKIP: Values identical to previous.
+
+[136.00s] Sampling Frame 3400
+  > Frame Diff: 0.027208% (Thresh: 0.0200%) -> PASS
+  > UI Presence: MATCH (Score: 0.4003, Thresh: 0.30)
+  > ROI0 Diff: 0.058005% (Thresh: 0.0500%) -> PASS
+[DEBUG] video_basename: su55kM-Changes_on_screen
+-1.00 | -1.00 | 0.00 | 0.00 | 180 | 180 | 0.00 | 0.00
+✓ Found 3 circles (unfiltered) with params: p1=60, p2=20
+✓ After edge validation: 1 circles (from 3)
+Warning: Found 1 validated circles, need at least 2
+  > Values: -1.00 | 0.00 | 180 | -1.00 | 0.00 | 180 | Detection_Failed | echart_600
+  > SKIP: Values identical to previous.
+
+[138.00s] Sampling Frame 3450
+  > Frame Diff: 0.001216% (Thresh: 0.0200%) -> SKIP
+
+[140.00s] Sampling Frame 3500
+  > Frame Diff: 0.003128% (Thresh: 0.0200%) -> SKIP
+
+[142.00s] Sampling Frame 3550
+  > Frame Diff: 0.872545% (Thresh: 0.0200%) -> PASS
+  > UI Presence: MATCH (Score: 0.3955, Thresh: 0.30)
+  > ROI0 Diff: 1.860339% (Thresh: 0.0500%) -> PASS
+[DEBUG] video_basename: su55kM-Changes_on_screen
+0.00 | 0.00 | 0.00 | 0.00 | 180 | 180 | 0.00 | 0.00
+✓ Found 4 circles (unfiltered) with params: p1=100, p2=30
+✓ After edge validation: 4 circles (from 4)
+✓ Selected pair: dist_ratio=0.91, radius_ratio=0.97
+  > Values: 0.00 | 0.00 | 180 | 0.00 | 0.00 | 180 | Left_Axis_Flip1 | echart_600
+  *** CAPTURED (Extraction #10) ***
+
+[144.00s] Sampling Frame 3600
+  > Frame Diff: 0.300447% (Thresh: 0.0200%) -> PASS
+  > UI Presence: MATCH (Score: 0.3963, Thresh: 0.30)
+  > ROI0 Diff: 0.640577% (Thresh: 0.0500%) -> PASS
+[DEBUG] video_basename: su55kM-Changes_on_screen
+0.00 | 0.00 | 0.00 | 0.00 | 180 | 180 | 0.00 | 0.00
+✓ Found 4 circles (unfiltered) with params: p1=100, p2=30
+✓ After edge validation: 4 circles (from 4)
+✓ Selected pair: dist_ratio=1.00, radius_ratio=0.97
+  > Values: 0.00 | 0.00 | 180 | 0.00 | 0.00 | 180 | Left_Axis_Flip1 | echart_600
+  *** CAPTURED (Extraction #11) ***
+
+[146.00s] Sampling Frame 3650
+  > Frame Diff: 0.162895% (Thresh: 0.0200%) -> PASS
+  > UI Presence: MATCH (Score: 0.3941, Thresh: 0.30)
+  > ROI0 Diff: 0.347306% (Thresh: 0.0500%) -> PASS
+[DEBUG] video_basename: su55kM-Changes_on_screen
+0.00 | 0.00 | 0.00 | 0.00 | 180 | 180 | 0.00 | 0.00
+✓ Found 3 circles (unfiltered) with params: p1=100, p2=30
+✓ After edge validation: 3 circles (from 3)
+✓ Selected pair: dist_ratio=0.80, radius_ratio=0.88
+  > Values: 0.00 | 0.00 | 180 | 0.00 | 0.00 | 180 | Left_Occluded | echart_600
+  *** CAPTURED (Extraction #12) ***
+
+[148.00s] Sampling Frame 3700
+  > Frame Diff: 1.064525% (Thresh: 0.0200%) -> PASS
+  > UI Presence: MATCH (Score: 0.3694, Thresh: 0.30)
+  > ROI0 Diff: 2.269655% (Thresh: 0.0500%) -> PASS
+[DEBUG] video_basename: su55kM-Changes_on_screen
+-0.25 | -0.25 | 0.00 | 0.00 | 180 | 180 | 0.00 | 0.00
+✓ Found 3 circles (unfiltered) with params: p1=100, p2=30
+✓ After edge validation: 3 circles (from 3)
+✓ Selected pair: dist_ratio=0.91, radius_ratio=1.00
+  > Values: -0.25 | 0.00 | 180 | -0.25 | 0.00 | 180 | Left_Axis_Flip1 | echart_600
+  *** CAPTURED (Extraction #13) ***
+
+[150.00s] Sampling Frame 3750
+  > Frame Diff: 0.409257% (Thresh: 0.0200%) -> PASS
+  > UI Presence: MATCH (Score: 0.3766, Thresh: 0.30)
+  > ROI0 Diff: 0.872569% (Thresh: 0.0500%) -> PASS
+[DEBUG] video_basename: su55kM-Changes_on_screen
+-0.50 | -0.50 | 0.00 | 0.00 | 180 | 180 | 0.00 | 0.00
+✓ Found 3 circles (unfiltered) with params: p1=100, p2=30
+✓ After edge validation: 3 circles (from 3)
+✓ Selected pair: dist_ratio=0.91, radius_ratio=1.00
+  > Values: -0.50 | 0.00 | 180 | -0.50 | 0.00 | 180 | Left_Axis_Flip1 | echart_600
+  *** CAPTURED (Extraction #14) ***
+
+[152.00s] Sampling Frame 3800
+  > Frame Diff: 0.823802% (Thresh: 0.0200%) -> PASS
+  > UI Presence: MATCH (Score: 0.3966, Thresh: 0.30)
+  > ROI0 Diff: 1.622968% (Thresh: 0.0500%) -> PASS
+[DEBUG] video_basename: su55kM-Changes_on_screen
+-0.50 | -0.25 | 0.00 | 0.00 | 180 | 180 | 0.00 | 0.00
+✓ Found 4 circles (unfiltered) with params: p1=100, p2=30
+✓ After edge validation: 3 circles (from 4)
+✓ Selected pair: dist_ratio=1.00, radius_ratio=0.83
+  > Values: -0.50 | 0.00 | 180 | -0.25 | 0.00 | 180 | BINO | echart_600
+  *** CAPTURED (Extraction #15) ***
+
+[154.00s] Sampling Frame 3850
+  > Frame Diff: 1.095627% (Thresh: 0.0200%) -> PASS
+  > UI Presence: MATCH (Score: 0.3931, Thresh: 0.30)
+  > ROI0 Diff: 2.329847% (Thresh: 0.0500%) -> PASS
+[DEBUG] video_basename: su55kM-Changes_on_screen
+-0.50 | -0.25 | 0.00 | 0.00 | 180 | 180 | 0.00 | 0.00
+✓ Found 3 circles (unfiltered) with params: p1=100, p2=30
+✓ After edge validation: 2 circles (from 3)
+✓ Selected pair: dist_ratio=0.91, radius_ratio=1.00
+  > Values: -0.50 | 0.00 | 180 | -0.25 | 0.00 | 180 | BINO | echart_600
+  > SKIP: Values identical to previous.
+
+[156.00s] Sampling Frame 3900
+  > Frame Diff: 0.174243% (Thresh: 0.0200%) -> PASS
+  > UI Presence: MATCH (Score: 0.3928, Thresh: 0.30)
+  > ROI0 Diff: 0.245281% (Thresh: 0.0500%) -> PASS
+[DEBUG] video_basename: su55kM-Changes_on_screen
+-0.50 | -0.25 | 0.00 | 0.00 | 180 | 180 | 0.00 | 0.00
+✓ Found 4 circles (unfiltered) with params: p1=100, p2=30
+✓ After edge validation: 2 circles (from 4)
+✓ Selected pair: dist_ratio=1.00, radius_ratio=0.83
+  > Values: -0.50 | 0.00 | 180 | -0.25 | 0.00 | 180 | BINO | echart_600
+  > SKIP: Values identical to previous.
+
+[158.00s] Sampling Frame 3950
+  > Frame Diff: 0.046570% (Thresh: 0.0200%) -> PASS
+  > UI Presence: MATCH (Score: 0.3928, Thresh: 0.30)
+  > ROI0 Diff: 0.089439% (Thresh: 0.0500%) -> PASS
+[DEBUG] video_basename: su55kM-Changes_on_screen
+-0.50 | -0.25 | 0.00 | 0.00 | 180 | 180 | 0.00 | 0.00
+✓ Found 3 circles (unfiltered) with params: p1=100, p2=30
+✓ After edge validation: 3 circles (from 3)
+✓ Selected pair: dist_ratio=1.00, radius_ratio=0.97
+  > Values: -0.50 | 0.00 | 180 | -0.25 | 0.00 | 180 | BINO | echart_600
+  > SKIP: Values identical to previous.
+
+[160.00s] Sampling Frame 4000
+  > Frame Diff: 0.009360% (Thresh: 0.0200%) -> SKIP
+
+[162.00s] Sampling Frame 4050
+  > Frame Diff: 0.009274% (Thresh: 0.0200%) -> SKIP
+
+[164.00s] Sampling Frame 4100
+  > Frame Diff: 0.008972% (Thresh: 0.0200%) -> SKIP
+
+[166.00s] Sampling Frame 4150
+  > Frame Diff: 0.008972% (Thresh: 0.0200%) -> SKIP
