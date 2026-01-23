@@ -11,10 +11,6 @@ __pycache__
 temp/
 settings.json
 pipeline_SC.py
-.DS_Store
-DS_Store
-DS_Store/
-.DS_Store/
 deps
 
 .venv
@@ -24,3 +20,11 @@ venv/
 env
 env/
 .vscode
+extract_roi3_4_SC.py
+leadership_proposal.md
+run_roi3_4_test.py
+probe_jcc_colors.py
+.DS_Store
+ai_optometrist_user_journey_uml.puml
+Drysh Flow.png
+.gitignore
