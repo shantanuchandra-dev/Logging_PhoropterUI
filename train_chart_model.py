@@ -12,7 +12,7 @@ import copy
 # Bypass SSL for downloading pre-trained weights
 ssl._create_default_https_context = ssl._create_unverified_context
 
-def train_chart_model(data_dir="chart_dataset", model_save_path="chart_classifier.pth", epochs=100, batch_size=8):
+def train_chart_model(data_dir="total_final_charts", model_save_path="chart_classifier.pth", epochs=100, batch_size=8):
     """
     Trains a ResNet18 model on the chart dataset.
     """

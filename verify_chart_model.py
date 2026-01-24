@@ -6,7 +6,7 @@ import os
 import json
 from pathlib import Path
 
-def verify_model(model_path="chart_classifier.pth", mapping_path="class_mapping.json", data_dir="all_the_charts"):
+def verify_model(model_path="chart_classifier.pth", mapping_path="class_mapping.json", data_dir="total_final_charts/val"):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     
     # Load mapping
@@ -43,12 +43,8 @@ def verify_model(model_path="chart_classifier.pth", mapping_path="class_mapping.
             if file.lower().endswith(('.png', '.jpg', '.jpeg')):
                 img_path = Path(root) / file
                 
-                # Sanitize expected class name (same logic as prepare_data.py)
-                orig_class_name = Path(root).name.strip().lower()
-                expected_class = "".join([c if c.isalnum() or c == "_" else "_" for c in orig_class_name.replace(" ", "_")])
-                while "__" in expected_class:
-                    expected_class = expected_class.replace("__", "_")
-                expected_class = expected_class.strip("_")
+                # Class name is simply the directory name since we are using cleaned data
+                expected_class = Path(root).name
                 
                 try:
                     img = Image.open(img_path).convert('RGB')

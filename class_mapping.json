@@ -28,10 +28,10 @@
     "26": "number_chart_60",
     "27": "number_chart_70",
     "28": "number_chart_80",
-    "29": "smellen_chart_25_20_15",
-    "30": "smellen_chart_40_30_25_25",
-    "31": "snellen_chart_100_80_100",
-    "32": "snellen_chart_100_80_80",
+    "29": "pictorial_chart",
+    "30": "snellen_chart_100_80_100",
+    "31": "snellen_chart_100_80_80",
+    "32": "snellen_chart_12_9_7.5",
     "33": "snellen_chart_12_9_7_5",
     "34": "snellen_chart_200_150_150",
     "35": "snellen_chart_200_150_200",
@@ -44,8 +44,9 @@
     "42": "snellen_chart_40_30_25_30",
     "43": "snellen_chart_40_30_25_40",
     "44": "snellen_chart_40_35",
-    "45": "snellen_chart_6_4_5",
-    "46": "snellen_chart_70_60_50_50",
-    "47": "snellen_chart_70_60_50_70",
-    "48": "snellenchart_70_60_50_60"
+    "45": "snellen_chart_6_4.5",
+    "46": "snellen_chart_6_4_5",
+    "47": "snellen_chart_70_60_50_50",
+    "48": "snellen_chart_70_60_50_60",
+    "49": "snellen_chart_70_60_50_70"
 }
