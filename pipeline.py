@@ -136,7 +136,24 @@ def extract_all_rois(roi0_img, gpu_available=False, save_debug=True, output_dir=
         'timestamp': datetime.datetime.now().isoformat(),
         'rois': {}
     }
-    
+
+    # Centralized coordinate loading (Phase 3 persistence)
+    coords_data = {}
+    if not save_debug and output_dir:
+        # Resolve video_basename if not provided
+        if not video_basename and filename:
+            video_basename = os.path.splitext(os.path.basename(filename))[0]
+        
+        if video_basename:
+            for search_dir in [output_dir, '.']:
+                candidate = os.path.join(search_dir, f'{video_basename}_coords.json')
+                if os.path.isfile(candidate):
+                    try:
+                        with open(candidate, 'r') as f:
+                            coords_data = json.load(f)
+                        break
+                    except: pass
+
     # 1. Menu
     try:
         menu_result = extract_roi_menu.extract(roi0_img, save_debug=save_debug, output_dir='ROI_Menu', filename=filename)
@@ -146,65 +163,23 @@ def extract_all_rois(roi0_img, gpu_available=False, save_debug=True, output_dir=
 
     # 2. ROI1 (Table Detection & OCR)
     try:
-        roi0_base = os.path.splitext(os.path.basename(filename))[0] if filename else 'roi0'
-        roi0_path = os.path.join('ROI_0', f'{roi0_base}.png')
-        if not os.path.isfile(roi0_path):
-            os.makedirs('ROI_0', exist_ok=True)
-            cv2.imwrite(roi0_path, roi0_img)
-
+        bboxes = []
         if save_debug:
-            # Only run table grid detection and debug image generation ONCE (during PHASE 2)
+            # Phase 2: Full detection
+            roi0_base = os.path.splitext(os.path.basename(filename))[0] if filename else 'roi0'
+            roi0_path = os.path.join('ROI_0', f'{roi0_base}.png')
+            if not os.path.isfile(roi0_path):
+                os.makedirs('ROI_0', exist_ok=True)
+                cv2.imwrite(roi0_path, roi0_img)
+            
             roi1_res = extract_roi1.extract(roi0_path, roi0_dir='ROI_0', roi_menu_dir='ROI_Menu', output_dir='ROI_1')
             results['rois']['roi1'] = roi1_res
             bboxes = roi1_res.get('cell_bboxes_on_roi0', [])
         else:
-            # For subsequent frames, use the video basename for _coords.json and bboxes.txt lookup
-            bboxes = []
-            roi1_res = {}
-            try:
-                # Use the video basename (without extension) as the prefix
-                if filename and (filename.endswith('.png') or filename.endswith('.jpg')):
-                    # Try to infer video basename from ROI0 PNG filename (e.g., ROI_0/3ym8_2001_133144.png -> 3ym80YNRSvOOPQjDTAu7wg)
-                    # But prefer to pass video_basename explicitly if possible
-                    # Fallback: strip ROI_0/ and .png, but this may not match video basename
-                    video_basename = None
-                    # Try to find a matching _coords.json in output_dir
-                    for f in os.listdir(output_dir):
-                        if f.endswith('_coords.json'):
-                            video_basename_candidate = f[:-12]  # remove _coords.json
-                            if os.path.isfile(os.path.join(output_dir, f)):
-                                video_basename = video_basename_candidate
-                                break
-                    if not video_basename:
-                        video_basename = os.path.splitext(os.path.basename(filename))[0]
-                else:
-                    video_basename = os.path.splitext(os.path.basename(filename))[0] if filename else 'roi0'
-                print(f"[DEBUG] video_basename: {video_basename}")
-                coords_json_path = None
-                for search_dir in [output_dir, '.']:
-                    candidate = os.path.join(search_dir, f'{video_basename}_coords.json')
-                    if os.path.isfile(candidate):
-                        coords_json_path = candidate
-                        break
-                if coords_json_path:
-                    import json
-                    with open(coords_json_path, 'r') as f:
-                        coords_data = json.load(f)
-                        bboxes = coords_data.get('rois', {}).get('roi1', {}).get('cell_bboxes_on_roi0', [])
-                        bboxes = [tuple(bb) for bb in bboxes if len(bb) == 4]
-                else:
-                    bboxes_path = os.path.join('ROI_1', f'{video_basename}_roi1_cells_on_roi0_bboxes.txt')
-                    if os.path.isfile(bboxes_path):
-                        with open(bboxes_path, 'r') as f:
-                            for line in f:
-                                import re
-                                nums = re.findall(r'-?\d+', line)
-                                if len(nums) == 4:
-                                    bboxes.append(tuple(map(int, nums)))
-                roi1_res['cell_bboxes_on_roi0'] = bboxes
-                results['rois']['roi1'] = roi1_res
-            except Exception as e:
-                results['rois']['roi1'] = {'error': f'Could not load ROI1 bboxes: {e}'}
+            # Phase 3: Use stored bboxes from centralized coords_data
+            bboxes = coords_data.get('rois', {}).get('roi1', {}).get('cell_bboxes_on_roi0', [])
+            bboxes = [tuple(bb) for bb in bboxes if len(bb) == 4]
+            results['rois']['roi1'] = {'cell_bboxes_on_roi0': bboxes}
 
         roi1_ocr_res = extract_roi1_ocr.extract_roi1_ocr(roi0_img, bboxes)
         results['rois']['roi1_ocr'] = roi1_ocr_res
@@ -212,73 +187,29 @@ def extract_all_rois(roi0_img, gpu_available=False, save_debug=True, output_dir=
         results['rois']['roi1'] = {'error': str(e)}
 
     # 3. ROI2 (PD) - COMMENTED OUT
-    # try:
-    #     if save_debug:
-    #         roi2_result = extract_roi2.extract(roi0_img, save_debug=save_debug, output_dir='ROI_2', filename=filename)
-    #         results['rois']['roi2'] = roi2_result
-    #     else:
-    #         # In PHASE 3, load PD bbox from _coords.json and extract PD value from that region
-    #         pd_bbox = None
-    #         if coords_json_path:
-    #             with open(coords_json_path, 'r') as f:
-    #                 coords_data = json.load(f)
-    #                 pd_bbox = coords_data.get('rois', {}).get('roi2', {}).get('pd_value_bbox', None)
-    #         if pd_bbox and len(pd_bbox) == 4:
-    #             x, y, w, h = pd_bbox
-    #             pd_crop = roi0_img[y:y+h, x:x+w]
-    #             # Use the same extraction logic as extract_roi2.extract, but only for the cropped region
-    #             pd_val = extract_roi2.extract_pd_value(pd_crop) if hasattr(extract_roi2, 'extract_pd_value') else ''
-    #             results['rois']['roi2'] = {
-    #                 'roi_id': 'ROI_2',
-    #                 'pd_value_bbox': pd_bbox,
-    #                 'pd_value': pd_val
-    #             }
-    #         else:
-    #             results['rois']['roi2'] = {'error': 'No PD bbox found in coords.json'}
-    # except Exception as e:
-    #     results['rois']['roi2'] = {'error': str(e)}
     results['rois']['roi2'] = {'roi_id': 'ROI_2', 'pd_value': '', 'note': 'PD extraction disabled'}
 
     # 4. ROI3/ROI4 (Occluders)
     try:
-        if save_debug:
-            # Phase 2: Full detection and save
-            roi3_4_result = extract_roi3_4.extract(
-                roi0_img, save_debug=save_debug, output_dir='ROI_3', 
-                filename=filename, timestamp_str=timestamp_str
-            )
-            results['rois']['roi3_4'] = roi3_4_result
-        else:
-            # Phase 3: Load from coords.json and classify
-            roi3_4_bboxes = None
-            if coords_json_path:
-                with open(coords_json_path, 'r') as f:
-                    coords_data = json.load(f)
-                    roi3_4_bboxes = coords_data.get('rois', {}).get('roi3_4', {}).get('bboxes', None)
-            
-            if roi3_4_bboxes and len(roi3_4_bboxes) == 2:
-                # Manual crop using stored bboxes
-                left_bbox = roi3_4_bboxes[0]['box']  # [x, y, w, h]
-                right_bbox = roi3_4_bboxes[1]['box']
-                
-                lx, ly, lw, lh = left_bbox
-                rx, ry, rw, rh = right_bbox
-                
-                left_roi = roi0_img[ly:ly+lh, lx:lx+lw]
-                right_roi = roi0_img[ry:ry+rh, rx:rx+rw]
-                
-                # Classify using stored coordinates
-                od_class = extract_roi3_4.classify_occluder_two_stage(left_roi)
-                os_class = extract_roi3_4.classify_occluder_two_stage(right_roi)
-                phoropter_state = extract_roi3_4.map_to_phoropter_state(os_class, od_class)
-                
-                results['rois']['roi3_4'] = {
-                    'roi_id': 'ROI_3_4',
-                    'bboxes': roi3_4_bboxes,
-                    'phoropter_state': phoropter_state
-                }
-            else:
-                results['rois']['roi3_4'] = {'error': 'No ROI3/4 bboxes found in coords.json'}
+        stored_occ_bboxes = None
+        if not save_debug:
+            stored_occ_bboxes = coords_data.get('rois', {}).get('roi3_4', {}).get('bboxes', None)
+        
+        # Pass stored_bboxes and OCR axes to the extractor for rotation-aware JCC
+        r_axis = results.get('rois', {}).get('roi1_ocr', {}).get('data', {}).get('R_Axis', None)
+        l_axis = results.get('rois', {}).get('roi1_ocr', {}).get('data', {}).get('L_Axis', None)
+        
+        roi3_4_result = extract_roi3_4.extract(
+            roi0_img, 
+            save_debug=save_debug, 
+            output_dir='ROI_3', 
+            filename=filename, 
+            timestamp_str=timestamp_str,
+            stored_bboxes=stored_occ_bboxes,
+            right_axis=r_axis,
+            left_axis=l_axis
+        )
+        results['rois']['roi3_4'] = roi3_4_result
     except Exception as e:
         results['rois']['roi3_4'] = {'error': str(e)}
 
@@ -287,71 +218,21 @@ def extract_all_rois(roi0_img, gpu_available=False, save_debug=True, output_dir=
         if save_debug:
             roi5_result = extract_roi5.extract(roi0_img, save_debug=save_debug, output_dir='ROI_5', filename=filename)
             results['rois']['roi5'] = roi5_result
-            # Store tab bboxes for later use in _coords.json
-            # if 'bboxes' in roi5_result:
-            #     results['rois']['roi5']['tab_bboxes_on_roi0'] = roi5_result['bboxes']
-            # roi5_out_path = os.path.join('ROI_5', f'{roi0_base}_roi5_output.json')
-            # with open(roi5_out_path, 'w') as f:
-            #     json.dump(roi5_result, f, indent=2)
         else:
-            # In PHASE 3, load tab bboxes from _coords.json and only run yellow tab selection
-            video_basename = os.path.splitext(os.path.basename(filename))[0] if filename else 'roi0'
-            coords_json_path = None
-            prefix = video_basename[:4] if len(video_basename) >= 4 else video_basename
-            for search_dir in [output_dir, '.']:
-                for f in os.listdir(search_dir):
-                    if f.startswith(prefix) and f.endswith('_coords.json'):
-                        candidate = os.path.join(search_dir, f)
-                        if os.path.isfile(candidate):
-                            coords_json_path = candidate
-                            break
-                if coords_json_path:
-                    break
-            tab_bboxes = None
-            if coords_json_path:
-                with open(coords_json_path, 'r') as f:
-                    coords_data = json.load(f)
-                    tab_bboxes = coords_data.get('rois', {}).get('roi5', {}).get('bboxes', None)
+            tab_bboxes = coords_data.get('rois', {}).get('roi5', {}).get('bboxes', None)
             if tab_bboxes:
                 selected_tab = extract_roi5.select_max_yellow_tab(roi0_img, tab_bboxes)
-                results['rois']['roi5'] = {
-                    'selected_tab': selected_tab,
-                    'bboxes': tab_bboxes
-                }
+                results['rois']['roi5'] = {'selected_tab': selected_tab, 'bboxes': tab_bboxes}
             else:
                 results['rois']['roi5'] = {'error': 'No ROI5 bboxes found in coords.json'}
     except Exception as e:
         results['rois']['roi5'] = {'error': str(e)}
 
-    # # 6. ROI6 (Chart Grid)
-    # try:
-    #     roi6_result = extract_roi6.extract(roi0_img, save_debug=save_debug, output_dir='ROI_6', filename=filename)
-    #     results['rois']['roi6'] = roi6_result
-    # except Exception as e:
-    #     results['rois']['roi6'] = {'error': str(e)}
-
     # 7. ROI7 (Big Chart)
     try:
         roi7_bbox = None
         if not save_debug:
-            # In PHASE 3, try to load ROI7 bbox from _coords.json
-            video_basename = os.path.splitext(os.path.basename(filename))[0] if filename else 'roi0'
-            # Find coords path (re-using logic from ROI1/5 if needed, but let's be direct)
-            prefix = video_basename[:4] if len(video_basename) >= 4 else video_basename
-            coords_path = None
-            for search_dir in [output_dir, '.']:
-                for f in os.listdir(search_dir):
-                    if f.startswith(prefix) and f.endswith('_coords.json'):
-                        candidate = os.path.join(search_dir, f)
-                        if os.path.isfile(candidate):
-                            coords_path = candidate
-                            break
-                if coords_path: break
-            
-            if coords_path:
-                with open(coords_path, 'r') as f:
-                    coords_data = json.load(f)
-                    roi7_bbox = coords_data.get('rois', {}).get('roi7', {}).get('bbox', None)
+            roi7_bbox = coords_data.get('rois', {}).get('roi7', {}).get('bbox', None)
         
         roi7_result = extract_roi7.extract(roi0_img, save_debug=save_debug, filename=filename, bbox=roi7_bbox)
         results['rois']['roi7'] = roi7_result
@@ -525,6 +406,7 @@ def main():
         # --- PHASE 2: Fix Coordinates on First Frame ---
         print(f"\n[PHASE 2] Setting reference coordinates on first frame (t={first_time_sec:.2f}s)...")
         try:
+            # Force save=True for the reference frame to ensure baseline artifacts are produced
             roi0_result = extract_roi0.extract_roi0(first_frame, filename=video_filename, save_dir='ROI_0', save=True)
             roi0_img = roi0_result['roi0']
             roi0_path = roi0_result.get('output_path') if 'output_path' in roi0_result else os.path.join('ROI_0', f"{os.path.splitext(video_filename)[0]}.png")
@@ -534,6 +416,7 @@ def main():
             ref_data = extract_all_rois(
                 roi0_img,
                 gpu_available=gpu_info['available'],
+                # Force save_debug=True for the first frame to establish baseline ROI artifacts
                 save_debug=True,
                 output_dir=config['output_dir'],
                 filename=roi0_path,

@@ -24,7 +24,8 @@ STAGE1_MODEL_PATH = 'stage1_model.pth'
 STAGE1_CLASSES_FILE = 'stage1_classes.txt'
 
 # Import Stage 2 classifiers
-from stage2_classifier import classify_filled, classify_jcc_pattern
+import stage2_classifier
+from stage2_classifier import classify_filled
 
 # Load class mapping
 def load_class_mapping(classes_file):
@@ -97,7 +98,7 @@ def stage1_classify(roi_img):
     
     return class_map[class_idx]
 
-def classify_occluder_two_stage(roi_img):
+def classify_occluder_two_stage(roi_img, cyl_axis=None):
     """
     Two-stage classification pipeline with color-first priority.
     """
@@ -111,9 +112,8 @@ def classify_occluder_two_stage(roi_img):
         
         if pattern_type == 'jcc_pattern':
             # Stage 2: Detailed rule-based classification
-            jcc_result = classify_jcc_pattern(roi_img)
-            # If classify_jcc_pattern didn't find clear red/green, 
-            # it returns blue_filled (handled inside classify_jcc_pattern)
+            # Pass cylinder axis to make it rotation-aware
+            jcc_result = stage2_classifier.classify_jcc_pattern(roi_img, cyl_axis=cyl_axis)
             return jcc_result
             
     return basic_state
@@ -466,7 +466,7 @@ def map_to_phoropter_state(os_class, od_class):
     return f'Unknown(OS:{os_class},OD:{od_class})'
 
 
-def extract(roi0_img, save_debug=False, output_dir='ROI_3', filename=None, timestamp_str=None):
+def extract(roi0_img, save_debug=False, output_dir='ROI_3', filename=None, timestamp_str=None, stored_bboxes=None, right_axis=None, left_axis=None):
     """
     Main extraction function compatible with existing pipeline.
     Uses two-stage classification.
@@ -504,11 +504,40 @@ def extract(roi0_img, save_debug=False, output_dir='ROI_3', filename=None, times
     
     prefix_parts.append(now)
     debug_prefix = "_".join(prefix_parts)
-    
-    # Extract occluder ROIs
-    left_roi, right_roi, left_bbox, right_bbox, debug_images = extract_occluders(
-        roi0_img, save_debug=save_debug, debug_prefix=debug_prefix
-    )
+
+    # Initialize variables
+    left_roi = None
+    right_roi = None
+    left_bbox = None
+    right_bbox = None
+    debug_images = {}
+
+    # USE STORED BBOXES IF PROVIDED (Phase 3 persistence)
+    if stored_bboxes and len(stored_bboxes) == 2:
+        try:
+            # ROI3 = left side icon (Right Eye / OD)
+            # ROI4 = right side icon (Left Eye / OS)
+            b1 = stored_bboxes[0]['box']
+            b2 = stored_bboxes[1]['box']
+            
+            lx, ly, lw, lh = b1
+            rx, ry, rw, rh = b2
+
+            h, w = roi0_img.shape[:2]
+            left_roi = roi0_img[max(0,ly):min(h,ly+lh), max(0,lx):min(w,lx+lw)]
+            right_roi = roi0_img[max(0,ry):min(h,ry+rh), max(0,rx):min(w,rx+rw)]
+            
+            left_bbox = b1
+            right_bbox = b2
+        except Exception as e:
+            print(f"Error in manual ROI3/4 crop: {e}")
+            return {'roi_id': 'ROI_3_4', 'phoropter_state': 'Error', 'error': str(e)}
+
+    # OTHERWISE RUN DETECTION (Phase 2 or redetection)
+    else:
+        left_roi, right_roi, left_bbox, right_bbox, debug_images = extract_occluders(
+            roi0_img, save_debug=save_debug, debug_prefix=debug_prefix
+        )
     
     if left_roi is None or right_roi is None:
         return {
@@ -519,10 +548,9 @@ def extract(roi0_img, save_debug=False, output_dir='ROI_3', filename=None, times
         }
     
     # Classify each occluder
-    # ui_left = icon on LEFT side of UI (Right Eye / OD)
-    # ui_right = icon on RIGHT side of UI (Left Eye / OS)
-    od_class = classify_occluder_two_stage(left_roi)
-    os_class = classify_occluder_two_stage(right_roi)
+    # Use eye-specific axis for rotation-aware JCC
+    od_class = classify_occluder_two_stage(left_roi, cyl_axis=right_axis)
+    os_class = classify_occluder_two_stage(right_roi, cyl_axis=left_axis)
     
     # Map to phoropter state
     phoropter_state = map_to_phoropter_state(os_class, od_class)

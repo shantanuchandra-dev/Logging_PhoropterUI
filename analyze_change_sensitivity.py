@@ -93,12 +93,12 @@ def analyze_sensitivity(video_path, start_time_sec=132, end_time_sec=428):
     cap.release()
 
 if __name__ == "__main__":
-    video_path = "Sample/videos/su55kMzAROCsMfmimnDS8A.mp4"
+    video_path = "Sample/videos/PBG0vHE1Q3GWj33HCZcUnA.mp4"
     if os.path.exists(video_path):
         analyze_sensitivity(video_path)
     else:
         # Try finding it relative to project root if executed from there
-        video_path = os.path.join(os.getcwd(), "Sample/videos/su55kMzAROCsMfmimnDS8A.mp4")
+        video_path = os.path.join(os.getcwd(), "Sample/videos/PBG0vHE1Q3GWj33HCZcUnA.mp4")
         if os.path.exists(video_path):
             analyze_sensitivity(video_path)
         else:

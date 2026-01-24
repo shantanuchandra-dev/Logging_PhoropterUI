@@ -1,7 +1,7 @@
 # Ignore all video files
 Sample/videos*/
 ROI_*/
-MatchedScreens/
+MatchedScreen*/
 firstFrame/
 firstFrame_JSON/
 __pycache__/
@@ -29,3 +29,4 @@ probe_jcc_colors.py
 ai_optometrist_user_journey_uml.puml
 Drysh Flow.png
 .gitignore
+*.log
