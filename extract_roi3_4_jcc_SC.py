@@ -311,12 +311,21 @@ def extract_occluders(roi0_img, save_debug=False, debug_prefix='debug'):
         print(f"Warning: Found {len(validated_circles)} validated circles, need at least 2")
         return None, None, None, None, debug_images
     
-    # Convert back to simple format
-    detected_circles = np.array([(cx, cy, r) for cx, cy, r, _ in validated_circles], dtype=np.uint16)
-    
-    if len(detected_circles) < 2:
-        print(f"Warning: Found {len(detected_circles)} circles, need at least 2")
+    # NEW: Filter by expected radius (PD labels are often ~60-80px, occluders are ~25-45px)
+    # Range broadened to 20-55 to ensure capture of smaller/blurry circles
+    clinical_circles = []
+    for cx, cy, r, density in validated_circles:
+        if 20 <= r <= 55: # Clinical range for occluder circles
+             clinical_circles.append((cx, cy, r))
+        else:
+             print(f"  > Ignoring circle with r={r} (outside clinical range 20-55)")
+             
+    if len(clinical_circles) < 2:
+        print(f"Warning: Found {len(clinical_circles)} clinical circles after radius filtering, need at least 2")
         return None, None, None, None, debug_images
+
+    # Convert back to simple format
+    detected_circles = np.array(clinical_circles, dtype=np.uint16)
     
     # Filter circles that are roughly equidistant from VERTICAL center
     # and have similar sizes
@@ -337,12 +346,17 @@ def extract_occluders(roi0_img, save_debug=False, debug_prefix='debug'):
         
         # Check if distances are similar (within 30%)
         dist_ratio = min(dist1, dist2) / max(dist1, dist2) if max(dist1, dist2) > 0 else 0
+        
+        # New: Use absolute tolerance if they are very close to center
+        # If both are within 15 pixels of vertical center, the ratio doesn't matter much
+        dist_ok = (dist_ratio > 0.7) or (dist1 < 15 and dist2 < 15)
+        
         # Check if radii are similar (within 20%)
         radius_ratio = min(r1, r2) / max(r1, r2) if max(r1, r2) > 0 else 0
         
-        if dist_ratio > 0.7 and radius_ratio > 0.8:
+        if dist_ok and radius_ratio > 0.8:
             best_pair = (c1, c2)
-            print(f"✓ Selected pair: dist_ratio={dist_ratio:.2f}, radius_ratio={radius_ratio:.2f}")
+            print(f"✓ Selected pair: dist_ratio={dist_ratio:.2f} (ok={dist_ok}), radius_ratio={radius_ratio:.2f}")
             break
     
     if best_pair is None:
@@ -452,7 +466,7 @@ def map_to_phoropter_state(os_class, od_class):
     return f'Unknown(OS:{os_class},OD:{od_class})'
 
 
-def extract(roi0_img, save_debug=False, output_dir='ROI_3', filename=None):
+def extract(roi0_img, save_debug=False, output_dir='ROI_3', filename=None, timestamp_str=None):
     """
     Main extraction function compatible with existing pipeline.
     Uses two-stage classification.
@@ -462,6 +476,7 @@ def extract(roi0_img, save_debug=False, output_dir='ROI_3', filename=None):
         save_debug: Whether to save debug images
         output_dir: Directory to save debug images
         filename: Original filename for naming debug outputs
+        timestamp_str: Optional timestamp string (e.g., '02:38') for debug filenames
     
     Returns:
         dict: {
@@ -477,11 +492,18 @@ def extract(roi0_img, save_debug=False, output_dir='ROI_3', filename=None):
     # Generate debug prefix
     import datetime
     now = datetime.datetime.now().strftime('%d%m_%H%M%S')
+    prefix_parts = []
     if filename:
         input_base = os.path.splitext(os.path.basename(filename))[0]
-        debug_prefix = input_base[:4] + '_' + now
-    else:
-        debug_prefix = 'roi0_' + now
+        prefix_parts.append(input_base[:4])
+    
+    if timestamp_str:
+        # Clean timestamp (replace : with _)
+        t_clean = timestamp_str.replace(':', '_')
+        prefix_parts.append(f"t{t_clean}")
+    
+    prefix_parts.append(now)
+    debug_prefix = "_".join(prefix_parts)
     
     # Extract occluder ROIs
     left_roi, right_roi, left_bbox, right_bbox, debug_images = extract_occluders(

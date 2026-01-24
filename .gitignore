@@ -19,6 +19,7 @@ venv
 venv/
 env
 env/
+*debug*
 .vscode
 extract_roi3_4_SC.py
 leadership_proposal.md

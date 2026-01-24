@@ -8,5 +8,5 @@
     "frame_diff_threshold": 0.0002,
     "roi0_diff_threshold": 0.0005,
     "max_consecutive_failures": 10,
-    "save_debug_images": true
+    "save_debug_images": false
 }

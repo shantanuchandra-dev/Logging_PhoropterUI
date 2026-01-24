@@ -128,7 +128,7 @@ import scan_video
 
 # ... (detect_gpu, load_config, verify_ui_present remain same)
 
-def extract_all_rois(roi0_img, gpu_available=False, save_debug=True, output_dir='MatchedScreens', filename=None):
+def extract_all_rois(roi0_img, gpu_available=False, save_debug=True, output_dir='MatchedScreens', filename=None, timestamp_str=None, video_basename=None):
     """
     Extract all ROIs from ROI-0 image.
     """
@@ -211,37 +211,74 @@ def extract_all_rois(roi0_img, gpu_available=False, save_debug=True, output_dir=
     except Exception as e:
         results['rois']['roi1'] = {'error': str(e)}
 
-    # 3. ROI2 (PD)
-    try:
-        if save_debug:
-            roi2_result = extract_roi2.extract(roi0_img, save_debug=save_debug, output_dir='ROI_2', filename=filename)
-            results['rois']['roi2'] = roi2_result
-        else:
-            # In PHASE 3, load PD bbox from _coords.json and extract PD value from that region
-            pd_bbox = None
-            if coords_json_path:
-                with open(coords_json_path, 'r') as f:
-                    coords_data = json.load(f)
-                    pd_bbox = coords_data.get('rois', {}).get('roi2', {}).get('pd_value_bbox', None)
-            if pd_bbox and len(pd_bbox) == 4:
-                x, y, w, h = pd_bbox
-                pd_crop = roi0_img[y:y+h, x:x+w]
-                # Use the same extraction logic as extract_roi2.extract, but only for the cropped region
-                pd_val = extract_roi2.extract_pd_value(pd_crop) if hasattr(extract_roi2, 'extract_pd_value') else ''
-                results['rois']['roi2'] = {
-                    'roi_id': 'ROI_2',
-                    'pd_value_bbox': pd_bbox,
-                    'pd_value': pd_val
-                }
-            else:
-                results['rois']['roi2'] = {'error': 'No PD bbox found in coords.json'}
-    except Exception as e:
-        results['rois']['roi2'] = {'error': str(e)}
+    # 3. ROI2 (PD) - COMMENTED OUT
+    # try:
+    #     if save_debug:
+    #         roi2_result = extract_roi2.extract(roi0_img, save_debug=save_debug, output_dir='ROI_2', filename=filename)
+    #         results['rois']['roi2'] = roi2_result
+    #     else:
+    #         # In PHASE 3, load PD bbox from _coords.json and extract PD value from that region
+    #         pd_bbox = None
+    #         if coords_json_path:
+    #             with open(coords_json_path, 'r') as f:
+    #                 coords_data = json.load(f)
+    #                 pd_bbox = coords_data.get('rois', {}).get('roi2', {}).get('pd_value_bbox', None)
+    #         if pd_bbox and len(pd_bbox) == 4:
+    #             x, y, w, h = pd_bbox
+    #             pd_crop = roi0_img[y:y+h, x:x+w]
+    #             # Use the same extraction logic as extract_roi2.extract, but only for the cropped region
+    #             pd_val = extract_roi2.extract_pd_value(pd_crop) if hasattr(extract_roi2, 'extract_pd_value') else ''
+    #             results['rois']['roi2'] = {
+    #                 'roi_id': 'ROI_2',
+    #                 'pd_value_bbox': pd_bbox,
+    #                 'pd_value': pd_val
+    #             }
+    #         else:
+    #             results['rois']['roi2'] = {'error': 'No PD bbox found in coords.json'}
+    # except Exception as e:
+    #     results['rois']['roi2'] = {'error': str(e)}
+    results['rois']['roi2'] = {'roi_id': 'ROI_2', 'pd_value': '', 'note': 'PD extraction disabled'}
 
     # 4. ROI3/ROI4 (Occluders)
     try:
-        roi3_4_result = extract_roi3_4.extract(roi0_img, save_debug=save_debug, output_dir='ROI_3', filename=filename)
-        results['rois']['roi3_4'] = roi3_4_result
+        if save_debug:
+            # Phase 2: Full detection and save
+            roi3_4_result = extract_roi3_4.extract(
+                roi0_img, save_debug=save_debug, output_dir='ROI_3', 
+                filename=filename, timestamp_str=timestamp_str
+            )
+            results['rois']['roi3_4'] = roi3_4_result
+        else:
+            # Phase 3: Load from coords.json and classify
+            roi3_4_bboxes = None
+            if coords_json_path:
+                with open(coords_json_path, 'r') as f:
+                    coords_data = json.load(f)
+                    roi3_4_bboxes = coords_data.get('rois', {}).get('roi3_4', {}).get('bboxes', None)
+            
+            if roi3_4_bboxes and len(roi3_4_bboxes) == 2:
+                # Manual crop using stored bboxes
+                left_bbox = roi3_4_bboxes[0]['box']  # [x, y, w, h]
+                right_bbox = roi3_4_bboxes[1]['box']
+                
+                lx, ly, lw, lh = left_bbox
+                rx, ry, rw, rh = right_bbox
+                
+                left_roi = roi0_img[ly:ly+lh, lx:lx+lw]
+                right_roi = roi0_img[ry:ry+rh, rx:rx+rw]
+                
+                # Classify using stored coordinates
+                od_class = extract_roi3_4.classify_occluder_two_stage(left_roi)
+                os_class = extract_roi3_4.classify_occluder_two_stage(right_roi)
+                phoropter_state = extract_roi3_4.map_to_phoropter_state(os_class, od_class)
+                
+                results['rois']['roi3_4'] = {
+                    'roi_id': 'ROI_3_4',
+                    'bboxes': roi3_4_bboxes,
+                    'phoropter_state': phoropter_state
+                }
+            else:
+                results['rois']['roi3_4'] = {'error': 'No ROI3/4 bboxes found in coords.json'}
     except Exception as e:
         results['rois']['roi3_4'] = {'error': str(e)}
 
@@ -499,7 +536,8 @@ def main():
                 gpu_available=gpu_info['available'],
                 save_debug=True,
                 output_dir=config['output_dir'],
-                filename=roi0_path
+                filename=roi0_path,
+                video_basename=video_basename
             )
             ref_data['frame_id'] = first_frame_idx
             ref_data['time_seconds'] = first_time_sec
@@ -656,12 +694,16 @@ def main():
                 prev_roi0 = roi0_curr.copy()
 
                 # 4. Extract all values
+                import datetime
+                timestamp_str = str(datetime.timedelta(seconds=int(time_seconds)))
                 current_roi_data = extract_all_rois(
                     roi0_curr,
                     gpu_available=gpu_info['available'],
-                    save_debug=False,
+                    save_debug=config.get('save_debug_images', True),
                     output_dir=config['output_dir'],
-                    filename=ref_roi0_filename
+                    filename=ref_roi0_filename,
+                    timestamp_str=timestamp_str,
+                    video_basename=video_basename
                 )
                 
                 current_roi_data['frame_id'] = frame_count
