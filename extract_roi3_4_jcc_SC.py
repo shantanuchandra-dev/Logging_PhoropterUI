@@ -280,7 +280,7 @@ def extract_occluders(roi0_img, save_debug=False, debug_prefix='debug'):
         if edge_density >= 0.30:
             validated_circles.append((cx, cy, r, edge_density))
     
-    print(f"✓ After edge validation: {len(validated_circles)} circles (from {len(detected_circles)}) for file {os.path.basename(roi0_img)}")
+    print(f"✓ After edge validation: {len(validated_circles)} circles (from {detected_circles.shape[0] if hasattr(detected_circles, 'shape') else len(detected_circles)}) for {debug_prefix}")
     
     if save_debug:
         # Visualize validated circles
@@ -340,26 +340,58 @@ def extract_occluders(roi0_img, save_debug=False, debug_prefix='debug'):
     # Sort by distance from vertical center
     candidates.sort(key=lambda x: x[1])
     
-    # Find pairs with similar distance from vertical center and similar radius
-    best_pair = None
+    # Find all pairs that satisfy the vertical and size constraints,
+    # then pick the one that is most equidistant from the horizontal center (symmetry).
+    mid_x_search = search_w / 2
+    valid_pairs = []
+    
     for i in range(len(candidates) - 1):
-        c1, dist1, r1 = candidates[i]
-        c2, dist2, r2 = candidates[i + 1]
-        
-        # Check if distances are similar (within 30%)
-        dist_ratio = min(dist1, dist2) / max(dist1, dist2) if max(dist1, dist2) > 0 else 0
-        
-        # New: Use absolute tolerance if they are very close to center
-        # If both are within 15 pixels of vertical center, the ratio doesn't matter much
-        dist_ok = (dist_ratio > 0.7) or (dist1 < 15 and dist2 < 15)
-        
-        # Check if radii are similar (within 20%)
-        radius_ratio = min(r1, r2) / max(r1, r2) if max(r1, r2) > 0 else 0
-        
-        if dist_ok and radius_ratio > 0.8:
-            best_pair = (c1, c2)
-            print(f"✓ Selected pair: dist_ratio={dist_ratio:.2f} (ok={dist_ok}), radius_ratio={radius_ratio:.2f}")
-            break
+        for j in range(i + 1, len(candidates)):
+            c1, dist1, r1 = candidates[i]
+            c2, dist2, r2 = candidates[j]
+            
+            # Check if distances from vertical center are similar (within 30%)
+            v_dist_ratio = min(dist1, dist2) / max(dist1, dist2) if max(dist1, dist2) > 0 else 0
+            v_dist_ok = (v_dist_ratio > 0.7) or (dist1 < 15 and dist2 < 15)
+            
+            # Check if radii are similar (within 20%)
+            radius_ratio = min(r1, r2) / max(r1, r2) if max(r1, r2) > 0 else 0
+            radius_ok = radius_ratio > 0.8
+            
+            if v_dist_ok and radius_ok:
+                # Add horizontal symmetry metric (closeness to horizontal center)
+                cx1, cy1, _ = c1
+                cx2, cy2, _ = c2
+                
+                # Metric 1: Midpoint of the pair should be near mid_x_search
+                pair_mid_x = (cx1 + cx2) / 2
+                center_offset = abs(pair_mid_x - mid_x_search)
+                
+                # Metric 2: Distances from mid_x_search should be similar
+                h_dist1 = abs(cx1 - mid_x_search)
+                h_dist2 = abs(cx2 - mid_x_search)
+                h_symmetry = abs(h_dist1 - h_dist2)
+                
+                # Total symmetry score (lower is better)
+                # Weighted heavily on center_offset
+                symmetry_score = center_offset + (h_symmetry * 0.5)
+                
+                valid_pairs.append({
+                    'pair': (c1, c2),
+                    'v_dist_ratio': v_dist_ratio,
+                    'radius_ratio': radius_ratio,
+                    'symmetry_score': symmetry_score
+                })
+    
+    best_pair = None
+    if valid_pairs:
+        # Sort by symmetry_score (lowest first)
+        valid_pairs.sort(key=lambda x: x['symmetry_score'])
+        top_selection = valid_pairs[0]
+        best_pair = top_selection['pair']
+        print(f"✓ Selected pair: v_dist_ratio={top_selection['v_dist_ratio']:.2f}, "
+              f"radius_ratio={top_selection['radius_ratio']:.2f}, "
+              f"symmetry_score={top_selection['symmetry_score']:.2f}")
     
     if best_pair is None:
         print("Warning: Could not find equidistant circles with similar sizes")
@@ -600,16 +632,19 @@ def extract(roi0_img, save_debug=False, output_dir='ROI_3', filename=None, times
     return result
 
 if __name__ == "__main__":
-    # Test with a sample ROI-0 image
-    roi0_dir = 'ROI_0'
-    roi0_files = [f for f in os.listdir(roi0_dir) if f.endswith('.png') and 'box' not in f]
-    
-    if not roi0_files:
-        print('No ROI-0 images found in ROI_0 directory.')
-        exit(1)
-    
-    roi0_files.sort()
-    roi0_path = os.path.join(roi0_dir, roi0_files[-1])
+    import sys
+    # Support single image test via command line
+    if len(sys.argv) > 1:
+        roi0_path = sys.argv[1]
+    else:
+        # Fallback to loading from ROI_0 directory
+        roi0_dir = 'ROI_0'
+        roi0_files = [f for f in os.listdir(roi0_dir) if f.endswith('.png') and 'box' not in f]
+        if not roi0_files:
+            print('No ROI-0 images found in ROI_0 directory.')
+            exit(1)
+        roi0_files.sort()
+        roi0_path = os.path.join(roi0_dir, roi0_files[-1])
     
     print(f"Testing with: {roi0_path}")
     img = cv2.imread(roi0_path)
@@ -618,8 +653,8 @@ if __name__ == "__main__":
         print(f'Could not load {roi0_path}')
         exit(1)
     
-    # Run extraction - save_debug=False to avoid saving debug images
-    result = extract(img, save_debug=False, filename=roi0_path)
+    # Run extraction with debug saving enabled
+    result = extract(img, save_debug=True, filename=roi0_path)
     
     print("\n" + "="*60)
     print("RESULT:")
