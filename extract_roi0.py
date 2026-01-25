@@ -17,7 +17,7 @@ def extract_roi0(img, filename=None, save_dir='ROI_0', save=False):
             roi_contour = approx
             max_area = area
     if roi_contour is None:
-        raise Exception('[WARNING] ROI-0 (main window) not found for file {filename}.')
+        raise Exception(f'[WARNING] ROI-0 (main window) not found for file {filename}.')
     x, y, w, h = cv2.boundingRect(roi_contour)
     roi0 = img[y:y+h, x:x+w]
 

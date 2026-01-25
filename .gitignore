@@ -12,6 +12,7 @@ temp/
 settings.json
 pipeline_SC.py
 deps
+debug*
 
 .venv
 .venv/
@@ -21,12 +22,14 @@ env
 env/
 *debug*
 .vscode
-extract_roi3_4_SC.py
 leadership_proposal.md
-run_roi3_4_test.py
+*test*.py
 probe_jcc_colors.py
 .DS_Store
 ai_optometrist_user_journey_uml.puml
 Drysh Flow.png
 .gitignore
 *.log
+frame_*.png
+rca_*.py
+debug*.py

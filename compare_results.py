@@ -24,15 +24,22 @@ def compare_csvs(new_dir, backup_dir):
         # Check for state changes at same timestamps
         old_map = {r['Timestamp']: r for r in old_rows}
         changed_states = 0
+        file_header_printed = False
+        
         for nr in new_rows:
             ts = nr['Timestamp']
             if ts in old_map:
                 if nr['Occluder_State'] != old_map[ts]['Occluder_State']:
+                    if not file_header_printed:
+                        print(f"\n--- Changes in {bn} ---")
+                        print(f"{'Timestamp':<10} | {'Backup State':<25} | {'New State':<25}")
+                        print("-" * 65)
+                        file_header_printed = True
+                    
+                    print(f"{ts:<10} | {old_map[ts]['Occluder_State']:<25} | {nr['Occluder_State']:<25}")
                     changed_states += 1
-                    # print(f"  {ts}: {old_map[ts]['Occluder_State']} -> {nr['Occluder_State']}")
         
         if changed_states > 0:
-            print(f"[STATE IMPROVEMENTS] {bn}: {changed_states} clinical states updated")
             total_changes += changed_states
 
     print(f"\nTotal Clinical State Updates across all videos: {total_changes}")
