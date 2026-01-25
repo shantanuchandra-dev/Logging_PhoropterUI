@@ -3,6 +3,25 @@ import numpy as np
 import os
 import pytesseract
 import datetime
+import os
+
+# Module-level context for logging
+_log_context = {'filename': None, 'timestamp': None}
+
+def set_log_context(filename, timestamp=None):
+    """Update the logging context for current video/frame."""
+    global _log_context
+    _log_context['filename'] = filename
+    _log_context['timestamp'] = timestamp
+
+def _get_warn_prefix():
+    """Helper to format the warning prefix."""
+    parts = []
+    if _log_context['filename']:
+        parts.append(os.path.basename(_log_context['filename']))
+    if _log_context['timestamp']:
+        parts.append(_log_context['timestamp'])
+    return f"[{' | '.join(parts)}] " if parts else ""
 
 # 1. Broadly Crop the "Chart" area (User requested 60-75%)
 def crop_tab_band(roi0_img, output_dir, prefix):
@@ -111,7 +130,7 @@ def extract_roi5_sc_v2(roi0_img, output_dir, prefix):
                 break
 
     if chart_word_idx == -1:
-        print("Error: Could not find 'Chart' on cropped image after multiple attempts.")
+        print(f"{_get_warn_prefix()}Error: Could not find 'Chart' on cropped image after multiple attempts.")
         return [], None
 
     # Get OCR coordinates and scale back if needed

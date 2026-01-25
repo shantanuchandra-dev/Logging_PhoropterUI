@@ -19,6 +19,24 @@ from torchvision import transforms
 from occluder_model import OccluderNet
 import os
 
+# Module-level context for logging
+_log_context = {'filename': None, 'timestamp': None}
+
+def set_log_context(filename, timestamp=None):
+    """Update the logging context for current video/frame."""
+    global _log_context
+    _log_context['filename'] = filename
+    _log_context['timestamp'] = timestamp
+
+def _get_warn_prefix():
+    """Helper to format the warning prefix."""
+    parts = []
+    if _log_context['filename']:
+        parts.append(os.path.basename(_log_context['filename']))
+    if _log_context['timestamp']:
+        parts.append(_log_context['timestamp'])
+    return f"[{' | '.join(parts)}] " if parts else ""
+
 # Model configuration
 STAGE1_MODEL_PATH = 'stage1_model.pth'
 STAGE1_CLASSES_FILE = 'stage1_classes.txt'
@@ -242,7 +260,7 @@ def extract_occluders(roi0_img, save_debug=False, debug_prefix='debug'):
             break
     
     if circles is None:
-        print("Warning: No circles detected in 40-60% region with any parameter set")
+        print(f"{_get_warn_prefix()}Warning: No circles detected in 40-60% region with any parameter set")
         return None, None, None, None, debug_images
     
     circles = np.uint16(np.around(circles))
@@ -310,7 +328,7 @@ def extract_occluders(roi0_img, save_debug=False, debug_prefix='debug'):
         debug_images['validated_on_edges'] = path_edges
     
     if len(validated_circles) < 2:
-        print(f"Warning: Found {len(validated_circles)} validated circles, need at least 2")
+        print(f"{_get_warn_prefix()}Warning: Found {len(validated_circles)} validated circles, need at least 2")
         return None, None, None, None, debug_images
     
     # NEW: Filter by expected radius (PD labels are often ~60-80px, occluders are ~25-45px)
@@ -323,7 +341,7 @@ def extract_occluders(roi0_img, save_debug=False, debug_prefix='debug'):
              print(f"  > Ignoring circle with r={r} (outside clinical range 20-55)")
              
     if len(clinical_circles) < 2:
-        print(f"Warning: Found {len(clinical_circles)} clinical circles after radius filtering, need at least 2")
+        print(f"{_get_warn_prefix()}Warning: Found {len(clinical_circles)} clinical circles after radius filtering, need at least 2")
         return None, None, None, None, debug_images
 
     # Convert back to simple format
@@ -394,7 +412,7 @@ def extract_occluders(roi0_img, save_debug=False, debug_prefix='debug'):
               f"symmetry_score={top_selection['symmetry_score']:.2f}")
     
     if best_pair is None:
-        print("Warning: Could not find equidistant circles with similar sizes")
+        print(f"{_get_warn_prefix()}Warning: Could not find equidistant circles with similar sizes")
         return None, None, None, None, debug_images
     
     # Sort by x-coordinate (left to right)
@@ -440,29 +458,21 @@ def extract_occluders(roi0_img, save_debug=False, debug_prefix='debug'):
     rx += x_start
     ry += y_start
     
-    # Add bounds checking to prevent empty ROI errors
-    y1_l, y2_l = max(0, ly-lr), min(h, ly+lr)
-    x1_l, x2_l = max(0, lx-lr), min(w, lx+lr)
+    # Extract ROIs with padding
+    padding = 10
+    
+    # Add bounds checking to prevent empty ROI errors and include padding
+    y1_l, y2_l = max(0, int(ly) - int(lr) - padding), min(h, int(ly) + int(lr) + padding)
+    x1_l, x2_l = max(0, int(lx) - int(lr) - padding), min(w, int(lx) + int(lr) + padding)
     left_roi = img[y1_l:y2_l, x1_l:x2_l]
     
-    y1_r, y2_r = max(0, ry-rr), min(h, ry+rr)
-    x1_r, x2_r = max(0, rx-rr), min(w, rx+rr)
+    y1_r, y2_r = max(0, int(ry) - int(rr) - padding), min(h, int(ry) + int(rr) + padding)
+    x1_r, x2_r = max(0, int(rx) - int(rr) - padding), min(w, int(rx) + int(rr) + padding)
     right_roi = img[y1_r:y2_r, x1_r:x2_r]
     
-    # Bounding boxes in original ROI0 resolution (no scaling needed)
-    left_bbox = [
-        int(lx) - int(lr),
-        int(ly) - int(lr),
-        int(2 * lr),
-        int(2 * lr)
-    ]
-    
-    right_bbox = [
-        int(rx) - int(rr),
-        int(ry) - int(rr),
-        int(2 * rr),
-        int(2 * rr)
-    ]
+    # Bounding boxes in original ROI0 resolution (reflecting the padded crop)
+    left_bbox = [x1_l, y1_l, x2_l - x1_l, y2_l - y1_l]
+    right_bbox = [x1_r, y1_r, x2_r - x1_r, y2_r - y1_r]
     
     return left_roi, right_roi, left_bbox, right_bbox, debug_images
 

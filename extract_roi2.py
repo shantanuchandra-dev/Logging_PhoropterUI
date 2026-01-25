@@ -3,6 +3,25 @@ import numpy as np
 import pytesseract
 import os
 import datetime
+import os
+
+# Module-level context for logging
+_log_context = {'filename': None, 'timestamp': None}
+
+def set_log_context(filename, timestamp=None):
+    """Update the logging context for current video/frame."""
+    global _log_context
+    _log_context['filename'] = filename
+    _log_context['timestamp'] = timestamp
+
+def _get_warn_prefix():
+    """Helper to format the warning prefix."""
+    parts = []
+    if _log_context['filename']:
+        parts.append(os.path.basename(_log_context['filename']))
+    if _log_context['timestamp']:
+        parts.append(_log_context['timestamp'])
+    return f"[{' | '.join(parts)}] " if parts else ""
 import ssl
 ssl._create_default_https_context = ssl._create_unverified_context
 
@@ -112,7 +131,7 @@ def extract(roi0_img, save_debug=False, output_dir='ROI_2', filename=None):
             'pd_value_bbox': [],
             'pd_value': None,
             'confidence': None,
-            'error': f'Found {len(detected_circles)} circles, need at least 2'
+            'error': f"{_get_warn_prefix()}Found {len(detected_circles)} circles, need at least 2"
         }
 
     # Find the two circles closest to the center vertically

@@ -4,6 +4,26 @@ import numpy as np
 import datetime
 import os
 import json
+import os
+
+# Module-level context for logging
+_log_context = {'filename': None, 'timestamp': None}
+
+def set_log_context(filename, timestamp=None):
+    """Update the logging context for current video/frame."""
+    global _log_context
+    _log_context['filename'] = filename
+    _log_context['timestamp'] = timestamp
+
+def _get_warn_prefix():
+    """Helper to format the warning prefix."""
+    parts = []
+    if _log_context['filename']:
+        parts.append(os.path.basename(_log_context['filename']))
+    if _log_context['timestamp']:
+        parts.append(_log_context['timestamp'])
+    return f"[{' | '.join(parts)}] " if parts else ""
+
 import torch
 import torch.nn as nn
 from torchvision import models, transforms
@@ -40,7 +60,7 @@ def load_chart_model():
         _CHART_MODEL = model
         return _CHART_MODEL, _CLASS_MAPPING
     except Exception as e:
-        print(f"[ROI7] Error loading model: {e}")
+        print(f"{_get_warn_prefix()}[ROI7] Error loading model: {e}")
         return None, None
 
 def classify_chart(roi_img, threshold=0.1):
@@ -76,7 +96,7 @@ def classify_chart(roi_img, threshold=0.1):
             class_idx = str(preds.item())
             return mapping.get(class_idx, "")
     except Exception as e:
-        print(f"[ROI7] Error during classification: {e}")
+        print(f"{_get_warn_prefix()}[ROI7] Error during classification: {e}")
         return ""
 
 def extract_roi7_from_roi0(roi0_img, debug=False):

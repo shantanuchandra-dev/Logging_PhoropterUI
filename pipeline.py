@@ -95,6 +95,11 @@ def extract_all_rois(roi0_img, gpu_available=False, save_debug=True, output_dir=
                         break
                     except: pass
 
+    # Set contextual logging info for sub-modules
+    for module in [extract_roi1_ocr, extract_roi2, extract_roi3_4, extract_roi5, extract_roi7]:
+        if hasattr(module, 'set_log_context'):
+            module.set_log_context(filename or video_basename, timestamp_str)
+
     # 1. Menu
     try: results['rois']['menu'] = extract_roi_menu.extract(roi0_img, save_debug=save_debug, output_dir='ROI_Menu', filename=filename)
     except Exception as e: results['rois']['menu'] = {'error': str(e)}

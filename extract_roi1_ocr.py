@@ -4,6 +4,25 @@ import pytesseract
 import os
 import datetime
 import re
+import os
+
+# Module-level context for logging
+_log_context = {'filename': None, 'timestamp': None}
+
+def set_log_context(filename, timestamp=None):
+    """Update the logging context for current video/frame."""
+    global _log_context
+    _log_context['filename'] = filename
+    _log_context['timestamp'] = timestamp
+
+def _get_warn_prefix():
+    """Helper to format the warning prefix."""
+    parts = []
+    if _log_context['filename']:
+        parts.append(os.path.basename(_log_context['filename']))
+    if _log_context['timestamp']:
+        parts.append(_log_context['timestamp'])
+    return f"[{' | '.join(parts)}] " if parts else ""
 
 def extract_roi1_ocr(img, bboxes):
     """
@@ -264,7 +283,7 @@ def extract_roi1_ocr(img, bboxes):
                     cv2.imwrite(f'ROI_1/{k}_failed_crop.png', img[by1:by2, bx1:bx2])
         except:
             pass
-            print(f"[WARNING] extract_roi1_ocr: {blank_count}/8 fields blank. Accuracy might be low.")
+            print(f"{_get_warn_prefix()}[WARNING] extract_roi1_ocr: {blank_count}/8 fields blank. Accuracy might be low.")
         # We don't exit in Phase 3 to avoid stopping the whole pipeline, 
         # but we should definitely log it.
     

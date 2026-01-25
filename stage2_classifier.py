@@ -47,9 +47,9 @@ def detect_circumference_color(roi_img):
     red_lower2 = np.array([155, 80, 80])
     red_upper2 = np.array([180, 255, 255])
     
-    # Green: lowered Saturation and Value
-    green_lower = np.array([40, 80, 80])
-    green_upper = np.array([90, 255, 255])
+    # Green: Narrowed Hue and increased S/V to avoid leakage from blue
+    green_lower = np.array([45, 100, 100])
+    green_upper = np.array([85, 255, 255])
     
     red_mask = cv2.bitwise_or(cv2.inRange(hsv, red_lower1, red_upper1), 
                               cv2.inRange(hsv, red_lower2, red_upper2))
@@ -58,7 +58,9 @@ def detect_circumference_color(roi_img):
     red_pixels = cv2.countNonZero(red_mask)
     green_pixels = cv2.countNonZero(green_mask)
     
-    min_pixels = 40 
+    total_pixels = roi_img.shape[0] * roi_img.shape[1]
+    # Dynamic threshold: 2% of the ROI area (approx 120 pixels for a 60x60 ROI)
+    min_pixels = int(total_pixels * 0.02)
     
     if red_pixels > green_pixels and red_pixels > min_pixels:
         return 'red'
@@ -70,30 +72,28 @@ def detect_circumference_color(roi_img):
 def detect_line_presence(roi_img, cyl_axis=None):
     """
     Distinguish Power Refine vs Axis Refine based on handle and dot geometry.
-    
-    Logic (Internal Rotation-Invariant):
-    Axis Refine: Red/White dots are at +/- 45 degrees to the handle.
-    Power Refine: Red/White dots are aligned with the handle (0 or 90 degrees).
+    Returns: bool (True for Power, False for Axis) or None if no structure found.
     """
     if roi_img is None or roi_img.size == 0:
-        return False
+        return None
         
     h, w = roi_img.shape[:2]
     center_x, center_y = w // 2, h // 2
     
-    # 1. Detect dots
+    # 1. Detect dots using contours (Primary)
     hsv = cv2.cvtColor(roi_img, cv2.COLOR_BGR2HSV)
     mask_red = cv2.bitwise_or(cv2.inRange(hsv, np.array([0, 50, 40]), np.array([20, 255, 255])),
                               cv2.inRange(hsv, np.array([150, 50, 40]), np.array([180, 255, 255])))
     mask_white = cv2.inRange(hsv, np.array([0, 0, 180]), np.array([180, 80, 255]))
     mask_dots = cv2.bitwise_or(mask_red, mask_white)
     
-    # Limit search to 85% of ROI to avoid circumference noise
+    # NEW: Tighten search to 60% of ROI to strictly avoid circumference noise
     draw_mask = np.zeros((h, w), dtype=np.uint8)
-    cv2.circle(draw_mask, (center_x, center_y), int(min(center_x, center_y) * 0.85), 255, -1)
-    mask_dots = cv2.bitwise_and(mask_dots, draw_mask)
+    search_radius = int(min(center_x, center_y) * 0.60)
+    cv2.circle(draw_mask, (center_x, center_y), search_radius, 255, -1)
+    mask_dots_filtered = cv2.bitwise_and(mask_dots, draw_mask)
     
-    contours, _ = cv2.findContours(mask_dots, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    contours, _ = cv2.findContours(mask_dots_filtered, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     dots_angles = []
     for cnt in contours:
         if 5 < cv2.contourArea(cnt) < 500:
@@ -102,10 +102,7 @@ def detect_line_presence(roi_img, cyl_axis=None):
                 dots_angles.append((np.arctan2(int(M["m01"]/M["m00"]) - center_y, 
                                                int(M["m10"]/M["m00"]) - center_x) * 180 / np.pi) % 180)
 
-    if not dots_angles:
-        return False # No data to decide
-
-    # 2. Detect the handle (longest line)
+    # 2. Detect the handle (Structural Pivot)
     gray = cv2.cvtColor(roi_img, cv2.COLOR_BGR2GRAY)
     edges = cv2.Canny(gray, 50, 150)
     lines = cv2.HoughLinesP(edges, 1, np.pi/180, threshold=30, minLineLength=25, maxLineGap=10)
@@ -120,21 +117,50 @@ def detect_line_presence(roi_img, cyl_axis=None):
                 max_len = length
                 best_handle_angle = (np.arctan2(y2-y1, x2-x1) * 180 / np.pi) % 180
 
+    if not dots_angles and best_handle_angle is None:
+        return None  # No clinical structure found
+
     # 3. Decision Logic
-    # We determine if dots are offset (Axis) or aligned (Power) with the handle.
-    
-    # If no handle detected, fallback to the mirrored OCR axis as our 'virtual handle'
     ref_angle = None
     if best_handle_angle is not None:
         ref_angle = best_handle_angle
     elif cyl_axis is not None:
         try:
-            # Screen Y down means OCR angle is mirrored (180 - angle)
             ref_angle = (180 - float(cyl_axis)) % 180
         except: pass
         
     if ref_angle is None:
-        ref_angle = 0.0 # Final fallback
+        ref_angle = 0.0
+
+    # TIE-BREAKER: Structural Profiling (Sampling along axes)
+    # If no dots or tied votes, we sample pixel intensities along Power and Axis radial lines.
+    def get_axis_score(angles_deg):
+        score = 0
+        for angle in angles_deg:
+            # Sample at 3 points along the radial line (30%, 45%, 60% of radius)
+            for r_fact in [0.3, 0.45, 0.6]:
+                rad = angle * np.pi / 180.0
+                px = int(center_x + search_radius * r_fact * np.cos(rad))
+                py = int(center_y + search_radius * r_fact * np.sin(rad))
+                if 0 <= py < h and 0 <= px < w:
+                    # Check if pixel is "dot-like" (in our color masks)
+                    if mask_dots[py, px] > 0:
+                        score += 1
+        return score
+
+    # Power axes: 0, 90, 180, 270 relative to handle (FULL CIRCLE for cos/sin)
+    power_axes = [ref_angle, ref_angle + 90, ref_angle + 180, ref_angle + 270]
+    # Axis axes: 45, 135, 225, 315 relative to handle
+    axis_axes = [ref_angle + 45, ref_angle + 135, ref_angle + 225, ref_angle + 315]
+
+    p_score = get_axis_score(power_axes)
+    a_score = get_axis_score(axis_axes)
+
+    if not dots_angles:
+        # If no dots detected via contours, use profiling score
+        if p_score > a_score: return True
+        if a_score > p_score: return False
+        return True # Default to Power on absolute tie
 
     power_votes = 0
     axis_votes = 0
@@ -142,8 +168,6 @@ def detect_line_presence(roi_img, cyl_axis=None):
         diff = abs(dot_angle - ref_angle)
         if diff > 90: diff = abs(180 - diff)
         
-        # Power dots are at 0 or 90 relative to handle
-        # Axis dots are at 45 relative to handle
         normalized_to_45 = abs(diff)
         if normalized_to_45 > 45: normalized_to_45 = abs(90 - normalized_to_45)
         
@@ -152,11 +176,10 @@ def detect_line_presence(roi_img, cyl_axis=None):
         else: # closer to 45
             axis_votes += 1
             
-    return power_votes >= axis_votes
-
-def detect_line_presence_fallback(roi_img, cyl_axis=None):
-    """Fallback: logic unified in detect_line_presence"""
-    return detect_line_presence(roi_img, cyl_axis=cyl_axis)
+    if power_votes == axis_votes:
+        return p_score >= a_score
+        
+    return power_votes > axis_votes
 
 def classify_jcc_pattern(roi_img, cyl_axis=None):
     """
@@ -167,10 +190,16 @@ def classify_jcc_pattern(roi_img, cyl_axis=None):
     if color == 'unknown':
         return classify_filled(roi_img)
     
-    # Detect pattern type (Axis vs Power)
+    # STRUCTURAL VALIDATION: Detect pattern type (Axis vs Power)
+    # This also confirms if ANY handle/dots exist.
     is_power = detect_line_presence(roi_img, cyl_axis=cyl_axis)
-    pattern_type = 'power' if is_power else 'axis'
     
+    if is_power is None:
+        # Color was detected but no dots/handle structure exists. 
+        # Fallback to filled state to avoid false refined identifications.
+        return classify_filled(roi_img)
+        
+    pattern_type = 'power' if is_power else 'axis'
     return f"{color}_{pattern_type}_refine"
 
 if __name__ == "__main__":
