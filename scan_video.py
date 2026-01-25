@@ -118,7 +118,7 @@ def find_first_ui_frame(video_path, config):
                     print(f"\n✓ UI locked on! First frame saved to: {output_filename}")
                     cap.release()
                     return frame, frame_sec, frame_id_to_grab
-                else:
+                # else:
                     # print(f"ROI0 area ratio {area_ratio:.3f} out of range [0.40, 0.55], discarding frame.")
             except Exception as e:
                 print(f"ROI0 extraction failed: {e}")
