@@ -222,9 +222,10 @@ def extract_occluders(roi0_img, save_debug=False, debug_prefix='debug'):
             if circles is not None:
                 test_circles = np.uint16(np.around(circles))
                 for i, (cx, cy, r) in enumerate(test_circles[0, :]):
-                    cv2.circle(test_vis, (cx, cy), r, (255, 0, 0), 2)
-                    cv2.circle(test_vis, (cx, cy), 2, (0, 0, 255), 3)
-                    cv2.putText(test_vis, f'{i+1}', (cx - 10, cy - r - 10), 
+                    cx_int, cy_int, r_int = int(cx), int(cy), int(r)
+                    cv2.circle(test_vis, (cx_int, cy_int), r_int, (255, 0, 0), 2)
+                    cv2.circle(test_vis, (cx_int, cy_int), 2, (0, 0, 255), 3)
+                    cv2.putText(test_vis, f'{i+1}', (cx_int - 10, cy_int - r_int - 10), 
                                 cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
                 cv2.putText(test_vis, f'Params: p1={p1}, p2={p2}, Found={len(test_circles[0])} (unfiltered)', 
                             (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
@@ -279,7 +280,7 @@ def extract_occluders(roi0_img, save_debug=False, debug_prefix='debug'):
         if edge_density >= 0.30:
             validated_circles.append((cx, cy, r, edge_density))
     
-    print(f"✓ After edge validation: {len(validated_circles)} circles (from {len(detected_circles)})")
+    print(f"✓ After edge validation: {len(validated_circles)} circles (from {len(detected_circles)}) for file {os.path.basename(roi0_img)}")
     
     if save_debug:
         # Visualize validated circles
@@ -287,14 +288,15 @@ def extract_occluders(roi0_img, save_debug=False, debug_prefix='debug'):
         edges_colored = cv2.cvtColor(edges, cv2.COLOR_GRAY2BGR)
         
         for i, (cx, cy, r, density) in enumerate(validated_circles):
-            cv2.circle(validated_vis, (cx, cy), r, (0, 255, 0), 2)
-            cv2.circle(validated_vis, (cx, cy), 2, (0, 255, 0), 3)
-            cv2.putText(validated_vis, f'{i+1}:{density:.0%}', (cx - 20, cy - r - 10), 
+            cx_int, cy_int, r_int = int(cx), int(cy), int(r)
+            cv2.circle(validated_vis, (cx_int, cy_int), r_int, (0, 255, 0), 2)
+            cv2.circle(validated_vis, (cx_int, cy_int), 2, (0, 255, 0), 3)
+            cv2.putText(validated_vis, f'{i+1}:{density:.0%}', (cx_int - 20, cy_int - r_int - 10), 
                         cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
             
             # Also draw on edges
-            cv2.circle(edges_colored, (cx, cy), r, (0, 255, 0), 2)
-            cv2.circle(edges_colored, (cx, cy), 2, (0, 255, 0), 3)
+            cv2.circle(edges_colored, (cx_int, cy_int), r_int, (0, 255, 0), 2)
+            cv2.circle(edges_colored, (cx_int, cy_int), 2, (0, 255, 0), 3)
         
         cv2.putText(validated_vis, f'Edge-Validated Circles: {len(validated_circles)}', 
                     (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
@@ -417,15 +419,15 @@ def extract_occluders(roi0_img, save_debug=False, debug_prefix='debug'):
     
     # Bounding boxes in original ROI0 resolution (no scaling needed)
     left_bbox = [
-        int(lx - lr),
-        int(ly - lr),
+        int(lx) - int(lr),
+        int(ly) - int(lr),
         int(2 * lr),
         int(2 * lr)
     ]
     
     right_bbox = [
-        int(rx - rr),
-        int(ry - rr),
+        int(rx) - int(rr),
+        int(ry) - int(rr),
         int(2 * rr),
         int(2 * rr)
     ]

@@ -128,10 +128,10 @@ def extract(roi0_img, save_debug=False, output_dir='ROI_2', filename=None):
     x2, y2, r2 = right_circle
     
     # Search region for PD box
-    search_x1 = int(x1 + r1)
-    search_x2 = int(x2 - r2)
-    search_y1 = int(min(y1, y2) - 50)
-    search_y2 = int(max(y1, y2) + 50)
+    search_x1 = int(x1) + int(r1) # Addition is safe but good for consistency
+    search_x2 = int(x2) - int(r2)
+    search_y1 = int(min(y1, y2)) - 50
+    search_y2 = int(max(y1, y2)) + 50
     
     search_x1 = max(0, search_x1)
     search_x2 = min(w, search_x2)

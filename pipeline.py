@@ -1,9 +1,6 @@
 #!/usr/bin/env python3
 """
-Automated ROI Extraction Pipeline
-
-This script automates the extraction of all available ROIs from a video file.
-It performs periodic ROI detection, data extraction, CSV logging, and visualization.
+Automated ROI Extraction Pipeline (Parallel Version)
 """
 
 import cv2
@@ -14,616 +11,268 @@ import os
 import sys
 import glob
 import datetime
+import multiprocessing
+import traceback
+from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 
 # Import ROI extractors
 import extract_roi0
 import extract_roi_menu
 import extract_roi1, extract_roi1_ocr
-import extract_roi2  # Using extract_roi2 instead of extract_roi2_temp
+import extract_roi2 
 import extract_roi3_4_jcc_SC as extract_roi3_4 
-
 import extract_roi5
 import extract_roi6
 import extract_roi7
-
+import scan_video
 
 def detect_gpu():
-    """
-    Detect if GPU is available for acceleration.
-    Returns: dict with 'available', 'device', and 'backend' keys
-    """
-    gpu_info = {
-        'available': False,
-        'device': 'CPU',
-        'backend': None
-    }
-    
-    # Check PyTorch CUDA
+    """Detect if GPU is available (MPS or CUDA)."""
+    gpu_info = {'available': False, 'device': 'CPU', 'backend': None}
     try:
         import torch
         if torch.cuda.is_available():
-            gpu_info['available'] = True
-            gpu_info['device'] = torch.cuda.get_device_name(0)
-            gpu_info['backend'] = 'PyTorch CUDA'
-            return gpu_info
-    except ImportError:
-        pass
-    
-    # Check OpenCV CUDA
-    try:
-        if cv2.cuda.getCudaEnabledDeviceCount() > 0:
-            gpu_info['available'] = True
-            gpu_info['device'] = 'CUDA Device'
-            gpu_info['backend'] = 'OpenCV CUDA'
-            return gpu_info
-    except:
-        pass
-    
+            gpu_info.update({'available': True, 'device': torch.cuda.get_device_name(0), 'backend': 'PyTorch CUDA'})
+        elif hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
+            gpu_info.update({'available': True, 'device': 'Apple Metal (MPS)', 'backend': 'PyTorch MPS'})
+    except ImportError: pass
+    if not gpu_info['available']:
+        try:
+            if cv2.cuda.getCudaEnabledDeviceCount() > 0:
+                gpu_info.update({'available': True, 'device': 'CUDA Device', 'backend': 'OpenCV CUDA'})
+        except: pass
     return gpu_info
 
-
 def load_config(config_path="config.json"):
-    """Load pipeline configuration from JSON file."""
+    """Load pipeline configuration."""
     default_config = {
         "video_source_dir": "Sample/videos",
         "reference_image": "topcon_ui_001.png",
-        "output_dir": "roi_all",
+        "output_dir": "MatchedScreens",
         "sampling_interval_seconds": 2,
         "match_threshold": 0.35,
         "max_consecutive_failures": 5,
-        "save_debug_images": True
+        "save_debug_images": False,
+        "frame_diff_threshold": 0.0002,
+        "roi0_diff_threshold": 0.0005
     }
-    
     if os.path.exists(config_path):
         with open(config_path, 'r') as f:
-            user_config = json.load(f)
-            default_config.update(user_config)
-    
-    # Ensure results paths are relative to the final output_dir
-    out_dir = default_config["output_dir"]
-    default_config["csv_output"] = os.path.join(out_dir, "results.csv")
-    default_config["json_output"] = os.path.join(out_dir, "results.json")
-    
+            default_config.update(json.load(f))
     return default_config
 
-
 def verify_ui_present(frame, reference_template, threshold=0.8):
-    """
-    Verify that the medical UI is present in the frame using template matching.
-    Returns: (is_present, match_score)
-    """
-    h_frame, w_frame = frame.shape[:2]
-    h_template, w_template = reference_template.shape[:2]
-    
-    # Resize template if needed
-    if h_frame != h_template or w_frame != w_template:
-        resized_template = cv2.resize(reference_template, (w_frame, h_frame))
-    else:
-        resized_template = reference_template
-    
-    # Match on top half
-    process_frame = frame[0:h_frame//2, 0:w_frame]
-    process_template = resized_template[0:h_frame//2, 0:w_frame]
-    
-    res = cv2.matchTemplate(process_frame, process_template, cv2.TM_CCOEFF_NORMED)
-    min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
-    
+    """Verify UI presence."""
+    h_f, w_f = frame.shape[:2]
+    h_t, w_t = reference_template.shape[:2]
+    res_t = cv2.resize(reference_template, (w_f, h_f)) if (h_f, w_f) != (h_t, w_t) else reference_template
+    res = cv2.matchTemplate(frame[0:h_f//2, 0:w_f], res_t[0:h_f//2, 0:w_f], cv2.TM_CCOEFF_NORMED)
+    _, max_val, _, _ = cv2.minMaxLoc(res)
     return (max_val >= threshold, max_val)
 
 def calculate_image_difference(img1, img2):
-    """Calculates the normalized mean absolute difference between two images."""
-    if img1 is None or img2 is None:
-        return 1.0
-    if img1.shape != img2.shape:
-        img2 = cv2.resize(img2, (img1.shape[1], img1.shape[0]))
+    """Calculates normalized difference."""
+    if img1 is None or img2 is None: return 1.0
+    if img1.shape != img2.shape: img2 = cv2.resize(img2, (img1.shape[1], img1.shape[0]))
     diff = cv2.absdiff(img1, img2)
-    if len(diff.shape) == 3:
-        diff = cv2.cvtColor(diff, cv2.COLOR_BGR2GRAY)
-    score = np.mean(diff) / 255.0
-    return score
-
-
-import scan_video
-
-# ... (detect_gpu, load_config, verify_ui_present remain same)
+    if len(diff.shape) == 3: diff = cv2.cvtColor(diff, cv2.COLOR_BGR2GRAY)
+    return np.mean(diff) / 255.0
 
 def extract_all_rois(roi0_img, gpu_available=False, save_debug=True, output_dir='MatchedScreens', filename=None, timestamp_str=None, video_basename=None):
-    """
-    Extract all ROIs from ROI-0 image.
-    """
-    results = {
-        'timestamp': datetime.datetime.now().isoformat(),
-        'rois': {}
-    }
-
-    # Centralized coordinate loading (Phase 3 persistence)
+    """Extract all ROIs."""
+    results = {'timestamp': datetime.datetime.now().isoformat(), 'rois': {}}
     coords_data = {}
+    
     if not save_debug and output_dir:
-        # Resolve video_basename if not provided
-        if not video_basename and filename:
-            video_basename = os.path.splitext(os.path.basename(filename))[0]
-        
-        if video_basename:
-            for search_dir in [output_dir, '.']:
-                candidate = os.path.join(search_dir, f'{video_basename}_coords.json')
-                if os.path.isfile(candidate):
+        v_base = video_basename or (filename and os.path.splitext(os.path.basename(filename))[0])
+        if v_base:
+            for d in [output_dir, '.']:
+                c = os.path.join(d, f'{v_base}_coords.json')
+                if os.path.isfile(c):
                     try:
-                        with open(candidate, 'r') as f:
-                            coords_data = json.load(f)
+                        with open(c, 'r') as f: coords_data = json.load(f)
                         break
                     except: pass
 
     # 1. Menu
-    try:
-        menu_result = extract_roi_menu.extract(roi0_img, save_debug=save_debug, output_dir='ROI_Menu', filename=filename)
-        results['rois']['menu'] = menu_result
-    except Exception as e:
-        results['rois']['menu'] = {'error': str(e)}
+    try: results['rois']['menu'] = extract_roi_menu.extract(roi0_img, save_debug=save_debug, output_dir='ROI_Menu', filename=filename)
+    except Exception as e: results['rois']['menu'] = {'error': str(e)}
 
-    # 2. ROI1 (Table Detection & OCR)
+    # 2. ROI1 (OCR)
     try:
         bboxes = []
         if save_debug:
-            # Phase 2: Full detection
             roi0_base = os.path.splitext(os.path.basename(filename))[0] if filename else 'roi0'
             roi0_path = os.path.join('ROI_0', f'{roi0_base}.png')
             if not os.path.isfile(roi0_path):
                 os.makedirs('ROI_0', exist_ok=True)
                 cv2.imwrite(roi0_path, roi0_img)
-            
             roi1_res = extract_roi1.extract(roi0_path, roi0_dir='ROI_0', roi_menu_dir='ROI_Menu', output_dir='ROI_1')
             results['rois']['roi1'] = roi1_res
             bboxes = roi1_res.get('cell_bboxes_on_roi0', [])
         else:
-            # Phase 3: Use stored bboxes from centralized coords_data
             bboxes = coords_data.get('rois', {}).get('roi1', {}).get('cell_bboxes_on_roi0', [])
             bboxes = [tuple(bb) for bb in bboxes if len(bb) == 4]
             results['rois']['roi1'] = {'cell_bboxes_on_roi0': bboxes}
-
-        roi1_ocr_res = extract_roi1_ocr.extract_roi1_ocr(roi0_img, bboxes)
-        results['rois']['roi1_ocr'] = roi1_ocr_res
+        
+        if bboxes:
+            ocr_res = extract_roi1_ocr.extract_roi1_ocr(roi0_img, bboxes)
+            results['rois']['roi1_ocr'] = ocr_res
+        else:
+            results['rois']['roi1_ocr'] = {'error': 'No bboxes for OCR'}
     except Exception as e:
-        results['rois']['roi1'] = {'error': str(e)}
+        results['rois']['roi1_ocr'] = {'error': str(e)}
+        print(f"[OCR ERROR] {e}")
 
-    # 3. ROI2 (PD) - COMMENTED OUT
-    results['rois']['roi2'] = {'roi_id': 'ROI_2', 'pd_value': '', 'note': 'PD extraction disabled'}
+    # 3. ROI2 (PD) - Static placeholder or extraction logic
+    results['rois']['roi2'] = {'pd_value': ''}
 
     # 4. ROI3/ROI4 (Occluders)
     try:
-        stored_occ_bboxes = None
-        if not save_debug:
-            stored_occ_bboxes = coords_data.get('rois', {}).get('roi3_4', {}).get('bboxes', None)
-        
-        # Pass stored_bboxes and OCR axes to the extractor for rotation-aware JCC
-        r_axis = results.get('rois', {}).get('roi1_ocr', {}).get('data', {}).get('R_Axis', None)
-        l_axis = results.get('rois', {}).get('roi1_ocr', {}).get('data', {}).get('L_Axis', None)
-        
-        roi3_4_result = extract_roi3_4.extract(
-            roi0_img, 
-            save_debug=save_debug, 
-            output_dir='ROI_3', 
-            filename=filename, 
-            timestamp_str=timestamp_str,
-            stored_bboxes=stored_occ_bboxes,
-            right_axis=r_axis,
-            left_axis=l_axis
-        )
-        results['rois']['roi3_4'] = roi3_4_result
-    except Exception as e:
-        results['rois']['roi3_4'] = {'error': str(e)}
+        stored = coords_data.get('rois', {}).get('roi3_4', {}).get('bboxes', None) if not save_debug else None
+        r_ax = results.get('rois', {}).get('roi1_ocr', {}).get('R_Axis') or results.get('rois', {}).get('roi1_ocr', {}).get('data', {}).get('R_Axis')
+        l_ax = results.get('rois', {}).get('roi1_ocr', {}).get('L_Axis') or results.get('rois', {}).get('roi1_ocr', {}).get('data', {}).get('L_Axis')
+        results['rois']['roi3_4'] = extract_roi3_4.extract(roi0_img, save_debug=save_debug, output_dir='ROI_3', filename=filename, timestamp_str=timestamp_str, stored_bboxes=stored, right_axis=r_ax, left_axis=l_ax)
+    except Exception as e: results['rois']['roi3_4'] = {'error': str(e)}
 
-    # 5. ROI5 (Chart Tabs)
+    # 5. ROI5 (Tabs)
     try:
-        if save_debug:
-            roi5_result = extract_roi5.extract(roi0_img, save_debug=save_debug, output_dir='ROI_5', filename=filename)
-            results['rois']['roi5'] = roi5_result
+        if save_debug: results['rois']['roi5'] = extract_roi5.extract(roi0_img, save_debug=save_debug, output_dir='ROI_5', filename=filename)
         else:
-            tab_bboxes = coords_data.get('rois', {}).get('roi5', {}).get('bboxes', None)
-            if tab_bboxes:
-                selected_tab = extract_roi5.select_max_yellow_tab(roi0_img, tab_bboxes)
-                results['rois']['roi5'] = {'selected_tab': selected_tab, 'bboxes': tab_bboxes}
-            else:
-                results['rois']['roi5'] = {'error': 'No ROI5 bboxes found in coords.json'}
-    except Exception as e:
-        results['rois']['roi5'] = {'error': str(e)}
+            t_bb = coords_data.get('rois', {}).get('roi5', {}).get('bboxes')
+            if t_bb: results['rois']['roi5'] = {'selected_tab': extract_roi5.select_max_yellow_tab(roi0_img, t_bb), 'bboxes': t_bb}
+    except Exception as e: results['rois']['roi5'] = {'error': str(e)}
 
-    # 7. ROI7 (Big Chart)
+    # 7. ROI7 (Chart)
     try:
-        roi7_bbox = None
-        if not save_debug:
-            roi7_bbox = coords_data.get('rois', {}).get('roi7', {}).get('bbox', None)
-        
-        roi7_result = extract_roi7.extract(roi0_img, save_debug=save_debug, filename=filename, bbox=roi7_bbox)
-        results['rois']['roi7'] = roi7_result
-    except Exception as e:
-        results['rois']['roi7'] = {'error': str(e)}
+        r7_bb = coords_data.get('rois', {}).get('roi7', {}).get('bbox') if not save_debug else None
+        results['rois']['roi7'] = extract_roi7.extract(roi0_img, save_debug=save_debug, filename=filename, bbox=r7_bb)
+    except Exception as e: results['rois']['roi7'] = {'error': str(e)}
     
     return results
 
-
-def save_visualization(frame, roi0_bbox, all_roi_data, output_path):
-    """
-    Draw all ROI bounding boxes on the frame and save visualization.
-    """
-    viz = frame.copy()
-    
-    # Draw ROI-0 bbox
-    if roi0_bbox:
-        x, y, w, h = roi0_bbox
-        cv2.rectangle(viz, (x, y), (x+w, y+h), (0, 255, 0), 3)
-        cv2.putText(viz, "ROI-0", (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
-    
-    # Draw other ROIs (relative to ROI-0)
-    roi0_x, roi0_y = roi0_bbox[0], roi0_bbox[1] if roi0_bbox else (0, 0)
-    
-    for roi_name, roi_data in all_roi_data.get('rois', {}).items():
-        if 'error' in roi_data or 'bbox' not in roi_data:
-            continue
-        
-        bbox = roi_data['bbox']
-        if not bbox or len(bbox) < 4:
-            continue
-        
-        # Convert relative to absolute coordinates
-        abs_x = roi0_x + bbox[0]
-        abs_y = roi0_y + bbox[1]
-        abs_w = bbox[2]
-        abs_h = bbox[3]
-        
-        # Draw bbox
-        color = (255, 0, 0)  # Blue
-        cv2.rectangle(viz, (abs_x, abs_y), (abs_x+abs_w, abs_y+abs_h), color, 2)
-        cv2.putText(viz, roi_name, (abs_x, abs_y-5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1)
-    
-    cv2.imwrite(output_path, viz)
-    return output_path
-
-
 def append_to_csv(csv_path, frame_data):
-    """
-    Append extracted data to CSV file with specific headers:
-    R_SPH, R_CYL, R_AXIS, R_ADD, L_SPH, L_CYL, L_AXIS, L_ADD, PD, Chart_Number, Occluder_State, Chart_Display
-    """
+    """Append data to CSV."""
     rois = frame_data.get('rois', {})
+    ocr = rois.get('roi1_ocr', {})
+    if 'data' in ocr: ocr = ocr['data']
     
-    # 1. Extraction from Table (ROI-1 OCR)
-    table = rois.get('roi1_ocr', {})
-    if 'data' in table:
-        table = table['data']
+    c_num = rois.get('roi5', {}).get('selected_tab', -1)
+    if c_num != -1: c_num += 1
     
-    # 2. PD (ROI-2)
-    pd_val = rois.get('roi2', {}).get('pd_value', '')
-    
-    # 3. Chart Number (ROI-5)
-    chart_num = rois.get('roi5', {}).get('selected_tab', -1)
-    if chart_num != -1:
-        chart_num += 1  # 1-based index (so 0→1, 1→2, ... 4→5)
-    
-    # 4. Occluder State (ROI-3/4)
-    occ_state = rois.get('roi3_4', {}).get('phoropter_state', 'Unknown')
-
-    # 5. Chart Display (ROI-7)
-    chart_display = rois.get('roi7', {}).get('chart_info', '')
-
-    # Prepare Row
-    time_sec = frame_data.get('time_seconds', 0)
     row = {
-        'Timestamp': f"{int(time_sec // 60):02d}:{int(time_sec % 60):02d}",
-        'R_SPH': table.get('R_Sph', ''),
-        'R_CYL': table.get('R_Cyl', ''),
-        'R_AXIS': table.get('R_Axis', ''),
-        'R_ADD': table.get('R_Add', ''),
-        'L_SPH': table.get('L_Sph', ''),
-        'L_CYL': table.get('L_Cyl', ''),
-        'L_AXIS': table.get('L_Axis', ''),
-        'L_ADD': table.get('L_Add', ''),
-        'PD': pd_val,
-        'Chart_Number': chart_num,
-        'Occluder_State': occ_state,
-        'Chart_Display': chart_display
+        'Timestamp': f"{int(frame_data.get('time_seconds', 0) // 60):02d}:{int(frame_data.get('time_seconds', 0) % 60):02d}",
+        'R_SPH': ocr.get('R_Sph', ''), 'R_CYL': ocr.get('R_Cyl', ''), 'R_AXIS': ocr.get('R_Axis', ''), 'R_ADD': ocr.get('R_Add', ''),
+        'L_SPH': ocr.get('L_Sph', ''), 'L_CYL': ocr.get('L_Cyl', ''), 'L_AXIS': ocr.get('L_Axis', ''), 'L_ADD': ocr.get('L_Add', ''),
+        'PD': rois.get('roi2', {}).get('pd_value', ''),
+        'Chart_Number': c_num,
+        'Occluder_State': rois.get('roi3_4', {}).get('phoropter_state', 'Unknown'),
+        'Chart_Display': rois.get('roi7', {}).get('chart_info', '')
     }
     
-    # Write to CSV
     headers = ['Timestamp', 'R_SPH', 'R_CYL', 'R_AXIS', 'R_ADD', 'L_SPH', 'L_CYL', 'L_AXIS', 'L_ADD', 'PD', 'Chart_Number', 'Occluder_State', 'Chart_Display']
-    
-    # Always overwrite CSV on first write, then append for subsequent writes
-    if not hasattr(append_to_csv, "_written"):
-        mode = 'w'
-        append_to_csv._written = set()
-    else:
-        mode = 'a'
-    if csv_path not in append_to_csv._written:
-        write_header = True
-        append_to_csv._written.add(csv_path)
-    else:
-        write_header = False
-    with open(csv_path, mode, newline='') as f:
-        import csv
+    write_h = not os.path.exists(csv_path)
+    with open(csv_path, 'a', newline='') as f:
         writer = csv.DictWriter(f, fieldnames=headers)
-        if write_header:
-            writer.writeheader()
+        if write_h: writer.writeheader()
         writer.writerow(row)
 
+def process_single_video(video_path, config, gpu_info):
+    """Process a single video."""
+    v_name = os.path.basename(video_path)
+    v_base = os.path.splitext(v_name)[0]
+    csv_p = os.path.join(config['output_dir'], f"{v_base}.csv")
+    json_p = os.path.join(config['output_dir'], f"{v_base}.json")
+    
+    print(f"[{v_name}] Starting...")
+    try:
+        first_frame, first_t, first_idx = scan_video.find_first_ui_frame(video_path, config)
+        if first_frame is None: return False
 
-def main():
-    """Main pipeline execution."""
-    print("=" * 60)
-    print("Automated ROI Extraction Pipeline")
-    print("=" * 60)
-    
-    # 1. GPU Detection
-    gpu_info = detect_gpu()
-    if gpu_info['available']:
-        print(f"✓ GPU Available: {gpu_info['device']} ({gpu_info['backend']})")
-    else:
-        print("ℹ GPU Not Detected - Running on CPU")
-    
-    # 2. Load Configuration
-    config = load_config()
-    print(f"\nConfiguration:")
-    print(f"  Video Source: {config['video_source_dir']}")
-    print(f"  Output Directory: {config['output_dir']}")
-    
-    # 3. Setup Output Directories
-    os.makedirs(config['output_dir'], exist_ok=True)
-    os.makedirs("firstFrame", exist_ok=True)
-    
-    # 4. Find Video File
-    video_files = glob.glob(os.path.join(config['video_source_dir'], "*"))
-    video_files = [f for f in video_files if os.path.isfile(f) and not f.lower().endswith('.ds_store')]
-    
-    if not video_files:
-        print(f"\n✗ No videos found in {config['video_source_dir']}")
-        return
-    
-    print(f"\nFound {len(video_files)} videos to process.")
-    
-    for video_path in video_files:
-        video_filename = os.path.basename(video_path)
-        video_basename = os.path.splitext(video_filename)[0]
+        roi0_res = extract_roi0.extract_roi0(first_frame, filename=v_name, save_dir='ROI_0', save=True)
+        r0_path = roi0_res.get('output_path', os.path.join('ROI_0', f"{v_base}.png"))
+        ref = extract_all_rois(roi0_res['roi0'], gpu_available=gpu_info['available'], save_debug=True, output_dir=config['output_dir'], filename=r0_path, video_basename=v_base)
+        ref.update({'frame_id': first_idx, 'time_seconds': first_t})
         
-        # Performance overrides for CSV/JSON outputs
-        video_csv_path = os.path.join(config['output_dir'], f"{video_basename}.csv")
-        video_json_path = os.path.join(config['output_dir'], f"{video_basename}.json")
+        with open(os.path.join(config['output_dir'], f"{v_base}_coords.json"), 'w') as f: json.dump(ref, f, indent=2)
+        append_to_csv(csv_p, ref)
         
-        print(f"\n{'='*60}")
-        print(f"Processing Video: {video_filename}")
-        print(f"{'='*60}")
-        print(f"✓ Output CSV: {video_csv_path}")
-        
-        # Close capture if left open
-        cap = None
-        
-        # --- PHASE 1: Find First UI Frame ---
-        print("\n[PHASE 1] Scanning for first UI frame...")
-        first_frame, first_time_sec, first_frame_idx = scan_video.find_first_ui_frame(video_path, config)
-        
-        if first_frame is None:
-            print(f"✗ No UI found in {video_filename}. Skipping.")
-            continue
-        
-        # --- PHASE 2: Fix Coordinates on First Frame ---
-        print(f"\n[PHASE 2] Setting reference coordinates on first frame (t={first_time_sec:.2f}s)...")
-        try:
-            # Force save=True for the reference frame to ensure baseline artifacts are produced
-            roi0_result = extract_roi0.extract_roi0(first_frame, filename=video_filename, save_dir='ROI_0', save=True)
-            roi0_img = roi0_result['roi0']
-            roi0_path = roi0_result.get('output_path') if 'output_path' in roi0_result else os.path.join('ROI_0', f"{os.path.splitext(video_filename)[0]}.png")
-
-            # Extract all ROIs to establish baseline coordinates
-
-            ref_data = extract_all_rois(
-                roi0_img,
-                gpu_available=gpu_info['available'],
-                # Force save_debug=True for the first frame to establish baseline ROI artifacts
-                save_debug=True,
-                output_dir=config['output_dir'],
-                filename=roi0_path,
-                video_basename=video_basename
-            )
-            ref_data['frame_id'] = first_frame_idx
-            ref_data['time_seconds'] = first_time_sec
-
-            # Overwrite coords.json if it exists
-            # Ensure only the PD value bbox is stored for ROI-2
-            if 'roi2' in ref_data['rois']:
-                roi2 = ref_data['rois']['roi2']
-                ref_data['rois']['roi2'] = {
-                    'roi_id': roi2.get('roi_id', 'ROI_2'),
-                    'pd_value_bbox': roi2.get('pd_value_bbox', []),
-                    'pd_value': roi2.get('pd_value', None),
-                    'confidence': roi2.get('confidence', None),
-                    'image_path': roi2.get('image_path', None)
-                }
-            # Ensure only 'selected_tab' and 'bboxes' are stored for ROI5
-            if 'roi5' in ref_data['rois']:
-                roi5 = ref_data['rois']['roi5']
-                roi5_clean = {}
-                if 'selected_tab' in roi5:
-                    roi5_clean['selected_tab'] = roi5['selected_tab']
-                if 'bboxes' in roi5:
-                    roi5_clean['bboxes'] = roi5['bboxes']
-                ref_data['rois']['roi5'] = roi5_clean
-            ref_path = os.path.join(config['output_dir'], f"{video_basename}_coords.json")
-            with open(ref_path, 'w') as f:
-                json.dump(ref_data, f, indent=2)
-            print(f"  ✓ Reference coordinates stored: {ref_path}")
-            ref_roi0_filename = roi0_path
-
-        except Exception as e:
-            print(f"✗ Failed to set reference on first frame: {e}")
-            continue
-
-        # --- PHASE 3: Process Video and Store Every Change ---
-        print("\n[PHASE 3] Processing video and logging changes...")
         cap = cv2.VideoCapture(video_path)
-        video_fps = cap.get(cv2.CAP_PROP_FPS)
-        total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        fps = cap.get(cv2.CAP_PROP_FPS)
+        interval = int(fps * config['sampling_interval_seconds'])
+        cap.set(cv2.CAP_PROP_POS_FRAMES, first_idx)
         
-        if video_fps <= 0:
-            print("✗ Invalid video FPS. Skipping.")
-            cap.release()
-            continue
+        def get_key(d):
+            r = d.get('rois', {})
+            o = r.get('roi1_ocr', {})
+            if 'data' in o: o = o['data']
+            cn = r.get('roi5', {}).get('selected_tab', -1)
+            if cn != -1: cn += 1
+            return (o.get('R_Sph'), o.get('R_Cyl'), o.get('R_Axis'), o.get('R_Add'), o.get('L_Sph'), o.get('L_Cyl'), o.get('L_Axis'), o.get('L_Add'), r.get('roi2', {}).get('pd_value', ''), cn, r.get('roi3_4', {}).get('phoropter_state'), r.get('roi7', {}).get('chart_info', ''))
 
-        sampling_interval_frames = int(video_fps * config['sampling_interval_seconds'])
-        all_results = [ref_data]
-        append_to_csv(video_csv_path, ref_data)
-
-        # Store previous extracted values for change detection
-        def extract_csv_row(frame_data):
-            """Extracts the row dict as written to CSV for value comparison."""
-            rois = frame_data.get('rois', {})
-            # 1. Table Data (ROI-1 OCR)
-            table = rois.get('roi1_ocr', {})
-            if not table:
-                table = rois.get('roi1', {}).get('data', {}) # Fallback
-            
-            # 2. PD (ROI-2)
-            pd_val = rois.get('roi2', {}).get('pd_value', '')
-            
-            # 3. Chart Number (ROI-5)
-            chart_num = rois.get('roi5', {}).get('selected_tab', -1)
-            if chart_num != -1:
-                chart_num += 1  # 1-based index (so 0→1, 1→2, ... 4→5)
-            
-            # 4. Occluder State (ROI-3/4)
-            occ_state = rois.get('roi3_4', {}).get('phoropter_state', 'Unknown')
-            
-            # 5. Chart Info (ROI-7)
-            chart_display = rois.get('roi7', {}).get('chart_info', '')
-
-            def normalize_val(v):
-                if isinstance(v, str):
-                    v_clean = v.strip().replace('+', '').replace('-', '')
-                    if v_clean == '0.00':
-                        return '0.00'
-                return v
-
-            row = {
-                'R_SPH': normalize_val(table.get('R_Sph', '')),
-                'R_CYL': normalize_val(table.get('R_Cyl', '')),
-                'R_AXIS': table.get('R_Axis', ''),
-                'R_ADD': normalize_val(table.get('R_Add', '')),
-                'L_SPH': normalize_val(table.get('L_Sph', '')),
-                'L_CYL': normalize_val(table.get('L_Cyl', '')),
-                'L_AXIS': table.get('L_Axis', ''),
-                'L_ADD': normalize_val(table.get('L_Add', '')),
-                'PD': normalize_val(pd_val),
-                'Chart_Number': chart_num,
-                'Occluder_State': occ_state,
-                'Chart_Display': chart_display
-            }
-            return row
-
-        prev_row = extract_csv_row(ref_data)
-        prev_frame = first_frame
-        prev_roi0 = roi0_img
-
-        # Start processing from first_frame_idx
-        frame_count = first_frame_idx
-        cap.set(cv2.CAP_PROP_POS_FRAMES, frame_count)
-
-        extraction_count = 1
-        
-        # Difference thresholds (now from config)
-        FRAME_DIFF_THRESHOLD = float(config.get('frame_diff_threshold', 0.0002))
-        ROI0_DIFF_THRESHOLD = float(config.get('roi0_diff_threshold', 0.0005))
+        results = [ref]
+        prev_k = get_key(ref)
+        prev_f, prev_r0 = first_frame, roi0_res['roi0']
+        f_cnt = first_idx
+        ui_temp = cv2.imread(config['reference_image'])
 
         while True:
             ret, frame = cap.read()
-            if not ret:
-                break
-
-            frame_count += 1
-            time_seconds = frame_count / video_fps
-
-            # Periodic sampling
-            if frame_count % sampling_interval_frames != 0:
-                continue
-
-            print(f"\n[{time_seconds:.2f}s] Sampling Frame {frame_count}")
-
-            try:
-                # 1. Frame-to-Frame Change Detection
-                frame_diff = calculate_image_difference(frame, prev_frame)
-                print(f"  > Frame Diff: {frame_diff*100:.6f}% (Thresh: {FRAME_DIFF_THRESHOLD*100:.4f}%)", end="")
-                
-                if frame_diff < FRAME_DIFF_THRESHOLD:
-                    print(" -> SKIP")
-                    continue
-                print(" -> PASS")
-                
-                prev_frame = frame.copy()
-
-                # 2. Check UI presence (to ensure we are still in the valid screen)
-                is_present, match_score = verify_ui_present(frame, cv2.imread(config['reference_image']), config['match_threshold'])
-                print(f"  > UI Presence: {'MATCH' if is_present else 'NO MATCH'} (Score: {match_score:.4f}, Thresh: {config['match_threshold']:.2f})")
-                if not is_present:
-                    continue
-
-                # 3. ROI0-to-ROI0 Change Detection
-                roi0_res = extract_roi0.extract_roi0(frame)
-                roi0_curr = roi0_res['roi0']
-                
-                roi0_diff = calculate_image_difference(roi0_curr, prev_roi0)
-                print(f"  > ROI0 Diff: {roi0_diff*100:.6f}% (Thresh: {ROI0_DIFF_THRESHOLD*100:.4f}%)", end="")
-                
-                if roi0_diff < ROI0_DIFF_THRESHOLD:
-                    print(" -> SKIP")
-                    continue
-                print(" -> PASS")
-                
-                prev_roi0 = roi0_curr.copy()
-
-                # 4. Extract all values
-                import datetime
-                timestamp_str = str(datetime.timedelta(seconds=int(time_seconds)))
-                current_roi_data = extract_all_rois(
-                    roi0_curr,
-                    gpu_available=gpu_info['available'],
-                    save_debug=config.get('save_debug_images', True),
-                    output_dir=config['output_dir'],
-                    filename=ref_roi0_filename,
-                    timestamp_str=timestamp_str,
-                    video_basename=video_basename
-                )
-                
-                current_roi_data['frame_id'] = frame_count
-                current_roi_data['time_seconds'] = time_seconds
-
-                # 5. Value-to-Value Change Detection
-                curr_row = extract_csv_row(current_roi_data)
-                
-                # Verbose Value Printing
-                print(f"  > Values: {curr_row['R_SPH']} | {curr_row['R_CYL']} | {curr_row['R_AXIS']} | {curr_row['L_SPH']} | {curr_row['L_CYL']} | {curr_row['L_AXIS']} | {curr_row['Occluder_State']} | {curr_row['Chart_Display']}")
-
-                # Only log if any value has changed
-                if curr_row != prev_row:
-                    print(f"  *** CAPTURED (Extraction #{extraction_count + 1}) ***")
-                    all_results.append(current_roi_data)
-                    append_to_csv(video_csv_path, current_roi_data)
-                    prev_row = curr_row
-                    extraction_count += 1
-                else:
-                    print("  > SKIP: Values identical to previous.")
-
-            except Exception as e:
-                print(f"\rError at frame {frame_count}: {e}")
-                continue
-
+            if not ret: break
+            f_cnt += 1
+            if f_cnt % interval != 0: continue
+            if calculate_image_difference(frame, prev_f) < config['frame_diff_threshold']: continue
+            if not verify_ui_present(frame, ui_temp, config['match_threshold'])[0]: continue
+            
+            r0_c = extract_roi0.extract_roi0(frame)['roi0']
+            if calculate_image_difference(r0_c, prev_r0) < config['roi0_diff_threshold']: continue
+            
+            ts = f_cnt / fps
+            data = extract_all_rois(r0_c, gpu_available=gpu_info['available'], save_debug=config['save_debug_images'], output_dir=config['output_dir'], filename=r0_path, timestamp_str=str(datetime.timedelta(seconds=int(ts))), video_basename=v_base)
+            data.update({'frame_id': f_cnt, 'time_seconds': ts})
+            
+            curr_k = get_key(data)
+            if curr_k != prev_k:
+                append_to_csv(csv_p, data)
+                results.append(data)
+                prev_k = curr_k
+            prev_f, prev_r0 = frame.copy(), r0_c.copy()
+            
         cap.release()
+        with open(json_p, 'w') as f: json.dump(results, f, indent=2)
+        print(f"[{v_name}] ✓ Success.")
+        return True
+    except Exception:
+        print(f"[{v_name}] ✗ Error:\n{traceback.format_exc()}")
+        return False
 
-        # Save final JSON
-        with open(video_json_path, 'w') as f:
-            json.dump(all_results, f, indent=2)
-        
-        print(f"\n✓ Video {video_filename} complete. Extractions: {extraction_count}")
-
-    print(f"\n\n{'='*60}")
-    print("All Pipeline Tasks Complete!")
-    print(f"{'='*60}\n")
-
+def main():
+    print("="*60 + "\nParallel ROI Extraction Pipeline\n" + "="*60)
+    # 1. GPU Detection
+    gpu = detect_gpu()
+    print(f"GPU: {gpu['device']} ({gpu['backend']})")
+    conf = load_config()
+    for d in [conf['output_dir'], "ROI_0", "ROI_Menu", "ROI_1", "ROI_3", "ROI_5"]: os.makedirs(d, exist_ok=True)
+    
+    # Support single video processing via command line
+    if len(sys.argv) > 1:
+        v_path = sys.argv[1]
+        if os.path.isfile(v_path):
+            print(f"Processing SINGLE video: {v_path}")
+            process_single_video(v_path, conf, gpu)
+            return
+    
+    vids = [f for f in glob.glob(os.path.join(conf['video_source_dir'], "*")) if os.path.isfile(f) and not f.lower().endswith('.ds_store')]
+    if not vids: return print("No videos found.")
+    
+    num_w = multiprocessing.cpu_count()
+    print(f"Processing {len(vids)} videos on {num_w} cores...")
+    start = datetime.datetime.now()
+    with ProcessPoolExecutor(max_workers=num_w) as ex:
+        list(ex.map(process_single_video, vids, [conf]*len(vids), [gpu]*len(vids)))
+    print(f"\nDone in {datetime.datetime.now() - start}\n" + "="*60)
 
 if __name__ == "__main__":
+    multiprocessing.freeze_support()
     main()

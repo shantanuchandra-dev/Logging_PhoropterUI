@@ -106,7 +106,7 @@ def find_first_ui_frame(video_path, config):
                 roi0_area = roi0.shape[0] * roi0.shape[1]
                 frame_area = frame.shape[0] * frame.shape[1]
                 area_ratio = roi0_area / frame_area
-                print(f"ROI0 area ratio: {area_ratio:.3f}")
+                # print(f"ROI0 area ratio: {area_ratio:.3f}")
                 
                 # Broaden the range slightly if needed, or keep upstream's strict 0.40-0.55
                 if 0.40 <= area_ratio <= 0.55:
@@ -119,7 +119,7 @@ def find_first_ui_frame(video_path, config):
                     cap.release()
                     return frame, frame_sec, frame_id_to_grab
                 else:
-                    print(f"ROI0 area ratio {area_ratio:.3f} out of range [0.40, 0.55], discarding frame.")
+                    # print(f"ROI0 area ratio {area_ratio:.3f} out of range [0.40, 0.55], discarding frame.")
             except Exception as e:
                 print(f"ROI0 extraction failed: {e}")
 

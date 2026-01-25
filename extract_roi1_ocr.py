@@ -249,7 +249,7 @@ def extract_roi1_ocr(img, bboxes):
 
     # PRINT SUMMARY
     main_keys = ['R_Sph', 'L_Sph', 'R_Cyl', 'L_Cyl', 'R_Axis', 'L_Axis', 'R_Add', 'L_Add']
-    print(' | '.join(str(results.get(k) or '') for k in main_keys))
+    # print(' | '.join(str(results.get(k) or '') for k in main_keys))
 
     # Error handling for too many blanks
     blank_count = sum(1 for k in main_keys if not results.get(k))
