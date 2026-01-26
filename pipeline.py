@@ -230,7 +230,7 @@ def process_single_video(video_path, config, gpu_info):
             if calculate_image_difference(frame, prev_f) < config['frame_diff_threshold']: continue
             if not verify_ui_present(frame, ui_temp, config['match_threshold'])[0]: continue
             
-            r0_c = extract_roi0.extract_roi0(frame)['roi0']
+            r0_c = extract_roi0.extract_roi0(frame, filename=v_name)['roi0']
             if calculate_image_difference(r0_c, prev_r0) < config['roi0_diff_threshold']: continue
             
             ts = f_cnt / fps

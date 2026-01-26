@@ -31,16 +31,22 @@ logger = logging.getLogger(__name__)
 class VideoDownloader:
     """Downloads videos from CSV data with error handling and progress tracking."""
     
-    def __init__(self, csv_path: str, output_folder: str):
+    def __init__(self, csv_path: str, output_folder: str, search_folders: Optional[list] = None):
         """
         Initialize the video downloader.
         
         Args:
             csv_path: Path to the CSV file
             output_folder: Folder where videos will be saved
+            search_folders: Optional list of folders to check for existing files
         """
         self.csv_path = csv_path
         self.output_folder = Path(output_folder)
+        self.search_folders = [Path(f) for f in search_folders] if search_folders else []
+        # Always include output folder in search folders
+        if self.output_folder not in self.search_folders:
+            self.search_folders.append(self.output_folder)
+            
         self.seen_engagement_ids: Set[str] = set()
         self.download_stats = {
             'success': 0,
@@ -165,13 +171,20 @@ class VideoDownloader:
         
         # Get file extension
         ext = self.get_extension_from_url(video_url)
-        output_path = self.output_folder / f"{engagement_id}{ext}"
+        filename = f"{engagement_id}{ext}"
         
-        # Check if file already exists
-        if output_path.exists():
-            logger.info(f"Video already exists, skipping: {output_path.name}")
-            self.download_stats['skipped_existing'] += 1
-            return False
+        # Check if file already exists in any of the search folders
+        for folder in self.search_folders:
+            check_path = folder / filename
+            if check_path.exists():
+                logger.info(f"Video already exists in {folder}, skipping: {filename}")
+                self.download_stats['skipped_existing'] += 1
+                return False
+        
+        output_path = self.output_folder / filename
+        
+        # Ensure output folder exists (in case it was deleted during run)
+        self.output_folder.mkdir(parents=True, exist_ok=True)
         
         # Download the video
         if self.download_video(video_url, output_path, retries=1):
@@ -280,7 +293,9 @@ def main():
         sys.exit(1)
     
     # Create downloader and run
-    downloader = VideoDownloader(args.csv, args.output)
+    # Check multiple folders for existing files to avoid duplicates
+    search_folders = ['Sample/videos', 'Sample/videos-2']
+    downloader = VideoDownloader(args.csv, args.output, search_folders=search_folders)
     
     try:
         downloader.download_range(args.sno_from, args.sno_till)
