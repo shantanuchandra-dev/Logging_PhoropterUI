@@ -88,8 +88,8 @@ def get_stage1_model():
             transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
         ])
         
-        print(f"Stage 1 model loaded from {STAGE1_MODEL_PATH}")
-        print(f"Stage 1 classes: {_stage1_class_map}")
+        # print(f"Stage 1 model loaded from {STAGE1_MODEL_PATH}")
+        # print(f"Stage 1 classes: {_stage1_class_map}")
     
     return _stage1_model, _device, _stage1_class_map, _transform
 
@@ -118,22 +118,25 @@ def stage1_classify(roi_img):
 
 def classify_occluder_two_stage(roi_img, cyl_axis=None):
     """
-    Two-stage classification pipeline with color-first priority.
+    Two-stage classification pipeline:
+    1. ML-based pattern type detection (Stage 1) - Best for Pinhole/JCC structure
+    2. Color and rule-based fallback (Stage 2)
     """
-    # 1. Check basic color (Grey vs Blue)
-    basic_state = classify_filled(roi_img)
+    # 1. RUN STAGE 1 ML FIRST for structural patterns (Pinhole, JCC)
+    pattern_type = stage1_classify(roi_img)
     
-    # 2. If it's Blue, it could be a JCC pattern
-    if basic_state == 'blue_filled':
-        # Stage 1: ML-based pattern type detection (structural)
-        pattern_type = stage1_classify(roi_img)
+    if pattern_type == 'pinhole':
+        return 'pinhole'
         
-        if pattern_type == 'jcc_pattern':
-            # Stage 2: Detailed rule-based classification
-            # Pass cylinder axis to make it rotation-aware
-            jcc_result = stage2_classifier.classify_jcc_pattern(roi_img, cyl_axis=cyl_axis)
+    if pattern_type == 'jcc_pattern':
+        # Stage 2: Detailed rule-based classification for JCC
+        jcc_result = stage2_classifier.classify_jcc_pattern(roi_img, cyl_axis=cyl_axis)
+        # Verify it's still "JCC-like" (usually blue)
+        if 'refine' in jcc_result:
             return jcc_result
-            
+
+    # 2. FALLBACK to basic color classification
+    basic_state = classify_filled(roi_img)
     return basic_state
 
 def extract_occluders(roi0_img, save_debug=False, debug_prefix='debug'):
@@ -256,7 +259,7 @@ def extract_occluders(roi0_img, save_debug=False, debug_prefix='debug'):
             debug_images[f'circles_attempt_{idx+1}'] = path
         
         if circles is not None and len(circles[0]) >= 2:
-            print(f"✓ Found {len(circles[0])} circles (unfiltered) with params: p1={p1}, p2={p2}")
+            # print(f"✓ Found {len(circles[0])} circles (unfiltered) with params: p1={p1}, p2={p2}")
             break
     
     if circles is None:
@@ -298,7 +301,7 @@ def extract_occluders(roi0_img, save_debug=False, debug_prefix='debug'):
         if edge_density >= 0.30:
             validated_circles.append((cx, cy, r, edge_density))
     
-    print(f"✓ After edge validation: {len(validated_circles)} circles (from {detected_circles.shape[0] if hasattr(detected_circles, 'shape') else len(detected_circles)}) for {debug_prefix}")
+    # print(f"✓ After edge validation: {len(validated_circles)} circles (from {detected_circles.shape[0] if hasattr(detected_circles, 'shape') else len(detected_circles)}) for {debug_prefix}")
     
     if save_debug:
         # Visualize validated circles
@@ -337,13 +340,13 @@ def extract_occluders(roi0_img, save_debug=False, debug_prefix='debug'):
     for cx, cy, r, density in validated_circles:
         if 20 <= r <= 55: # Clinical range for occluder circles
              clinical_circles.append((cx, cy, r))
-        else:
-             print(f"  > Ignoring circle with r={r} (outside clinical range 20-55)")
+        # else:
+        #      print(f"  > Ignoring circle with r={r} (outside clinical range 20-55)")
              
     if len(clinical_circles) < 2:
-        print(f"{_get_warn_prefix()}Warning: Found {len(clinical_circles)} clinical circles after radius filtering, need at least 2")
+        # print(f"{_get_warn_prefix()}Warning: Found {len(clinical_circles)} clinical circles after radius filtering, need at least 2")
         return None, None, None, None, debug_images
-
+    
     # Convert back to simple format
     detected_circles = np.array(clinical_circles, dtype=np.uint16)
     
@@ -407,9 +410,9 @@ def extract_occluders(roi0_img, save_debug=False, debug_prefix='debug'):
         valid_pairs.sort(key=lambda x: x['symmetry_score'])
         top_selection = valid_pairs[0]
         best_pair = top_selection['pair']
-        print(f"✓ Selected pair: v_dist_ratio={top_selection['v_dist_ratio']:.2f}, "
-              f"radius_ratio={top_selection['radius_ratio']:.2f}, "
-              f"symmetry_score={top_selection['symmetry_score']:.2f}")
+        # print(f"✓ Selected pair: v_dist_ratio={top_selection['v_dist_ratio']:.2f}, "
+        #       f"radius_ratio={top_selection['radius_ratio']:.2f}, "
+        #       f"symmetry_score={top_selection['symmetry_score']:.2f}")
     
     if best_pair is None:
         print(f"{_get_warn_prefix()}Warning: Could not find equidistant circles with similar sizes")
@@ -482,19 +485,25 @@ def map_to_phoropter_state(os_class, od_class):
     os_class: Left Eye (OS) - Right side of UI
     od_class: Right Eye (OD) - Left side of UI
     """
-    # 1. JCC States - RIGHT EYE (OD)
+    # 1. Pinhole check (Priority)
+    if od_class == 'pinhole':
+        return 'Right_Pinhole'
+    if os_class == 'pinhole':
+        return 'Left_Pinhole'
+
+    # 2. JCC States - RIGHT EYE (OD)
     if 'refine' in od_class:
         pattern = 'Axis' if 'axis' in od_class else 'Power'
         suffix = 'Flip1' if 'green' in od_class else 'Flip2'
         return f'Right_{pattern}_{suffix}'
 
-    # 2. JCC States - LEFT EYE (OS)
+    # 3. JCC States - LEFT EYE (OS)
     if 'refine' in os_class:
         pattern = 'Axis' if 'axis' in os_class else 'Power'
         suffix = 'Flip1' if 'green' in os_class else 'Flip2'
         return f'Left_{pattern}_{suffix}'
     
-    # 3. Standard Occlusion States
+    # 4. Standard Occlusion States
     if os_class == 'blue_filled' and od_class == 'blue_filled':
         return 'BINO'
     
@@ -549,36 +558,34 @@ def extract(roi0_img, save_debug=False, output_dir='ROI_3', filename=None, times
     prefix_parts.append(now)
     debug_prefix = "_".join(prefix_parts)
 
-    # Initialize variables
+    # Initialize variables to avoid UnboundLocalError
     left_roi = None
     right_roi = None
     left_bbox = None
     right_bbox = None
     debug_images = {}
 
-    # USE STORED BBOXES IF PROVIDED (Phase 3 persistence)
+    # 1. ATTEMPT WITH STORED BBOXES (Phase 3 persistence)
     if stored_bboxes and len(stored_bboxes) == 2:
         try:
-            # ROI3 = left side icon (Right Eye / OD)
-            # ROI4 = right side icon (Left Eye / OS)
             b1 = stored_bboxes[0]['box']
             b2 = stored_bboxes[1]['box']
-            
             lx, ly, lw, lh = b1
             rx, ry, rw, rh = b2
-
             h, w = roi0_img.shape[:2]
+            
             left_roi = roi0_img[max(0,ly):min(h,ly+lh), max(0,lx):min(w,lx+lw)]
             right_roi = roi0_img[max(0,ry):min(h,ry+rh), max(0,rx):min(w,rx+rw)]
             
-            left_bbox = b1
-            right_bbox = b2
+            if left_roi.size > 0 and right_roi.size > 0:
+                left_bbox, right_bbox = b1, b2
+                # Preliminary check - if both are 'grey_filled', they might be occluded or failed crops
+                # We'll classify them later, but let's keep going
         except Exception as e:
-            print(f"Error in manual ROI3/4 crop: {e}")
-            return {'roi_id': 'ROI_3_4', 'phoropter_state': 'Error', 'error': str(e)}
+            print(f"Error in cached ROI3/4 crop: {e}")
 
-    # OTHERWISE RUN DETECTION (Phase 2 or redetection)
-    else:
+    # 2. RUN DYNAMIC DETECTION (If cached failed, missing, or to verify)
+    if left_roi is None or right_roi is None:
         left_roi, right_roi, left_bbox, right_bbox, debug_images = extract_occluders(
             roi0_img, save_debug=save_debug, debug_prefix=debug_prefix
         )
@@ -591,40 +598,40 @@ def extract(roi0_img, save_debug=False, output_dir='ROI_3', filename=None, times
             'error': 'Failed to detect occluders'
         }
     
-    # Classify each occluder
-    # Use eye-specific axis for rotation-aware JCC
+    # 3. CLASSIFY (Eye-specific axis for rotation-aware JCC)
     od_class = classify_occluder_two_stage(left_roi, cyl_axis=right_axis)
     os_class = classify_occluder_two_stage(right_roi, cyl_axis=left_axis)
     
-    # Map to phoropter state
+    # 4. ROBUSTNESS CHECK: If both are grey/unknown, try dynamic detection once more 
+    # (only if we used stored_bboxes previously)
+    if stored_bboxes and od_class == 'grey_filled' and os_class == 'grey_filled':
+         d_l, d_r, d_lb, d_rb, d_imgs = extract_occluders(roi0_img, save_debug=save_debug, debug_prefix=debug_prefix + "_retry")
+         if d_l is not None and d_r is not None:
+             d_od = classify_occluder_two_stage(d_l, cyl_axis=right_axis)
+             d_os = classify_occluder_two_stage(d_r, cyl_axis=left_axis)
+             # If dynamic detection finds something more interesting than grey, use it
+             if d_od != 'grey_filled' or d_os != 'grey_filled':
+                 left_roi, right_roi, left_bbox, right_bbox, debug_images = d_l, d_r, d_lb, d_rb, {**debug_images, **d_imgs}
+                 od_class, os_class = d_od, d_os
+
     phoropter_state = map_to_phoropter_state(os_class, od_class)
     
     result = {
         'roi_id': 'ROI_3_4',
         'bboxes': [
-            {
-                'label': 'right_occluder',  # ROI3 - Left side icon (Right Eye / OD)
-                'box': left_bbox,
-                'state': od_class
-            },
-            {
-                'label': 'left_occluder',   # ROI4 - Right side icon (Left Eye / OS)
-                'box': right_bbox,
-                'state': os_class
-            }
+            {'label': 'right_occluder', 'box': left_bbox, 'state': od_class},
+            {'label': 'left_occluder', 'box': right_bbox, 'state': os_class}
         ],
         'phoropter_state': phoropter_state
     }
     
     # Save debug images if requested
     if save_debug:
-        # Save ROI-3 (left side icon - Right Eye)
         roi3_dir = 'ROI_3'
         os.makedirs(roi3_dir, exist_ok=True)
         roi3_path = os.path.join(roi3_dir, f'{debug_prefix}_4_roi3_{od_class}.png')
         cv2.imwrite(roi3_path, left_roi)
         
-        # Save ROI-4 (right side icon - Left Eye)
         roi4_dir = 'ROI_4'
         os.makedirs(roi4_dir, exist_ok=True)
         roi4_path = os.path.join(roi4_dir, f'{debug_prefix}_5_roi4_{os_class}.png')
@@ -633,11 +640,7 @@ def extract(roi0_img, save_debug=False, output_dir='ROI_3', filename=None, times
         # Combine all debug images
         all_debug_paths = list(debug_images.values()) + [roi3_path, roi4_path]
         result['image_paths'] = all_debug_paths
-        result['debug_stages'] = {
-            **debug_images,
-            'roi3_extracted': roi3_path,
-            'roi4_extracted': roi4_path
-        }
+        result['debug_stages'] = {**debug_images, 'roi3_extracted': roi3_path, 'roi4_extracted': roi4_path}
     
     return result
 

@@ -130,7 +130,7 @@ def extract_roi5_sc_v2(roi0_img, output_dir, prefix):
                 break
 
     if chart_word_idx == -1:
-        print(f"{_get_warn_prefix()}Error: Could not find 'Chart' on cropped image after multiple attempts.")
+        # print(f"{_get_warn_prefix()}Error: Could not find 'Chart' on cropped image after multiple attempts.")
         return [], None
 
     # Get OCR coordinates and scale back if needed

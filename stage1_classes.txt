@@ -1,2 +1,3 @@
 0:filled
 1:jcc_pattern
+2:pinhole

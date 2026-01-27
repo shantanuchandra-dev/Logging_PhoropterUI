@@ -101,7 +101,10 @@ def find_first_ui_frame(video_path, config):
 
         if max_val >= match_threshold:
             try:
-                roi0_result = extract_roi0(frame)
+                # Pass filename context for better error logging
+                video_base = os.path.basename(video_path)
+                context_name = f"{video_base} | {frame_sec:.2f}s"
+                roi0_result = extract_roi0(frame, filename=context_name)
                 roi0 = roi0_result['roi0']
                 roi0_area = roi0.shape[0] * roi0.shape[1]
                 frame_area = frame.shape[0] * frame.shape[1]

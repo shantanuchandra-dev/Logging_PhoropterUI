@@ -176,6 +176,17 @@ def append_to_csv(csv_path, frame_data):
         'Chart_Display': rois.get('roi7', {}).get('chart_info', '')
     }
     
+    # Filter out rows with >4 blank OCR fields
+    ocr_values = [
+        ocr.get('R_Sph', ''), ocr.get('R_Cyl', ''), ocr.get('R_Axis', ''), ocr.get('R_Add', ''),
+        ocr.get('L_Sph', ''), ocr.get('L_Cyl', ''), ocr.get('L_Axis', ''), ocr.get('L_Add', '')
+    ]
+    blank_count = sum(1 for v in ocr_values if not v or str(v).strip() == '')
+    
+    if blank_count > 4:
+        # print(f"Skipping row at {row['Timestamp']} due to low OCR quality ({blank_count}/8 blank)")
+        return
+
     headers = ['Timestamp', 'R_SPH', 'R_CYL', 'R_AXIS', 'R_ADD', 'L_SPH', 'L_CYL', 'L_AXIS', 'L_ADD', 'PD', 'Chart_Number', 'Occluder_State', 'Chart_Display']
     write_h = not os.path.exists(csv_path)
     with open(csv_path, 'a', newline='') as f:
@@ -230,10 +241,12 @@ def process_single_video(video_path, config, gpu_info):
             if calculate_image_difference(frame, prev_f) < config['frame_diff_threshold']: continue
             if not verify_ui_present(frame, ui_temp, config['match_threshold'])[0]: continue
             
-            r0_c = extract_roi0.extract_roi0(frame, filename=v_name)['roi0']
+            ts = f_cnt / fps
+            context_name = f"{v_name} | {ts:.2f}s"
+            r0_c = extract_roi0.extract_roi0(frame, filename=context_name)['roi0']
             if calculate_image_difference(r0_c, prev_r0) < config['roi0_diff_threshold']: continue
             
-            ts = f_cnt / fps
+
             data = extract_all_rois(r0_c, gpu_available=gpu_info['available'], save_debug=config['save_debug_images'], output_dir=config['output_dir'], filename=r0_path, timestamp_str=str(datetime.timedelta(seconds=int(ts))), video_basename=v_base)
             data.update({'frame_id': f_cnt, 'time_seconds': ts})
             

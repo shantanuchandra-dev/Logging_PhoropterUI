@@ -1,6 +1,6 @@
 """
 Stage 1 Model Training
-Trains a binary classifier: filled vs jcc_pattern
+Trains a 3-class classifier: filled, jcc_pattern, pinhole
 """
 
 import torch
@@ -70,8 +70,8 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
     
-    # Binary classification: 2 classes
-    model = OccluderNet(num_classes=2).to(device)
+    # Stage 1 classification: 3 classes (filled, jcc_pattern, pinhole)
+    model = OccluderNet(num_classes=3).to(device)
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=LR)
     

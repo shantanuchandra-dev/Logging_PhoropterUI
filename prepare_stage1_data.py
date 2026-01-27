@@ -35,13 +35,16 @@ def create_stage1_dataset():
     os.makedirs(STAGE1_DATASET)
     filled_dir = os.path.join(STAGE1_DATASET, 'filled')
     jcc_pattern_dir = os.path.join(STAGE1_DATASET, 'jcc_pattern')
+    pinhole_dir = os.path.join(STAGE1_DATASET, 'pinhole')
     os.makedirs(filled_dir)
     os.makedirs(jcc_pattern_dir)
+    os.makedirs(pinhole_dir)
     
     # Mapping of source classes to stage1 classes
     class_mapping = {
         'grey_filled': 'filled',
         'blue_filled': 'filled',
+        'pinhole': 'pinhole',
         'green_axis_refine': 'jcc_pattern',
         'red_axis_refine': 'jcc_pattern',
         'green_power_refine': 'jcc_pattern',
@@ -76,7 +79,7 @@ def create_stage1_dataset():
     
     # Print summary
     print("\nStage 1 Dataset Summary:")
-    for class_name in ['filled', 'jcc_pattern']:
+    for class_name in ['filled', 'jcc_pattern', 'pinhole']:
         class_dir = os.path.join(STAGE1_DATASET, class_name)
         count = len([f for f in os.listdir(class_dir) if f.lower().endswith(('.png', '.jpg', '.jpeg'))])
         print(f"  {class_name}: {count} images")
