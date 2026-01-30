@@ -1,0 +1,58 @@
+{
+  "input_analyzed_dir": "Analyzed_CSVs",
+  "output_valid_dir": "Valid_CSVs",
+  "input_valid_dir": "Valid_CSVs",
+  "output_curated_dir": "Curated_Conversations",
+  "move_files": true,
+  "required_chart_types": [
+    "snellen",
+    "jcc",
+    "duochrome",
+    "echart"
+  ],
+  "required_occluder_states": [
+    "BINO",
+    "Left_Occluded",
+    "Right_Occluded",
+    "Right_Power_Flip1",
+    "Right_Power_Flip2",
+    "Right_Axis_Flip1",
+    "Right_Axis_Flip2"
+  ],
+  "restart_state_row": {
+    "R_SPH": "0.0",
+    "R_CYL": "0.0",
+    "R_AXIS": "180.0",
+    "R_ADD": "0.0",
+    "L_SPH": "0.0",
+    "L_CYL": "0.0",
+    "L_AXIS": "180.0",
+    "L_ADD": "0.0",
+    "PD": "",
+    "Chart_Number": "-1",
+    "Occluder_State": "BINO"
+  },
+  "question_flip1": "Is this better?",
+  "question_flip2": "Or is this better?",
+  "question_jcc": "Focus on the dot chart. I will show you two options; tell me which is clearer.",
+  "question_duochrome": "Which is clearer: red or green, or are they the same?",
+  "question_near": "Please read the nearest line you can see comfortably.",
+  "question_snellen_left_occluded": "I'm covering your left eye. Please read the smallest line you can see clearly on the Snellen chart.",
+  "question_snellen_right_occluded": "I'm covering your right eye. Please read the smallest line you can see clearly on the Snellen chart.",
+  "question_snellen": "Please read the smallest line you can see clearly on the Snellen chart.",
+  "question_echart": "Please read the smallest line you can see clearly on the chart.",
+  "question_fallback": "Please describe what you see.",
+  "answer_duochrome": "Responds red/green preference.",
+  "answer_jcc": "Compares dot clarity.",
+  "answer_near": "Reads near chart.",
+  "answer_distance": "Reads the chart.",
+  "answer_fallback": "Responds to instruction.",
+  "confidence_window_rows": 3,
+  "confidence_confused_label": "Confused",
+  "confidence_confident_label": "Confident",
+  "output_fields": [
+    "Optometrist_Question",
+    "Patient_Answer_Intent",
+    "Patient_Confidence"
+  ]
+}

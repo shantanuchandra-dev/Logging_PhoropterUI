@@ -1,0 +1,98 @@
+Timestamp,R_SPH,R_CYL,R_AXIS,R_ADD,L_SPH,L_CYL,L_AXIS,L_ADD,PD,Chart_Number,Occluder_State,Chart_Display,OCR_Fields_Read,Anomalies_Fixed,Optometrist_Question,Patient_Answer_Intent,Patient_Confidence
+00:52,0.0,0.0,180.0,0.0,0.0,0.0,180.0,0.0,,-1,BINO,echart_600,8,11,Please read the smallest line you can see clearly on the chart.,Reads the chart.,Confident
+01:26,0.0,0.0,180.0,0.0,0.0,0.0,180.0,0.0,,-1,BINO,snellen_chart_12_9_7_5,8,11,Please read the smallest line you can see clearly on the Snellen chart.,Reads the chart.,Confident
+03:24,0.0,0.0,180.0,0.0,0.0,0.0,180.0,0.0,,-1,Left_Occluded,snellen_chart_12_9_7_5,8,11,I'm covering your left eye. Please read the smallest line you can see clearly on the Snellen chart.,Reads snellen_chart_12_9_7_5.,Confused
+03:26,0.0,0.0,180.0,0.0,0.0,0.0,180.0,0.0,,-1,Left_Occluded,snellen_chart_40_30_25_40,8,11,I'm covering your left eye. Please read the smallest line you can see clearly on the Snellen chart.,Reads snellen_chart_40_30_25_40.,Confused
+03:38,0.0,0.0,180.0,0.0,0.0,0.0,180.0,0.0,,-1,Left_Occluded,snellen_chart_40_30_25_25,8,11,I'm covering your left eye. Please read the smallest line you can see clearly on the Snellen chart.,Reads snellen_chart_40_30_25_25.,Confused
+03:46,0.0,0.0,180.0,0.0,0.0,0.0,180.0,0.0,,-1,Left_Occluded,snellen_chart_6_4_5,8,11,I'm covering your left eye. Please read the smallest line you can see clearly on the Snellen chart.,Reads snellen_chart_6_4_5.,Confused
+03:48,0.0,0.0,180.0,0.0,0.0,0.0,180.0,0.0,,-1,Left_Occluded,snellen_chart_20_15_20,8,11,I'm covering your left eye. Please read the smallest line you can see clearly on the Snellen chart.,Reads snellen_chart_20_15_20.,Confused
+03:52,0.0,0.0,180.0,0.0,0.0,0.0,180.0,0.0,,-1,Left_Occluded,snellen_chart_20_15_15,8,11,I'm covering your left eye. Please read the smallest line you can see clearly on the Snellen chart.,Reads snellen_chart_20_15_15.,Confused
+03:54,0.0,-1.0,180.0,0.0,0.0,0.0,180.0,0.0,,-1,Left_Occluded,snellen_chart_20_15_15,8,11,I'm covering your left eye. Please read the smallest line you can see clearly on the Snellen chart.,Reads snellen_chart_20_15_15.,Confused
+04:00,0.0,0.0,180.0,0.0,0.0,0.0,180.0,0.0,,-1,Left_Occluded,snellen_chart_20_15_15,8,11,I'm covering your left eye. Please read the smallest line you can see clearly on the Snellen chart.,Reads snellen_chart_20_15_15.,Confused
+04:02,0.5,0.0,180.0,0.0,0.0,0.0,180.0,0.0,,-1,Left_Occluded,snellen_chart_20_15_15,8,11,I'm covering your left eye. Please read the smallest line you can see clearly on the Snellen chart.,Reads snellen_chart_20_15_15.,Confused
+04:06,0.25,0.0,180.0,0.0,0.0,0.0,180.0,0.0,,-1,Left_Occluded,snellen_chart_20_15_15,8,11,I'm covering your left eye. Please read the smallest line you can see clearly on the Snellen chart.,Reads snellen_chart_20_15_15.,Confused
+04:08,,0.0,180.0,0.0,0.0,0.0,180.0,0.0,,-1,Left_Occluded,snellen_chart_20_15_15,7,11,I'm covering your left eye. Please read the smallest line you can see clearly on the Snellen chart.,Reads snellen_chart_20_15_15.,Confused
+04:10,-0.5,0.0,180.0,0.0,0.0,0.0,180.0,0.0,,-1,Left_Occluded,snellen_chart_20_15_15,8,11,I'm covering your left eye. Please read the smallest line you can see clearly on the Snellen chart.,Reads snellen_chart_20_15_15.,Confused
+04:12,,0.0,180.0,0.0,0.0,0.0,180.0,0.0,,-1,Left_Occluded,snellen_chart_20_15_15,7,11,I'm covering your left eye. Please read the smallest line you can see clearly on the Snellen chart.,Reads snellen_chart_20_15_15.,Confused
+04:14,0.0,0.0,180.0,0.0,0.0,0.0,180.0,0.0,,-1,Left_Occluded,snellen_chart_20_15_15,8,11,I'm covering your left eye. Please read the smallest line you can see clearly on the Snellen chart.,Reads snellen_chart_20_15_15.,Confident
+04:16,0.0,0.0,180.0,0.0,0.0,0.0,180.0,0.0,,-1,Right_Axis_Flip1,jcc_chart,8,11,Is this better?,,Confused
+04:18,0.0,-0.25,180.0,0.0,0.0,0.0,180.0,0.0,,-1,Right_Axis_Flip1,jcc_chart,8,11,Is this better?,,Confused
+04:20,0.0,-0.25,90.0,0.0,0.0,0.0,180.0,0.0,,-1,Right_Axis_Flip1,jcc_chart,8,11,Is this better?,,Confused
+04:22,0.0,-0.25,105.0,0.0,0.0,0.0,180.0,0.0,,-1,Right_Axis_Flip1,jcc_chart,8,11,Is this better?,,Confused
+04:26,0.0,-0.5,105.0,0.0,0.0,0.0,180.0,0.0,,-1,Right_Axis_Flip1,jcc_chart,8,11,Is this better?,,Confused
+04:28,0.0,-0.5,105.0,0.0,0.0,0.0,180.0,0.0,,-1,Right_Power_Flip1,jcc_chart,8,11,Is this better?,,Confident
+04:34,0.0,-0.5,105.0,0.0,0.0,0.0,180.0,0.0,,-1,Right_Power_Flip2,jcc_chart,8,11,Or is this better?,No cylinder change.,Confident
+04:38,0.0,-0.5,105.0,0.0,0.0,0.0,180.0,0.0,,-1,Right_Axis_Flip1,jcc_chart,8,11,Is this better?,,Confident
+04:44,0.0,-0.5,105.0,0.0,0.0,0.0,180.0,0.0,,-1,Right_Axis_Flip2,jcc_chart,8,11,Or is this better?,Increase axis.,Confused
+04:48,0.0,-0.5,120.0,0.0,0.0,0.0,180.0,0.0,,-1,Right_Axis_Flip2,jcc_chart,8,11,Or is this better?,Decrease axis.,Confused
+04:50,0.0,-0.5,115.0,0.0,0.0,0.0,180.0,0.0,,-1,Right_Axis_Flip2,jcc_chart,8,11,Or is this better?,No axis change.,Confused
+04:52,0.0,-0.5,115.0,0.0,0.0,0.0,180.0,0.0,,-1,Right_Axis_Flip1,jcc_chart,8,11,Is this better?,,Confident
+04:54,0.0,-0.5,115.0,0.0,0.0,0.0,180.0,0.0,,-1,Right_Axis_Flip2,jcc_chart,8,11,Or is this better?,No axis change.,Confident
+05:00,0.0,-0.5,115.0,0.0,0.0,0.0,180.0,0.0,,-1,Right_Power_Flip1,jcc_chart,8,11,Is this better?,,Confused
+05:02,0.0,-0.5,115.0,0.0,0.0,0.0,180.0,0.0,,-1,Right_Power_Flip2,jcc_chart,8,11,Or is this better?,Increase cylinder.,Confused
+05:06,0.0,-0.25,115.0,0.0,0.0,0.0,180.0,0.0,,-1,Right_Power_Flip1,jcc_chart,8,11,Is this better?,,Confident
+05:10,0.0,-0.25,115.0,0.0,0.0,0.0,180.0,0.0,,-1,Right_Power_Flip2,jcc_chart,8,11,Or is this better?,No cylinder change.,Confident
+05:14,0.0,-0.25,115.0,0.0,0.0,0.0,180.0,0.0,,-1,Right_Axis_Flip2,jcc_chart,8,11,Or is this better?,No axis change.,Confused
+05:16,0.0,-0.25,115.0,0.0,0.0,0.0,180.0,0.0,,-1,Right_Axis_Flip2,duochrome,8,11,Or is this better?,No axis change.,Confident
+05:18,0.0,0.0,115.0,0.0,0.0,0.0,180.0,0.0,,-1,Left_Occluded,duochrome,8,11,"Which is clearer: red or green, or are they the same?",Responds red/green preference.,Confused
+05:42,-0.25,0.0,115.0,0.0,0.0,0.0,180.0,0.0,,-1,Left_Occluded,duochrome,8,11,"Which is clearer: red or green, or are they the same?",Responds red/green preference.,Confused
+05:46,0.25,0.0,115.0,0.0,0.0,0.0,180.0,0.0,,-1,Left_Occluded,duochrome,8,11,"Which is clearer: red or green, or are they the same?",Responds red/green preference.,Confident
+05:48,0.25,0.0,115.0,0.0,0.0,0.0,180.0,0.0,,-1,Left_Occluded,snellen_chart_20_20_20,8,11,I'm covering your left eye. Please read the smallest line you can see clearly on the Snellen chart.,Reads snellen_chart_20_20_20.,Confused
+05:58,0.0,0.0,115.0,0.0,0.0,0.0,180.0,0.0,,-1,Left_Occluded,snellen_chart_20_20_20,8,11,I'm covering your left eye. Please read the smallest line you can see clearly on the Snellen chart.,Reads snellen_chart_20_20_20.,Confused
+06:06,0.0,,115.0,0.0,0.0,0.0,180.0,0.0,,-1,Left_Occluded,snellen_chart_20_20_20,7,11,I'm covering your left eye. Please read the smallest line you can see clearly on the Snellen chart.,Reads snellen_chart_20_20_20.,Confused
+06:08,0.0,-0.25,115.0,0.0,0.0,0.0,180.0,0.0,,-1,Left_Occluded,snellen_chart_20_20_20,8,11,I'm covering your left eye. Please read the smallest line you can see clearly on the Snellen chart.,Reads snellen_chart_20_20_20.,Confused
+06:10,0.0,-0.25,115.0,0.0,0.0,0.0,180.0,0.0,,-1,Left_Occluded,snellen_chart_20_15_15,8,11,I'm covering your left eye. Please read the smallest line you can see clearly on the Snellen chart.,Reads snellen_chart_20_15_15.,Confused
+06:16,0.0,0.0,115.0,0.0,0.0,0.0,180.0,0.0,,-1,Left_Occluded,snellen_chart_20_15_15,8,11,I'm covering your left eye. Please read the smallest line you can see clearly on the Snellen chart.,Reads snellen_chart_20_15_15.,Confident
+06:24,0.0,0.0,115.0,0.0,0.0,0.0,180.0,0.0,,-1,BINO,snellen_chart_20_15_15,8,11,Please read the smallest line you can see clearly on the Snellen chart.,Reads the chart.,Confused
+06:26,0.0,0.0,115.0,0.0,0.0,0.0,180.0,0.0,,-1,BINO,snellen_chart_12_9_7_5,8,11,Please read the smallest line you can see clearly on the Snellen chart.,Reads the chart.,Confused
+06:28,0.0,0.0,115.0,0.0,0.0,0.0,180.0,0.0,,-1,BINO,snellen_chart_40_30_25_40,8,11,Please read the smallest line you can see clearly on the Snellen chart.,Reads the chart.,Confused
+06:32,0.0,0.0,115.0,0.0,0.0,0.0,180.0,0.0,,-1,BINO,snellen_chart_12_9_7_5,8,11,Please read the smallest line you can see clearly on the Snellen chart.,Reads the chart.,Confused
+06:34,0.0,0.0,115.0,0.0,0.0,0.0,180.0,0.0,,-1,BINO,snellen_chart_40_30_25_25,8,11,Please read the smallest line you can see clearly on the Snellen chart.,Reads the chart.,Confused
+06:36,0.0,0.0,115.0,0.0,0.0,0.0,180.0,0.0,,-1,BINO,snellen_chart_6_4_5,8,11,Please read the smallest line you can see clearly on the Snellen chart.,Reads the chart.,Confused
+06:38,0.0,0.0,115.0,0.0,0.0,0.0,180.0,0.0,,-1,BINO,snellen_chart_20_15_20,8,11,Please read the smallest line you can see clearly on the Snellen chart.,Reads the chart.,Confused
+06:40,0.0,0.0,115.0,0.0,0.0,0.0,180.0,0.0,,-1,BINO,snellen_chart_20_15_15,8,11,Please read the smallest line you can see clearly on the Snellen chart.,Reads the chart.,Confused
+06:46,0.0,0.0,115.0,0.0,0.75,0.0,180.0,0.0,,-1,BINO,snellen_chart_20_15_15,8,11,Please read the smallest line you can see clearly on the Snellen chart.,Reads the chart.,Confused
+06:48,0.0,0.0,5.0,0.0,0.5,0.0,180.0,0.0,,-1,BINO,snellen_chart_20_15_15,8,11,Please read the smallest line you can see clearly on the Snellen chart.,Reads the chart.,Confused
+06:50,0.0,0.0,25.0,0.0,0.0,0.0,180.0,0.0,,-1,BINO,snellen_chart_20_15_15,8,11,Please read the smallest line you can see clearly on the Snellen chart.,Reads the chart.,Confused
+06:52,0.0,0.0,15.0,0.0,0.0,0.0,180.0,0.0,,-1,BINO,snellen_chart_20_15_15,8,11,Please read the smallest line you can see clearly on the Snellen chart.,Reads the chart.,Confused
+06:54,0.0,0.0,15.0,0.0,-0.5,0.0,180.0,0.0,,-1,BINO,snellen_chart_20_15_15,8,11,Please read the smallest line you can see clearly on the Snellen chart.,Reads the chart.,Confident
+06:58,0.0,0.0,115.0,0.0,-0.5,0.0,180.0,0.0,,-1,Left_Axis_Flip1,jcc_chart,8,11,Is this better?,,Confused
+07:00,0.0,0.0,115.0,0.0,0.0,-0.25,180.0,0.0,,-1,Left_Axis_Flip1,jcc_chart,8,11,Is this better?,,Confused
+07:02,0.0,0.0,115.0,0.0,-0.25,-0.5,180.0,0.0,,-1,Left_Axis_Flip1,jcc_chart,8,11,Is this better?,,Confident
+07:04,0.0,0.0,115.0,0.0,-0.25,-0.5,180.0,0.0,,-1,Left_Power_Flip1,jcc_chart,8,11,Is this better?,,Confused
+07:06,0.0,0.0,115.0,0.0,-0.25,-0.5,180.0,0.0,,-1,Left_Power_Flip1,jcc_chart,8,11,Is this better?,,Confused
+07:08,0.0,0.0,115.0,0.0,-0.25,-0.5,180.0,0.0,,-1,Left_Power_Flip2,jcc_chart,8,11,Or is this better?,Increase cylinder.,Confused
+07:14,0.0,0.0,115.0,0.0,-0.25,-0.25,180.0,0.0,,-1,Left_Power_Flip2,jcc_chart,8,11,Or is this better?,No cylinder change.,Confused
+07:16,0.0,0.0,115.0,0.0,-0.25,-0.25,180.0,0.0,,-1,Left_Power_Flip1,jcc_chart,8,11,Is this better?,,Confident
+07:20,0.0,0.0,115.0,0.0,-0.25,-0.25,180.0,0.0,,-1,Left_Power_Flip2,jcc_chart,8,11,Or is this better?,No cylinder change.,Confident
+07:24,0.0,0.0,115.0,0.0,-0.25,-0.25,180.0,0.0,,-1,Left_Axis_Flip1,jcc_chart,8,11,Is this better?,,Confused
+07:26,0.0,0.0,115.0,0.0,-0.25,-0.25,180.0,0.0,,-1,Left_Axis_Flip2,jcc_chart,8,11,Or is this better?,Decrease axis.,Confused
+07:30,0.0,0.0,115.0,0.0,-0.25,-0.25,170.0,0.0,,-1,Left_Axis_Flip2,jcc_chart,8,11,Or is this better?,No axis change.,Confused
+07:32,0.0,0.0,115.0,0.0,-0.25,-0.25,170.0,0.0,,-1,Left_Axis_Flip1,jcc_chart,8,11,Is this better?,,Confident
+07:34,0.0,0.0,115.0,0.0,-0.25,-0.25,170.0,0.0,,-1,Left_Axis_Flip2,jcc_chart,8,11,Or is this better?,Increase axis.,Confused
+07:36,0.0,0.0,115.0,0.0,-0.25,-0.25,175.0,0.0,,-1,Left_Axis_Flip2,jcc_chart,8,11,Or is this better?,No axis change.,Confident
+07:38,0.0,0.0,115.0,0.0,,-0.25,175.0,0.0,,-1,Left_Power_Flip1,jcc_chart,7,11,Is this better?,,Confused
+07:40,0.0,0.0,115.0,0.0,0.0,-0.25,175.0,0.0,,-1,Left_Power_Flip1,jcc_chart,8,11,Is this better?,,Confident
+07:42,0.0,0.0,115.0,0.0,0.0,-0.25,175.0,0.0,,-1,Left_Power_Flip2,jcc_chart,8,11,Or is this better?,No cylinder change.,Confused
+07:46,0.0,0.0,115.0,0.0,0.0,-0.25,175.0,0.0,,-1,Left_Power_Flip2,duochrome,8,11,Or is this better?,Increase cylinder.,Confident
+07:48,0.0,0.0,15.0,0.0,0.0,0.0,175.0,0.0,,-1,BINO,duochrome,8,11,"Which is clearer: red or green, or are they the same?",Responds red/green preference.,Confused
+07:50,0.0,0.0,15.0,0.0,0.0,0.0,175.0,0.0,,-1,Right_Occluded,duochrome,8,11,"Which is clearer: red or green, or are they the same?",Responds red/green preference.,Confident
+07:52,0.0,0.0,15.0,0.0,0.0,-0.25,175.0,0.0,,-1,BINO,duochrome,8,11,"Which is clearer: red or green, or are they the same?",Responds red/green preference.,Confident
+08:00,0.0,0.0,15.0,0.0,0.0,-0.25,175.0,0.0,,-1,BINO,snellen_chart_20_20_20,8,11,Please read the smallest line you can see clearly on the Snellen chart.,Reads the chart.,Confused
+08:08,0.0,0.0,15.0,0.0,0.0,0.0,175.0,0.0,,-1,BINO,snellen_chart_20_20_20,8,11,Please read the smallest line you can see clearly on the Snellen chart.,Reads the chart.,Confused
+08:14,0.0,0.0,15.0,0.0,0.0,-0.25,175.0,0.0,,-1,BINO,snellen_chart_20_20_20,8,11,Please read the smallest line you can see clearly on the Snellen chart.,Reads the chart.,Confused
+08:18,0.0,0.0,15.0,0.0,0.0,-0.25,175.0,0.0,,-1,BINO,snellen_chart_20_15_15,8,11,Please read the smallest line you can see clearly on the Snellen chart.,Reads the chart.,Confused
+08:20,0.0,0.0,15.0,0.0,0.0,-0.25,175.0,0.0,,-1,BINO,snellen_chart_20_15_15,8,11,Please read the smallest line you can see clearly on the Snellen chart.,Reads the chart.,Confused
+08:24,0.0,0.0,15.0,0.0,0.0,-0.25,175.0,0.0,,-1,BINO,snellen_chart_20_15_15,8,11,Please read the smallest line you can see clearly on the Snellen chart.,Reads the chart.,Confused
+08:26,0.0,0.0,15.0,0.0,0.0,0.0,175.0,0.0,,-1,BINO,snellen_chart_20_15_15,8,11,Please read the smallest line you can see clearly on the Snellen chart.,Reads the chart.,Confused
+08:34,0.0,0.0,115.0,0.0,0.0,0.0,175.0,0.0,,-1,BINO,snellen_chart_20_15_15,8,11,Please read the smallest line you can see clearly on the Snellen chart.,Reads the chart.,Confused
+08:38,0.0,0.0,115.0,0.0,0.0,0.0,175.0,0.0,,-1,BINO,snellen_chart_20_15_20,8,11,Please read the smallest line you can see clearly on the Snellen chart.,Reads the chart.,Confident
+08:46,0.0,0.0,115.0,0.0,0.0,0.0,175.0,0.0,,-1,BINO,near_vision,8,11,Please read the nearest line you can see comfortably.,Reads near chart.,Confused
+08:54,0.0,0.0,115.0,0.0,0.0,0.0,175.0,0.0,,-1,Left_Occluded,near_vision,8,11,Please read the nearest line you can see comfortably.,Reads near chart.,Confident
+09:02,0.0,0.0,115.0,0.0,0.0,0.0,175.0,0.0,,-1,BINO,near_vision,8,11,Please read the nearest line you can see comfortably.,Reads near chart.,Confused
+09:04,0.0,0.0,115.0,0.0,0.0,0.0,175.0,0.0,,-1,BINO,near_vision,8,11,Please read the nearest line you can see comfortably.,Reads near chart.,Confused
+09:06,0.0,0.0,115.0,0.0,0.0,0.0,175.0,0.0,,-1,BINO,near_vision,8,11,Please read the nearest line you can see comfortably.,Reads near chart.,Confused
+09:08,0.0,0.0,115.0,0.0,0.0,0.0,175.0,0.0,,-1,BINO,near_vision,8,11,Please read the nearest line you can see comfortably.,Reads near chart.,Confused
+09:10,0.0,0.0,115.0,0.0,0.0,0.0,175.0,0.0,,-1,BINO,near_vision,8,11,Please read the nearest line you can see comfortably.,Reads near chart.,Confident
+09:24,0.0,0.0,115.0,0.0,0.0,0.0,175.0,0.0,,-1,BINO,snellen_chart_20_20_20,8,11,Please read the smallest line you can see clearly on the Snellen chart.,Reads the chart.,Confused
+09:52,0.0,0.0,115.0,0.0,0.0,0.0,175.0,0.0,,-1,BINO,snellen_chart_20_20_20,8,11,Please read the smallest line you can see clearly on the Snellen chart.,Reads the chart.,Confident
