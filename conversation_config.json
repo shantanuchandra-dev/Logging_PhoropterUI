@@ -20,14 +20,14 @@
     "Right_Axis_Flip2"
   ],
   "restart_state_row": {
-    "R_SPH": "0.0",
-    "R_CYL": "0.0",
-    "R_AXIS": "180.0",
-    "R_ADD": "0.0",
-    "L_SPH": "0.0",
-    "L_CYL": "0.0",
-    "L_AXIS": "180.0",
-    "L_ADD": "0.0",
+    "R_SPH": "0.00",
+    "R_CYL": "0.00",
+    "R_AXIS": "180",
+    "R_ADD": "0.00",
+    "L_SPH": "0.00",
+    "L_CYL": "0.00",
+    "L_AXIS": "180",
+    "L_ADD": "0.00",
     "PD": "",
     "Chart_Number": "-1",
     "Occluder_State": "BINO"
