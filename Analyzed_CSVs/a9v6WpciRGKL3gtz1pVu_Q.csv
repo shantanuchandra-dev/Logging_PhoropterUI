@@ -53,7 +53,6 @@ Timestamp,R_SPH,R_CYL,R_AXIS,R_ADD,L_SPH,L_CYL,L_AXIS,L_ADD,PD,Chart_Number,Occl
 10:06,-0.50,,0,,-0.50,,0,,,1,Right_Occluded,snellen_chart_20_15_15
 10:26,-0.50,,70,,-0.50,,0,,,1,BINO,snellen_chart_20_15_15
 10:28,-0.50,,180,,-0.50,,0,,,1,BINO,snellen_chart_20_20_20
-10:30,-0.50,,159,,-0.50,,0,,,1,BINO,snellen_chart_20_20_20
 10:34,-0.50,,15,,-0.50,,0,,,1,BINO,snellen_chart_20_20_20
 10:36,-0.50,,15,,-0.50,,0,,,1,BINO,near_vision
 10:38,-0.50,,0,,-0.50,,0,,,1,BINO,near_vision

@@ -1,8 +1,8 @@
 Timestamp,R_SPH,R_CYL,R_AXIS,R_ADD,L_SPH,L_CYL,L_AXIS,L_ADD,PD,Chart_Number,Occluder_State,Chart_Display
-00:25,-1.00,0.00,180,0.00,-0.50,-0.75,70,0.00,,-1,BINO,snellen_chart_20_20_20
+00:25,-1.00,0.00,180,0.00,-0.50,0.00,70,0.00,,-1,BINO,snellen_chart_20_20_20
 00:52,0.00,0.00,180,0.00,0.00,0.00,180,0.00,,-1,BINO,echart_600
-03:26,-1.00,-0.75,180,0.00,-1.00,-0.50,180,0.00,,-1,Right_Axis_Flip1,jcc_chart
-03:56,-1.00,-0.50,15,0.00,-1.00,-0.50,180,0.00,,-1,Right_Power_Flip2,jcc_chart
-04:28,-1.00,0.00,15,0.00,-1.00,-0.50,180,0.00,,-1,Right_Occluded,snellen_chart_20_15_20
-04:58,-1.00,-0.50,9,0.00,-1.25,-0.75,180,0.00,,-1,Left_Power_Flip1,jcc_chart
-06:28,-1.00,-0.75,180,0.00,-1.00,-9.50,180,0.00,,-1,Right_Occluded,near_vision
+03:26,-1.00,0.00,180,0.00,-1.00,0.00,180,0.00,,-1,Right_Axis_Flip1,jcc_chart
+03:56,-1.00,0.00,15,0.00,-1.00,0.00,180,0.00,,-1,Right_Power_Flip2,jcc_chart
+04:28,-1.00,0.00,15,0.00,-1.00,0.00,180,0.00,,-1,Right_Occluded,snellen_chart_20_15_20
+04:58,-1.00,0.00,15,0.00,-1.25,0.00,180,0.00,,-1,Left_Power_Flip1,jcc_chart
+06:28,-1.00,0.00,180,0.00,-1.00,0.00,180,0.00,,-1,Right_Occluded,near_vision

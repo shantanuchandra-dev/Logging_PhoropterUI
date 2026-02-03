@@ -1,11 +1,6 @@
 Timestamp,R_SPH,R_CYL,R_AXIS,R_ADD,L_SPH,L_CYL,L_AXIS,L_ADD,PD,Chart_Number,Occluder_State,Chart_Display
-00:20,0.00,-0.75,100,0.00,0.00,-0.75,6,0.00,,-1,BINO,snellen_chart_40_35
-00:30,0,-0.75,100,0.00,0,-0.75,6,0.00,,-1,BINO,snellen_chart_40_35
-00:32,0.00,-0.75,100,0.00,0.00,-0.75,6,0.00,,-1,BINO,snellen_chart_40_35
-00:50,0.00,-0.75,100,0.00,0.00,-0.75,69,0.00,,-1,BINO,snellen_chart_40_35
-00:54,0.00,-0.75,100,0.00,0.00,-0.75,69,0.00,,-1,Both_Occluded,snellen_chart_40_35
-00:58,0.00,-0.75,100,0.00,0.00,-0.75,6,0.00,,-1,Both_Occluded,snellen_chart_40_35
-01:20,0.00,-0.75,100,0.00,0.00,-0.75,60,0.00,,-1,Both_Occluded,snellen_chart_40_35
-02:22,0.00,-0.75,102,0.00,0.00,-0.75,60,0.00,,-1,Both_Occluded,snellen_chart_40_35
+00:20,0.00,0.00,100,0.00,0.00,0.00,6,0.00,,-1,BINO,snellen_chart_40_35
+00:54,0.00,0.00,100,0.00,0.00,0.00,6,0.00,,-1,Both_Occluded,snellen_chart_40_35
+01:20,0.00,0.00,100,0.00,0.00,0.00,60,0.00,,-1,Both_Occluded,snellen_chart_40_35
 02:24,0.00,0.00,180,0.00,0.00,0.00,180,-1.00,,-1,Both_Occluded,snellen_chart_40_35
 02:26,0.00,0.00,180,0.00,0.00,0.00,180,0.00,,-1,Both_Occluded,snellen_chart_40_35
