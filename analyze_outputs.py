@@ -138,19 +138,70 @@ def run_analysis():
                 except: continue
 
         try:
-            df = pd.read_csv(fpath)
-            if df.empty: continue
-            
-            # Step 1: Correction
-            df, corrections = process_dataframe(df)
-            
-            # Step 2: Quality metadata
+            # Read raw strings so we can preserve formatting (e.g. leading '+')
+            df_raw = pd.read_csv(fpath, dtype=str)
+            if df_raw.empty: continue
+
+            # Prepare a DataFrame for numeric processing: convert known numeric cols using clean_value
             cols = ['R_SPH', 'R_CYL', 'R_AXIS', 'R_ADD', 'L_SPH', 'L_CYL', 'L_AXIS', 'L_ADD']
-            df['OCR_Fields_Read'] = df[cols].notna().sum(axis=1)
-            df['Anomalies_Fixed'] = corrections 
-            
-            # Save cleaned CSV
-            df.to_csv(out_fpath, index=False)
+            for col in cols:
+                if col in df_raw.columns:
+                    df_raw[col] = df_raw[col].where(df_raw[col].notna(), '')
+
+            df_for_process = df_raw.copy()
+            for col in cols:
+                if col in df_for_process.columns:
+                    df_for_process[col] = [clean_value(v) for v in df_for_process[col]]
+
+            # Step 1: Correction on numeric values
+            df_processed, corrections = process_dataframe(df_for_process)
+
+            # Step 2: Quality metadata
+            df_processed['OCR_Fields_Read'] = df_processed[cols].notna().sum(axis=1)
+            df_processed['Anomalies_Fixed'] = corrections
+
+            # Restore string formatting for numeric columns, preserving leading '+' when original had it
+            def format_cell(orig_str, val):
+                if val is None or (isinstance(val, float) and pd.isna(val)):
+                    return ''
+                # If original string represented the same numeric value, keep original formatting (preserves '+')
+                try:
+                    orig_num = clean_value(orig_str) if isinstance(orig_str, str) else None
+                except:
+                    orig_num = None
+                if orig_str is not None and str(orig_str).strip() != '' and orig_num is not None and float(orig_num) == float(val):
+                    return orig_str
+
+                # Otherwise format the processed numeric value: prefer integer style for whole numbers
+                try:
+                    fv = float(val)
+                except:
+                    return ''
+                if abs(fv - round(fv)) < 1e-9:
+                    s = str(int(round(fv)))
+                else:
+                    s = ('{:.2f}'.format(fv)).rstrip('0').rstrip('.')
+                if isinstance(orig_str, str) and orig_str.strip().startswith('+') and fv > 0:
+                    s = '+' + s
+                return s
+
+            # Build final dataframe to save: start with df_raw for non-numeric columns
+            final_df = df_raw.copy()
+            for col in cols:
+                if col in final_df.columns:
+                    final_df[col] = [format_cell(orig, val) for orig, val in zip(df_raw[col].tolist(), df_processed[col].tolist())]
+
+            # Step 2.5: De-duplicate phoropter states to remove repeated readings
+            # Deduplicate on all right/left values + PD + Chart_Number + Occluder_State + Chart_Display
+            dedupe_cols = cols + ['PD', 'Chart_Number', 'Occluder_State', 'Chart_Display']
+            dedupe_cols = [c for c in dedupe_cols if c in final_df.columns]
+            if dedupe_cols:
+                    cmp = final_df[dedupe_cols].fillna('').astype(str)
+                    same_as_prev = cmp.eq(cmp.shift(1)).all(axis=1)
+                    final_df = final_df[~same_as_prev].reset_index(drop=True)
+
+            # Save cleaned (and deduped) CSV
+            final_df.to_csv(out_fpath, index=False)
             
             # Step 3: Workflow analysis
             workflow = analyze_workflow(df)

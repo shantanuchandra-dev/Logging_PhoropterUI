@@ -1,2 +1,2 @@
-Timestamp,R_SPH,R_CYL,R_AXIS,R_ADD,L_SPH,L_CYL,L_AXIS,L_ADD,PD,Chart_Number,Occluder_State,Chart_Display,OCR_Fields_Read,Anomalies_Fixed
-01:48,0.0,0.0,180.0,0.0,0.0,0.0,180.0,0.0,,-1,BINO,snellen_chart_20_20_20,8,0
+Timestamp,R_SPH,R_CYL,R_AXIS,R_ADD,L_SPH,L_CYL,L_AXIS,L_ADD,PD,Chart_Number,Occluder_State,Chart_Display
+01:48,0.00,0.00,180,0.00,0.00,0.00,180,0.00,,-1,BINO,snellen_chart_20_20_20
