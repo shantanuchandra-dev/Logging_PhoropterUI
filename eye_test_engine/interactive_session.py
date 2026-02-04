@@ -216,17 +216,19 @@ class InteractiveSession:
         self.session_history.append(self.current_row)
         
         # Determine next action based on phase and intent
-        # This is a simplified version - full logic would be in state machine
+        next_phase = self._determine_next_phase(intent)
         
-        if self.current_phase == "distance_vision":
-            if intent == "Able to read":
-                # Move to right eye refraction
-                self.current_phase = "right_eye_refraction"
-                self.set_chart("snellen_chart_20_20_20")
-                self.set_power(occluder="Left_Occluded")
-                self.current_row = self._init_row()
-                self.current_row.occluder_state = "Left_Occluded"
-                self.current_row.chart_display = "snellen_chart_20_20_20"
+        if next_phase == "complete":
+            return {
+                "phase": "complete",
+                "status": "complete",
+                "question": "Test complete!",
+                "intents": [],
+            }
+        
+        # Transition to next phase
+        self.current_phase = next_phase
+        self._setup_phase(next_phase)
         
         question = self.get_question()
         intents = self.get_intents()
@@ -237,7 +239,104 @@ class InteractiveSession:
             "intents": intents,
             "chart": self.current_row.chart_display,
             "occluder": self.current_row.occluder_state,
+            "power": {
+                "right": {
+                    "sph": self.current_row.r_sph,
+                    "cyl": self.current_row.r_cyl,
+                    "axis": self.current_row.r_axis,
+                },
+                "left": {
+                    "sph": self.current_row.l_sph,
+                    "cyl": self.current_row.l_cyl,
+                    "axis": self.current_row.l_axis,
+                }
+            }
         }
+    
+    def _determine_next_phase(self, intent: str) -> str:
+        """Determine next phase based on current phase and intent."""
+        phase_flow = {
+            "distance_vision": "right_eye_refraction",
+            "right_eye_refraction": "jcc_axis_right",
+            "jcc_axis_right": "jcc_power_right",
+            "jcc_power_right": "duochrome_right",
+            "duochrome_right": "left_eye_refraction",
+            "left_eye_refraction": "jcc_axis_left",
+            "jcc_axis_left": "jcc_power_left",
+            "jcc_power_left": "duochrome_left",
+            "duochrome_left": "binocular_balance",
+            "binocular_balance": "complete",
+        }
+        
+        return phase_flow.get(self.current_phase, "complete")
+    
+    def _setup_phase(self, phase: str):
+        """Setup phoropter for the given phase."""
+        # Create new row for this phase
+        prev_row = self.current_row
+        self.current_row = self._init_row()
+        
+        # Copy power from previous row
+        self.current_row.r_sph = prev_row.r_sph
+        self.current_row.r_cyl = prev_row.r_cyl
+        self.current_row.r_axis = prev_row.r_axis
+        self.current_row.l_sph = prev_row.l_sph
+        self.current_row.l_cyl = prev_row.l_cyl
+        self.current_row.l_axis = prev_row.l_axis
+        
+        if phase == "right_eye_refraction":
+            self.set_chart("snellen_chart_20_20_20")
+            self.set_power(occluder="Left_Occluded")
+            self.current_row.occluder_state = "Left_Occluded"
+            self.current_row.chart_display = "snellen_chart_20_20_20"
+            
+        elif phase == "jcc_axis_right":
+            self.set_chart("jcc_chart")
+            self.jcc_flip("R")  # Set to right eye mode
+            self.current_row.occluder_state = "Right_Axis_Flip1"
+            self.current_row.chart_display = "jcc_chart"
+            
+        elif phase == "jcc_power_right":
+            self.set_chart("jcc_chart")
+            self.jcc_flip("power_axis_switch")  # Switch to power mode
+            self.current_row.occluder_state = "Right_Power_Flip1"
+            self.current_row.chart_display = "jcc_chart"
+            
+        elif phase == "duochrome_right":
+            self.set_chart("duochrome")
+            self.set_power(occluder="Left_Occluded")
+            self.current_row.occluder_state = "Left_Occluded"
+            self.current_row.chart_display = "duochrome"
+            
+        elif phase == "left_eye_refraction":
+            self.set_chart("snellen_chart_20_20_20")
+            self.set_power(occluder="Right_Occluded")
+            self.current_row.occluder_state = "Right_Occluded"
+            self.current_row.chart_display = "snellen_chart_20_20_20"
+            
+        elif phase == "jcc_axis_left":
+            self.set_chart("jcc_chart")
+            self.jcc_flip("L")  # Set to left eye mode
+            self.current_row.occluder_state = "Left_Axis_Flip1"
+            self.current_row.chart_display = "jcc_chart"
+            
+        elif phase == "jcc_power_left":
+            self.set_chart("jcc_chart")
+            self.jcc_flip("power_axis_switch")  # Switch to power mode
+            self.current_row.occluder_state = "Left_Power_Flip1"
+            self.current_row.chart_display = "jcc_chart"
+            
+        elif phase == "duochrome_left":
+            self.set_chart("duochrome")
+            self.set_power(occluder="Right_Occluded")
+            self.current_row.occluder_state = "Right_Occluded"
+            self.current_row.chart_display = "duochrome"
+            
+        elif phase == "binocular_balance":
+            self.set_chart("snellen_chart_20_20_20")
+            self.set_power(occluder="BINO")
+            self.current_row.occluder_state = "BINO"
+            self.current_row.chart_display = "snellen_chart_20_20_20"
 
 
 def main():

@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eye Test Engine - Interactive Session</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .header h1 {
+            color: #667eea;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+        }
+
+        .test-panel {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .info-panel {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .phase-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            font-size: 0.9em;
+        }
+
+        .question-box {
+            background: #f8f9fa;
+            border-left: 5px solid #667eea;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+
+        .question-box h3 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 1.3em;
+        }
+
+        .question-text {
+            color: #555;
+            font-size: 1.2em;
+            line-height: 1.6;
+        }
+
+        .intents-container {
+            margin: 30px 0;
+        }
+
+        .intents-container h4 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.1em;
+        }
+
+        .intent-button {
+            display: block;
+            width: 100%;
+            padding: 15px 20px;
+            margin: 10px 0;
+            background: white;
+            border: 2px solid #667eea;
+            border-radius: 10px;
+            color: #667eea;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: left;
+        }
+
+        .intent-button:hover {
+            background: #667eea;
+            color: white;
+            transform: translateX(5px);
+        }
+
+        .intent-button:active {
+            transform: scale(0.98);
+        }
+
+        .control-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #d0d0d0;
+        }
+
+        .info-section {
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .info-section:last-child {
+            border-bottom: none;
+        }
+
+        .info-section h4 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 1em;
+        }
+
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            color: #555;
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .info-value {
+            color: #666;
+            font-family: 'Courier New', monospace;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-active {
+            background: #4caf50;
+            box-shadow: 0 0 10px #4caf50;
+        }
+
+        .status-inactive {
+            background: #f44336;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .history-log {
+            max-height: 300px;
+            overflow-y: auto;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 0.9em;
+        }
+
+        .history-item {
+            padding: 8px;
+            margin: 5px 0;
+            background: white;
+            border-radius: 5px;
+            border-left: 3px solid #667eea;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+
+        .alert-info {
+            background: #e3f2fd;
+            color: #1976d2;
+            border-left: 4px solid #1976d2;
+        }
+
+        .alert-success {
+            background: #e8f5e9;
+            color: #388e3c;
+            border-left: 4px solid #388e3c;
+        }
+
+        .alert-warning {
+            background: #fff3e0;
+            color: #f57c00;
+            border-left: 4px solid #f57c00;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>👁️ Eye Test Engine</h1>
+            <p>Interactive Phoropter-Controlled Eye Examination</p>
+        </div>
+
+        <div class="main-content">
+            <div class="test-panel">
+                <div id="welcomeScreen">
+                    <h2>Welcome to the Eye Test</h2>
+                    <p style="margin: 20px 0; color: #666; line-height: 1.6;">
+                        This interactive system will guide you through a complete eye examination.
+                        The phoropter will be automatically controlled based on your responses.
+                    </p>
+                    <div class="alert alert-info">
+                        <strong>Note:</strong> Make sure the phoropter API is accessible at:
+                        <code>https://rajasthan-royals.preprod.lenskart.com</code>
+                    </div>
+                    <button class="btn btn-primary" onclick="startTest()">Start Eye Test</button>
+                </div>
+
+                <div id="testScreen" style="display: none;">
+                    <span class="phase-badge" id="phaseBadge">Loading...</span>
+                    
+                    <div class="question-box">
+                        <h3>Question</h3>
+                        <p class="question-text" id="questionText">Loading question...</p>
+                    </div>
+
+                    <div class="intents-container">
+                        <h4>Please select your response:</h4>
+                        <div id="intentButtons"></div>
+                    </div>
+
+                    <div class="loading" id="loadingIndicator">
+                        <div class="spinner"></div>
+                        <p style="margin-top: 10px; color: #666;">Processing...</p>
+                    </div>
+
+                    <div class="control-buttons">
+                        <button class="btn btn-secondary" onclick="endTest()">End Test</button>
+                    </div>
+                </div>
+
+                <div id="completeScreen" style="display: none;">
+                    <h2>✅ Test Complete!</h2>
+                    <div class="alert alert-success">
+                        <strong>Success!</strong> Your eye test has been completed successfully.
+                    </div>
+                    <div id="finalPrescription"></div>
+                    <button class="btn btn-primary" onclick="location.reload()">Start New Test</button>
+                </div>
+            </div>
+
+            <div class="info-panel">
+                <div class="info-section">
+                    <h4>Session Status</h4>
+                    <div class="info-item">
+                        <span class="info-label">
+                            <span class="status-indicator" id="statusIndicator"></span>
+                            Status
+                        </span>
+                        <span class="info-value" id="sessionStatus">Not Started</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Session ID</span>
+                        <span class="info-value" id="sessionId">-</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Current Phase</span>
+                        <span class="info-value" id="currentPhase">-</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Responses</span>
+                        <span class="info-value" id="responseCount">0</span>
+                    </div>
+                </div>
+
+                <div class="info-section">
+                    <h4>Current Power</h4>
+                    <div class="info-item">
+                        <span class="info-label">Right Eye</span>
+                        <span class="info-value" id="rightPower">0.00 / 0.00 / 180°</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Left Eye</span>
+                        <span class="info-value" id="leftPower">0.00 / 0.00 / 180°</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Occluder</span>
+                        <span class="info-value" id="occluderState">BINO</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Chart</span>
+                        <span class="info-value" id="chartDisplay">-</span>
+                    </div>
+                </div>
+
+                <div class="info-section">
+                    <h4>Test History</h4>
+                    <div class="history-log" id="historyLog">
+                        <p style="color: #999;">No history yet</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
