@@ -81,13 +81,10 @@ def get_question(row: dict, config: dict) -> str:
     if chart == "jcc_chart" and (occ == "Left_Occluded" or occ == "Right_Occluded"):
         return "INTERMITTENT ERROR"
 
-    if "Flip1" in occ:
+    if "Flip1" in occ or (chart == "jcc_chart" and "Flip" not in occ):
         return config["question_flip1"]
     if "Flip2" in occ:
         return config["question_flip2"]
-
-    if chart == "jcc_chart":
-        return config["question_jcc"]
 
     if chart == "duochrome":
         return config["question_duochrome"]
@@ -300,8 +297,9 @@ def get_answer(row: dict, prev: dict, prevprev: dict, nxt: dict, config: dict) -
     if chart == "duochrome":
         return config["answer_duochrome"]
 
-    if chart == "jcc_chart":
-        return config["answer_jcc"]
+    if chart == "jcc_chart" and "Flip" not in occ:
+        # JCC chart without explicit flip state: treat as Flip1 (no answer)
+        return ""
 
     if chart == "near_vision" or is_number_chart(chart):
         return config["answer_near"]

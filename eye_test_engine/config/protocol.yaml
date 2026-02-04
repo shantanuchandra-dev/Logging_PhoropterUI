@@ -1,0 +1,325 @@
+# Eye Test Protocol Configuration
+# Maps CSV patterns to clinical phases and defines transition rules
+
+phases:
+  distance_vision:
+    id: "A"
+    name: "Distance Vision (Step 2.1)"
+    trigger:
+      occluder: "BINO"
+      charts: ["snellen_chart_*", "echart_*"]
+      condition: "before_first_duochrome"
+    questions:
+      - "Please read the line you can see clearly."
+      - "Are you able to see big E clearly."
+    intents:
+      - "Able to read"
+      - "Blurry"
+      - "Unable to read"
+    exit_conditions:
+      - type: "baseline_established"
+        next_phase: "right_eye_refraction"
+      - type: "unable_read_20_20"
+        next_phase: "pinhole_check_a4"
+
+  pinhole_check_a4:
+    id: "A4"
+    name: "Pinhole Check (Distance Vision)"
+    trigger:
+      occluder: ["Right_Pinhole", "Left_Pinhole"]
+      charts: ["snellen_chart_*"]
+      condition: "distance_vision_unable_20_20"
+    exit_conditions:
+      - type: "pinhole_complete"
+        next_phase: "right_eye_refraction"
+
+  right_eye_refraction:
+    id: "B"
+    name: "Right Eye Refraction (RE6.3)"
+    trigger:
+      occluder: "Left_Occluded"
+      charts: ["snellen_chart_*", "echart_*"]
+    questions:
+      - "I'm covering your left eye. Please read the line you can see clearly."
+    intents:
+      - "Able to read"
+      - "Blurry"
+      - "Unable to read"
+      - "Getting better"
+    exit_conditions:
+      - type: "unable_read_2x_after_sph"
+        next_phase: "jcc_axis_right"
+      - type: "pinhole_needed"
+        next_phase: "pinhole_check_right"
+
+  pinhole_check_right:
+    id: "C_right"
+    name: "Pinhole Check - Right"
+    trigger:
+      occluder: "Right_Pinhole"
+      charts: ["snellen_chart_*"]
+    exit_conditions:
+      - type: "return_to_refraction"
+        next_phase: "right_eye_refraction"
+      - type: "proceed_to_cylinder"
+        next_phase: "jcc_axis_right"
+
+  jcc_axis_right:
+    id: "E"
+    name: "JCC Axis Refinement (Right Eye)"
+    trigger:
+      occluder: ["Right_Axis_Flip1", "Right_Axis_Flip2"]
+      charts: ["jcc_chart"]
+    questions:
+      flip1: "Focus on the dot chart. Is this better? (Flip 1)"
+      flip2: "Or is this better? (Flip 2)"
+    intents:
+      flip1: "No response expected (Flip 1 presented, awaiting Flip 2 comparison)"
+      flip2:
+        - "Flip 1: GAP Axis (patient chose Flip 1, increase axis by 5°)"
+        - "Flip 2: RAM Axis (patient chose Flip 2, decrease axis by 5°)"
+        - "Both Same (no change needed)"
+    adjustment_rules:
+      flip1_chosen: "+5 degrees to R_AXIS"
+      flip2_chosen: "-5 degrees to R_AXIS"
+    exit_conditions:
+      - type: "axis_stable"
+        next_phase: "jcc_power_right"
+
+  jcc_power_right:
+    id: "F"
+    name: "JCC Power Refinement (Right Eye)"
+    trigger:
+      occluder: ["Right_Power_Flip1", "Right_Power_Flip2"]
+      charts: ["jcc_chart"]
+    questions:
+      flip1: "Focus on the dot chart. Is this better? (Flip 1)"
+      flip2: "Or is this better? (Flip 2)"
+    intents:
+      flip1: "No response expected (Flip 1 presented, awaiting Flip 2 comparison)"
+      flip2:
+        - "Flip 1: GAP Power (patient chose Flip 1, increase cylinder by 0.25D)"
+        - "Flip 2: RAM Power (patient chose Flip 2, decrease cylinder by 0.25D)"
+        - "Both Same (no change needed)"
+    adjustment_rules:
+      flip1_chosen: "+0.25D to R_CYL (more positive/less negative)"
+      flip2_chosen: "-0.25D to R_CYL (more negative)"
+    exception:
+      condition: "R_CYL == 0.00 and Flip1 chosen"
+      action: "Both Same (no cylinder power)"
+      next_phase: "duochrome_right"
+    exit_conditions:
+      - type: "power_stable"
+        next_phase: "duochrome_right"
+
+  duochrome_right:
+    id: "G"
+    name: "Duochrome (Right Eye)"
+    trigger:
+      occluder: "Left_Occluded"
+      charts: ["duochrome"]
+    questions:
+      - "Which is clearer: red or green, or are they the same?"
+    intents:
+      - "Red"
+      - "Green"
+      - "Both Same"
+    exit_conditions:
+      - type: "response_received"
+        next_phase: "left_eye_refraction"
+
+  left_eye_refraction:
+    id: "D"
+    name: "Left Eye Refraction (LE6.3)"
+    trigger:
+      occluder: "Right_Occluded"
+      charts: ["snellen_chart_*", "echart_*"]
+    questions:
+      - "I'm covering your right eye. Please read the line you can see clearly."
+    intents:
+      - "Able to read"
+      - "Blurry"
+      - "Unable to read"
+      - "Getting better"
+    exit_conditions:
+      - type: "unable_read_2x_after_sph"
+        next_phase: "jcc_axis_left"
+      - type: "pinhole_needed"
+        next_phase: "pinhole_check_left"
+
+  pinhole_check_left:
+    id: "C_left"
+    name: "Pinhole Check - Left"
+    trigger:
+      occluder: "Left_Pinhole"
+      charts: ["snellen_chart_*"]
+    exit_conditions:
+      - type: "return_to_refraction"
+        next_phase: "left_eye_refraction"
+      - type: "proceed_to_cylinder"
+        next_phase: "jcc_axis_left"
+
+  jcc_axis_left:
+    id: "H"
+    name: "JCC Axis Refinement (Left Eye)"
+    trigger:
+      occluder: ["Left_Axis_Flip1", "Left_Axis_Flip2"]
+      charts: ["jcc_chart"]
+    questions:
+      flip1: "Focus on the dot chart. Is this better? (Flip 1)"
+      flip2: "Or is this better? (Flip 2)"
+    intents:
+      flip1: "No response expected (Flip 1 presented, awaiting Flip 2 comparison)"
+      flip2:
+        - "Flip 1: GAP Axis (patient chose Flip 1, increase axis by 5°)"
+        - "Flip 2: RAM Axis (patient chose Flip 2, decrease axis by 5°)"
+        - "Both Same (no change needed)"
+    adjustment_rules:
+      flip1_chosen: "+5 degrees to L_AXIS"
+      flip2_chosen: "-5 degrees to L_AXIS"
+    exit_conditions:
+      - type: "axis_stable"
+        next_phase: "jcc_power_left"
+
+  jcc_power_left:
+    id: "I"
+    name: "JCC Power Refinement (Left Eye)"
+    trigger:
+      occluder: ["Left_Power_Flip1", "Left_Power_Flip2"]
+      charts: ["jcc_chart"]
+    questions:
+      flip1: "Focus on the dot chart. Is this better? (Flip 1)"
+      flip2: "Or is this better? (Flip 2)"
+    intents:
+      flip1: "No response expected (Flip 1 presented, awaiting Flip 2 comparison)"
+      flip2:
+        - "Flip 1: GAP Power (patient chose Flip 1, increase cylinder by 0.25D)"
+        - "Flip 2: RAM Power (patient chose Flip 2, decrease cylinder by 0.25D)"
+        - "Both Same (no change needed)"
+    adjustment_rules:
+      flip1_chosen: "+0.25D to L_CYL (more positive/less negative)"
+      flip2_chosen: "-0.25D to L_CYL (more negative)"
+    exception:
+      condition: "L_CYL == 0.00 and Flip1 chosen"
+      action: "Both Same (no cylinder power)"
+      next_phase: "duochrome_left"
+    exit_conditions:
+      - type: "power_stable"
+        next_phase: "duochrome_left"
+
+  duochrome_left:
+    id: "J"
+    name: "Duochrome (Left Eye)"
+    trigger:
+      occluder: "Right_Occluded"
+      charts: ["duochrome"]
+    questions:
+      - "Which is clearer: red or green, or are they the same?"
+    intents:
+      - "Red"
+      - "Green"
+      - "Both Same"
+    exit_conditions:
+      - type: "response_received"
+        next_phase: "binocular_balance"
+
+  binocular_balance:
+    id: "K"
+    name: "Binocular Balance (Step 6.5)"
+    trigger:
+      occluder: "BINO"
+      charts: ["snellen_chart_*", "echart_*"]
+      condition: "after_first_duochrome"
+    questions:
+      - "Please read the line you can see clearly."
+    intents:
+      - "Able to read"
+      - "Blurry"
+      - "Unable to read"
+    exit_conditions:
+      - type: "balance_verified"
+        next_phase: "test_complete"
+      - type: "both_occluded_check"
+        next_phase: "both_occluded"
+
+  both_occluded:
+    id: "L"
+    name: "Both Occluded Check"
+    trigger:
+      occluder: "Both_Occluded"
+      charts: ["snellen_chart_*"]
+    exit_conditions:
+      - type: "check_complete"
+        next_phase: "binocular_balance"
+      - type: "test_complete"
+        next_phase: "test_complete"
+
+  detection_failed:
+    id: "M"
+    name: "Detection Failed (QA Marker)"
+    trigger:
+      occluder: "Detection_Failed"
+      charts: ["*"]
+    action: "log_and_continue"
+    exit_conditions:
+      - type: "skip_to_next_valid_row"
+        next_phase: "continue"
+
+# Transition rules
+transition_rules:
+  unable_read_2x_after_sph:
+    description: "Exit sphere refinement after 2 consecutive 'Unable to read' with SPH changes"
+    logic: |
+      count = 0
+      for row in current_phase_rows:
+        if sph_changed(row, prev_row) and intent == "Unable to read":
+          count += 1
+        if count >= 2:
+          return True
+      return False
+
+  axis_stable:
+    description: "Exit axis refinement when 'Both Same' or no change"
+    logic: |
+      if flip2_intent == "Both Same":
+        return True
+      if next_row_axis == current_row_axis:
+        return True
+      return False
+
+  power_stable:
+    description: "Exit power refinement when 'Both Same', 0.00, or no change"
+    logic: |
+      if flip2_intent == "Both Same":
+        return True
+      if current_cyl == 0.00 and flip1_chosen:
+        return True
+      if next_row_cyl == current_row_cyl:
+        return True
+      return False
+
+  before_first_duochrome:
+    description: "Rows before the first duochrome chart"
+    logic: |
+      return not duochrome_seen
+
+  after_first_duochrome:
+    description: "Rows after the first duochrome chart"
+    logic: |
+      return duochrome_seen
+
+# State variables
+state_variables:
+  - current_phase
+  - current_eye
+  - duochrome_seen
+  - right_sph_stable
+  - left_sph_stable
+  - right_axis_stable
+  - left_axis_stable
+  - right_cyl_stable
+  - left_cyl_stable
+  - unable_read_count_right
+  - unable_read_count_left
+  - last_question
+  - last_occluder
