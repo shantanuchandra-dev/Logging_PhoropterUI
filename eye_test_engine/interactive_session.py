@@ -29,6 +29,21 @@ class InteractiveSession:
         self.current_row = self._init_row()
         self.session_history: List[RowContext] = []
         
+        # Refraction state tracking
+        self.snellen_charts = [
+            "snellen_chart_200_150",
+            "snellen_chart_100_90",
+            "snellen_chart_70_60_50",
+            "snellen_chart_40_30_25",
+            "snellen_chart_25_20_15",
+            "snellen_chart_20_20_20",
+            "snellen_chart_20_15_10",
+        ]
+        self.current_chart_index = 0
+        self.unable_read_count = 0
+        self.jcc_flip_state = "flip1"  # flip1 or flip2
+        self.jcc_cycle_count = 0
+        
         # Chart mappings
         self.chart_map = {
             "echart_400": "chart_9",
@@ -215,21 +230,379 @@ class InteractiveSession:
         self.current_row.patient_answer_intent = intent
         self.session_history.append(self.current_row)
         
-        # Determine next action based on phase and intent
-        next_phase = self._determine_next_phase(intent)
+        # Process based on current phase
+        if self.current_phase == "distance_vision":
+            return self._process_distance_vision(intent)
+        elif self.current_phase == "right_eye_refraction":
+            return self._process_right_eye_refraction(intent)
+        elif self.current_phase == "jcc_axis_right":
+            return self._process_jcc_axis_right(intent)
+        elif self.current_phase == "jcc_power_right":
+            return self._process_jcc_power_right(intent)
+        elif self.current_phase == "duochrome_right":
+            return self._process_duochrome_right(intent)
+        elif self.current_phase == "left_eye_refraction":
+            return self._process_left_eye_refraction(intent)
+        elif self.current_phase == "jcc_axis_left":
+            return self._process_jcc_axis_left(intent)
+        elif self.current_phase == "jcc_power_left":
+            return self._process_jcc_power_left(intent)
+        elif self.current_phase == "duochrome_left":
+            return self._process_duochrome_left(intent)
+        elif self.current_phase == "binocular_balance":
+            return self._process_binocular_balance(intent)
         
-        if next_phase == "complete":
-            return {
-                "phase": "complete",
-                "status": "complete",
-                "question": "Test complete!",
-                "intents": [],
-            }
+        # Default: complete
+        return {
+            "phase": "complete",
+            "status": "complete",
+            "question": "Test complete!",
+            "intents": [],
+        }
+    
+    def _process_distance_vision(self, intent: str) -> Dict:
+        """Process distance vision phase."""
+        # Move to right eye refraction
+        self.current_phase = "right_eye_refraction"
+        self.current_chart_index = 0  # Start with largest chart
+        self.unable_read_count = 0
         
-        # Transition to next phase
-        self.current_phase = next_phase
-        self._setup_phase(next_phase)
+        # Create new row
+        self.current_row = self._init_row()
+        self.current_row.occluder_state = "Left_Occluded"
+        self.current_row.chart_display = self.snellen_charts[0]
         
+        # Set phoropter
+        self.set_chart(self.snellen_charts[0])
+        self.set_power(occluder="Left_Occluded")
+        
+        return self._build_response()
+    
+    def _process_right_eye_refraction(self, intent: str) -> Dict:
+        """Process right eye refraction with chart progression."""
+        current_chart = self.snellen_charts[self.current_chart_index]
+        
+        if intent == "Able to read":
+            # Move to next smaller chart
+            if current_chart == "snellen_chart_20_20_20":
+                # Target reached, move to JCC
+                return self._transition_to_jcc_axis_right()
+            elif self.current_chart_index < len(self.snellen_charts) - 1:
+                self.current_chart_index += 1
+                self.unable_read_count = 0
+                self.current_row = self._copy_row_state()
+                self.current_row.chart_display = self.snellen_charts[self.current_chart_index]
+                self.set_chart(self.snellen_charts[self.current_chart_index])
+            else:
+                # Reached smallest chart, move to JCC
+                return self._transition_to_jcc_axis_right()
+        
+        elif intent == "Blurry":
+            # Add -0.25D SPH, stay on same chart
+            self.current_row = self._copy_row_state()
+            self.current_row.r_sph -= 0.25
+            self.set_power(r_sph=self.current_row.r_sph, occluder="Left_Occluded")
+            self.unable_read_count = 0
+        
+        elif intent == "Unable to read":
+            # Add -0.25D SPH, stay on same chart
+            self.current_row = self._copy_row_state()
+            self.current_row.r_sph -= 0.25
+            self.set_power(r_sph=self.current_row.r_sph, occluder="Left_Occluded")
+            self.unable_read_count += 1
+            
+            # Check exit condition: 2 consecutive "Unable to read"
+            if self.unable_read_count >= 2:
+                return self._transition_to_jcc_axis_right()
+        
+        elif intent == "Getting better":
+            # Continue with current power, move to smaller chart
+            if self.current_chart_index < len(self.snellen_charts) - 1:
+                self.current_chart_index += 1
+                self.unable_read_count = 0
+                self.current_row = self._copy_row_state()
+                self.current_row.chart_display = self.snellen_charts[self.current_chart_index]
+                self.set_chart(self.snellen_charts[self.current_chart_index])
+            else:
+                return self._transition_to_jcc_axis_right()
+        
+        return self._build_response()
+    
+    def _process_left_eye_refraction(self, intent: str) -> Dict:
+        """Process left eye refraction (same logic as right eye)."""
+        current_chart = self.snellen_charts[self.current_chart_index]
+        
+        if intent == "Able to read":
+            if current_chart == "snellen_chart_20_20_20":
+                return self._transition_to_jcc_axis_left()
+            elif self.current_chart_index < len(self.snellen_charts) - 1:
+                self.current_chart_index += 1
+                self.unable_read_count = 0
+                self.current_row = self._copy_row_state()
+                self.current_row.chart_display = self.snellen_charts[self.current_chart_index]
+                self.set_chart(self.snellen_charts[self.current_chart_index])
+            else:
+                return self._transition_to_jcc_axis_left()
+        
+        elif intent == "Blurry":
+            self.current_row = self._copy_row_state()
+            self.current_row.l_sph -= 0.25
+            self.set_power(l_sph=self.current_row.l_sph, occluder="Right_Occluded")
+            self.unable_read_count = 0
+        
+        elif intent == "Unable to read":
+            self.current_row = self._copy_row_state()
+            self.current_row.l_sph -= 0.25
+            self.set_power(l_sph=self.current_row.l_sph, occluder="Right_Occluded")
+            self.unable_read_count += 1
+            
+            if self.unable_read_count >= 2:
+                return self._transition_to_jcc_axis_left()
+        
+        elif intent == "Getting better":
+            if self.current_chart_index < len(self.snellen_charts) - 1:
+                self.current_chart_index += 1
+                self.unable_read_count = 0
+                self.current_row = self._copy_row_state()
+                self.current_row.chart_display = self.snellen_charts[self.current_chart_index]
+                self.set_chart(self.snellen_charts[self.current_chart_index])
+            else:
+                return self._transition_to_jcc_axis_left()
+        
+        return self._build_response()
+    
+    def _process_jcc_axis_right(self, intent: str) -> Dict:
+        """Process JCC axis refinement for right eye."""
+        if self.jcc_flip_state == "flip1":
+            # Flip1 shown, now show Flip2
+            self.jcc_flip_state = "flip2"
+            self.current_row = self._copy_row_state()
+            self.current_row.occluder_state = "Right_Axis_Flip2"
+            self.jcc_flip("handle")  # Flip to position 2
+            return self._build_response()
+        
+        elif self.jcc_flip_state == "flip2":
+            # Process Flip2 response
+            if "GAP Axis" in intent:
+                # Increase axis by 5°
+                self.current_row = self._copy_row_state()
+                self.current_row.r_axis += 5
+                if self.current_row.r_axis > 180:
+                    self.current_row.r_axis -= 180
+                self.set_power(r_axis=self.current_row.r_axis, occluder="Left_Occluded")
+                self.jcc_flip("increase")
+                # Reset for next cycle
+                self.jcc_flip_state = "flip1"
+                self.current_row.occluder_state = "Right_Axis_Flip1"
+                return self._build_response()
+            
+            elif "RAM Axis" in intent:
+                # Decrease axis by 5°
+                self.current_row = self._copy_row_state()
+                self.current_row.r_axis -= 5
+                if self.current_row.r_axis < 0:
+                    self.current_row.r_axis += 180
+                self.set_power(r_axis=self.current_row.r_axis, occluder="Left_Occluded")
+                self.jcc_flip("decrease")
+                # Reset for next cycle
+                self.jcc_flip_state = "flip1"
+                self.current_row.occluder_state = "Right_Axis_Flip1"
+                return self._build_response()
+            
+            elif "Both Same" in intent or "Reverse" in intent:
+                # Move to JCC Power
+                return self._transition_to_jcc_power_right()
+            
+            elif "Repeat" in intent:
+                # Repeat the flip cycle
+                self.jcc_flip_state = "flip1"
+                self.current_row = self._copy_row_state()
+                self.current_row.occluder_state = "Right_Axis_Flip1"
+                self.jcc_flip("handle")  # Flip to position 1
+                return self._build_response()
+        
+        return self._build_response()
+    
+    def _process_jcc_axis_left(self, intent: str) -> Dict:
+        """Process JCC axis refinement for left eye."""
+        if self.jcc_flip_state == "flip1":
+            self.jcc_flip_state = "flip2"
+            self.current_row = self._copy_row_state()
+            self.current_row.occluder_state = "Left_Axis_Flip2"
+            self.jcc_flip("handle")
+            return self._build_response()
+        
+        elif self.jcc_flip_state == "flip2":
+            if "GAP Axis" in intent:
+                self.current_row = self._copy_row_state()
+                self.current_row.l_axis += 5
+                if self.current_row.l_axis > 180:
+                    self.current_row.l_axis -= 180
+                self.set_power(l_axis=self.current_row.l_axis, occluder="Right_Occluded")
+                self.jcc_flip("increase")
+                self.jcc_flip_state = "flip1"
+                self.current_row.occluder_state = "Left_Axis_Flip1"
+                return self._build_response()
+            
+            elif "RAM Axis" in intent:
+                self.current_row = self._copy_row_state()
+                self.current_row.l_axis -= 5
+                if self.current_row.l_axis < 0:
+                    self.current_row.l_axis += 180
+                self.set_power(l_axis=self.current_row.l_axis, occluder="Right_Occluded")
+                self.jcc_flip("decrease")
+                self.jcc_flip_state = "flip1"
+                self.current_row.occluder_state = "Left_Axis_Flip1"
+                return self._build_response()
+            
+            elif "Both Same" in intent or "Reverse" in intent:
+                return self._transition_to_jcc_power_left()
+            
+            elif "Repeat" in intent:
+                self.jcc_flip_state = "flip1"
+                self.current_row = self._copy_row_state()
+                self.current_row.occluder_state = "Left_Axis_Flip1"
+                self.jcc_flip("handle")
+                return self._build_response()
+        
+        return self._build_response()
+    
+    def _process_jcc_power_right(self, intent: str) -> Dict:
+        """Process JCC power refinement for right eye."""
+        if self.jcc_flip_state == "flip1":
+            self.jcc_flip_state = "flip2"
+            self.current_row = self._copy_row_state()
+            self.current_row.occluder_state = "Right_Power_Flip2"
+            self.jcc_flip("handle")
+            return self._build_response()
+        
+        elif self.jcc_flip_state == "flip2":
+            if "GAP Power" in intent:
+                # Increase cylinder by 0.25D (more positive/less negative)
+                self.current_row = self._copy_row_state()
+                self.current_row.r_cyl += 0.25
+                self.set_power(r_cyl=self.current_row.r_cyl, occluder="Left_Occluded")
+                self.jcc_flip("increase")
+                self.jcc_flip_state = "flip1"
+                self.current_row.occluder_state = "Right_Power_Flip1"
+                return self._build_response()
+            
+            elif "RAM Power" in intent:
+                # Decrease cylinder by 0.25D (more negative)
+                self.current_row = self._copy_row_state()
+                self.current_row.r_cyl -= 0.25
+                self.set_power(r_cyl=self.current_row.r_cyl, occluder="Left_Occluded")
+                self.jcc_flip("decrease")
+                self.jcc_flip_state = "flip1"
+                self.current_row.occluder_state = "Right_Power_Flip1"
+                return self._build_response()
+            
+            elif "Both Same" in intent or "Reverse" in intent or (self.current_row.r_cyl == 0.0 and "GAP" in intent):
+                return self._transition_to_duochrome_right()
+            
+            elif "Repeat" in intent:
+                self.jcc_flip_state = "flip1"
+                self.current_row = self._copy_row_state()
+                self.current_row.occluder_state = "Right_Power_Flip1"
+                self.jcc_flip("handle")
+                return self._build_response()
+        
+        return self._build_response()
+    
+    def _process_jcc_power_left(self, intent: str) -> Dict:
+        """Process JCC power refinement for left eye."""
+        if self.jcc_flip_state == "flip1":
+            self.jcc_flip_state = "flip2"
+            self.current_row = self._copy_row_state()
+            self.current_row.occluder_state = "Left_Power_Flip2"
+            self.jcc_flip("handle")
+            return self._build_response()
+        
+        elif self.jcc_flip_state == "flip2":
+            if "GAP Power" in intent:
+                self.current_row = self._copy_row_state()
+                self.current_row.l_cyl += 0.25
+                self.set_power(l_cyl=self.current_row.l_cyl, occluder="Right_Occluded")
+                self.jcc_flip("increase")
+                self.jcc_flip_state = "flip1"
+                self.current_row.occluder_state = "Left_Power_Flip1"
+                return self._build_response()
+            
+            elif "RAM Power" in intent:
+                self.current_row = self._copy_row_state()
+                self.current_row.l_cyl -= 0.25
+                self.set_power(l_cyl=self.current_row.l_cyl, occluder="Right_Occluded")
+                self.jcc_flip("decrease")
+                self.jcc_flip_state = "flip1"
+                self.current_row.occluder_state = "Left_Power_Flip1"
+                return self._build_response()
+            
+            elif "Both Same" in intent or "Reverse" in intent or (self.current_row.l_cyl == 0.0 and "GAP" in intent):
+                return self._transition_to_duochrome_left()
+            
+            elif "Repeat" in intent:
+                self.jcc_flip_state = "flip1"
+                self.current_row = self._copy_row_state()
+                self.current_row.occluder_state = "Left_Power_Flip1"
+                self.jcc_flip("handle")
+                return self._build_response()
+        
+        return self._build_response()
+    
+    def _process_duochrome_right(self, intent: str) -> Dict:
+        """Process duochrome test for right eye."""
+        # Adjust SPH based on response
+        if intent == "Red":
+            self.current_row = self._copy_row_state()
+            self.current_row.r_sph += 0.25
+            self.set_power(r_sph=self.current_row.r_sph, occluder="Left_Occluded")
+        elif intent == "Green":
+            self.current_row = self._copy_row_state()
+            self.current_row.r_sph -= 0.25
+            self.set_power(r_sph=self.current_row.r_sph, occluder="Left_Occluded")
+        
+        # Move to left eye refraction
+        return self._transition_to_left_eye_refraction()
+    
+    def _process_duochrome_left(self, intent: str) -> Dict:
+        """Process duochrome test for left eye."""
+        if intent == "Red":
+            self.current_row = self._copy_row_state()
+            self.current_row.l_sph += 0.25
+            self.set_power(l_sph=self.current_row.l_sph, occluder="Right_Occluded")
+        elif intent == "Green":
+            self.current_row = self._copy_row_state()
+            self.current_row.l_sph -= 0.25
+            self.set_power(l_sph=self.current_row.l_sph, occluder="Right_Occluded")
+        
+        # Move to binocular balance
+        return self._transition_to_binocular_balance()
+    
+    def _process_binocular_balance(self, intent: str) -> Dict:
+        """Process binocular balance phase."""
+        # Test complete
+        return {
+            "phase": "complete",
+            "status": "complete",
+            "question": "Test complete!",
+            "intents": [],
+        }
+    
+    def _copy_row_state(self) -> RowContext:
+        """Copy current row state to new row."""
+        new_row = self._init_row()
+        new_row.r_sph = self.current_row.r_sph
+        new_row.r_cyl = self.current_row.r_cyl
+        new_row.r_axis = self.current_row.r_axis
+        new_row.l_sph = self.current_row.l_sph
+        new_row.l_cyl = self.current_row.l_cyl
+        new_row.l_axis = self.current_row.l_axis
+        new_row.occluder_state = self.current_row.occluder_state
+        new_row.chart_display = self.current_row.chart_display
+        return new_row
+    
+    def _build_response(self) -> Dict:
+        """Build response with current state."""
         question = self.get_question()
         intents = self.get_intents()
         
@@ -252,6 +625,107 @@ class InteractiveSession:
                 }
             }
         }
+    
+    def _transition_to_jcc_axis_right(self) -> Dict:
+        """Transition to JCC axis refinement for right eye."""
+        self.current_phase = "jcc_axis_right"
+        self.jcc_flip_state = "flip1"
+        self.current_row = self._copy_row_state()
+        self.current_row.occluder_state = "Right_Axis_Flip1"
+        self.current_row.chart_display = "jcc_chart"
+        
+        self.set_chart("jcc_chart")
+        self.jcc_flip("R")  # Set to right eye mode
+        
+        return self._build_response()
+    
+    def _transition_to_jcc_axis_left(self) -> Dict:
+        """Transition to JCC axis refinement for left eye."""
+        self.current_phase = "jcc_axis_left"
+        self.jcc_flip_state = "flip1"
+        self.current_row = self._copy_row_state()
+        self.current_row.occluder_state = "Left_Axis_Flip1"
+        self.current_row.chart_display = "jcc_chart"
+        
+        self.set_chart("jcc_chart")
+        self.jcc_flip("L")  # Set to left eye mode
+        
+        return self._build_response()
+    
+    def _transition_to_jcc_power_right(self) -> Dict:
+        """Transition to JCC power refinement for right eye."""
+        self.current_phase = "jcc_power_right"
+        self.jcc_flip_state = "flip1"
+        self.current_row = self._copy_row_state()
+        self.current_row.occluder_state = "Right_Power_Flip1"
+        self.current_row.chart_display = "jcc_chart"
+        
+        self.jcc_flip("power_axis_switch")  # Switch to power mode
+        
+        return self._build_response()
+    
+    def _transition_to_jcc_power_left(self) -> Dict:
+        """Transition to JCC power refinement for left eye."""
+        self.current_phase = "jcc_power_left"
+        self.jcc_flip_state = "flip1"
+        self.current_row = self._copy_row_state()
+        self.current_row.occluder_state = "Left_Power_Flip1"
+        self.current_row.chart_display = "jcc_chart"
+        
+        self.jcc_flip("power_axis_switch")  # Switch to power mode
+        
+        return self._build_response()
+    
+    def _transition_to_duochrome_right(self) -> Dict:
+        """Transition to duochrome test for right eye."""
+        self.current_phase = "duochrome_right"
+        self.current_row = self._copy_row_state()
+        self.current_row.occluder_state = "Left_Occluded"
+        self.current_row.chart_display = "duochrome"
+        
+        self.set_chart("duochrome")
+        self.set_power(occluder="Left_Occluded")
+        
+        return self._build_response()
+    
+    def _transition_to_duochrome_left(self) -> Dict:
+        """Transition to duochrome test for left eye."""
+        self.current_phase = "duochrome_left"
+        self.current_row = self._copy_row_state()
+        self.current_row.occluder_state = "Right_Occluded"
+        self.current_row.chart_display = "duochrome"
+        
+        self.set_chart("duochrome")
+        self.set_power(occluder="Right_Occluded")
+        
+        return self._build_response()
+    
+    def _transition_to_left_eye_refraction(self) -> Dict:
+        """Transition to left eye refraction."""
+        self.current_phase = "left_eye_refraction"
+        self.current_chart_index = 0  # Start with largest chart
+        self.unable_read_count = 0
+        
+        self.current_row = self._copy_row_state()
+        self.current_row.occluder_state = "Right_Occluded"
+        self.current_row.chart_display = self.snellen_charts[0]
+        
+        self.set_chart(self.snellen_charts[0])
+        self.set_power(occluder="Right_Occluded")
+        
+        return self._build_response()
+    
+    def _transition_to_binocular_balance(self) -> Dict:
+        """Transition to binocular balance."""
+        self.current_phase = "binocular_balance"
+        self.current_row = self._copy_row_state()
+        self.current_row.occluder_state = "BINO"
+        self.current_row.chart_display = "snellen_chart_20_20_20"
+        
+        self.set_chart("snellen_chart_20_20_20")
+        self.set_power(occluder="BINO")
+        
+        return self._build_response()
     
     def _determine_next_phase(self, intent: str) -> str:
         """Determine next phase based on current phase and intent."""
