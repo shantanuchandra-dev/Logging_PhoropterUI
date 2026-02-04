@@ -67,6 +67,40 @@ python3 analyze_outputs.py
 
 ---
 
+## 🚦 Order of Execution
+
+1. **Create files in MatchedScreens**
+   - Run: `python3 pipeline.py`
+   - Output: CSVs and metadata in `MatchedScreens/`
+
+2. **Create files in Analyzed_CSVs**
+   - Run: `python3 analyze_outputs.py`
+   - Output: Cleaned and deduped CSVs in `Analyzed_CSVs/`
+
+3. **Create files in Valid CSVs**
+   - Run: `python3 filter_valid_csvs.py`
+   - Output: Filtered/validated CSVs in the appropriate folder (e.g., `Valid_CSVs/`)
+
+4. **Create files in Curated Conversations**
+   - Run: `python3 curate_conversations.py`
+   - Output: Curated conversation files in `Curated_Conversations/`
+
+---
+
+## 🏃‍♂️ Quick Start
+To process a new dataset, run the following scripts in order:
+
+```bash
+python3 pipeline.py
+python3 analyze_outputs.py
+python3 filter_valid_csvs.py
+python3 curate_conversations.py
+```
+
+Each step produces files for the next stage. See above for output folders.
+
+---
+
 ## 💻 Requirements
 - **Python**: 3.13.9+
 - **System**: `Tesseract OCR` (must be installed on the host OS)
