@@ -1,0 +1,133 @@
+#!/usr/bin/env python3
+"""
+Simple Flask API server for interactive eye test sessions.
+"""
+from flask import Flask, request, jsonify
+from flask_cors import CORS
+import json
+from pathlib import Path
+
+from .interactive_session import InteractiveSession
+
+app = Flask(__name__)
+CORS(app)
+
+# Global session storage (in production, use proper session management)
+sessions = {}
+
+
+@app.route('/api/session/start', methods=['POST'])
+def start_session():
+    """Start a new eye test session."""
+    session_id = request.json.get('session_id', 'default')
+    
+    # Create new session
+    session = InteractiveSession()
+    sessions[session_id] = session
+    
+    # Start distance vision phase
+    state = session.start_distance_vision()
+    
+    return jsonify({
+        "session_id": session_id,
+        "status": "started",
+        **state
+    })
+
+
+@app.route('/api/session/<session_id>/respond', methods=['POST'])
+def respond(session_id):
+    """Process patient response and get next question."""
+    if session_id not in sessions:
+        return jsonify({"error": "Session not found"}), 404
+    
+    session = sessions[session_id]
+    intent = request.json.get('intent')
+    
+    if not intent:
+        return jsonify({"error": "Intent required"}), 400
+    
+    # Process response
+    next_state = session.process_response(intent)
+    
+    return jsonify({
+        "session_id": session_id,
+        "status": "active",
+        **next_state
+    })
+
+
+@app.route('/api/session/<session_id>/status', methods=['GET'])
+def get_status(session_id):
+    """Get current session status."""
+    if session_id not in sessions:
+        return jsonify({"error": "Session not found"}), 404
+    
+    session = sessions[session_id]
+    
+    return jsonify({
+        "session_id": session_id,
+        "current_phase": session.current_phase,
+        "total_rows": len(session.session_history),
+        "current_power": {
+            "right": {
+                "sph": session.current_row.r_sph,
+                "cyl": session.current_row.r_cyl,
+                "axis": session.current_row.r_axis,
+            },
+            "left": {
+                "sph": session.current_row.l_sph,
+                "cyl": session.current_row.l_cyl,
+                "axis": session.current_row.l_axis,
+            }
+        }
+    })
+
+
+@app.route('/api/session/<session_id>/end', methods=['POST'])
+def end_session(session_id):
+    """End session and get final prescription."""
+    if session_id not in sessions:
+        return jsonify({"error": "Session not found"}), 404
+    
+    session = sessions[session_id]
+    
+    # Get final prescription
+    if session.session_history:
+        last_row = session.session_history[-1]
+        final_rx = {
+            "right_eye": {
+                "sph": last_row.r_sph,
+                "cyl": last_row.r_cyl,
+                "axis": last_row.r_axis,
+                "add": last_row.r_add,
+            },
+            "left_eye": {
+                "sph": last_row.l_sph,
+                "cyl": last_row.l_cyl,
+                "axis": last_row.l_axis,
+                "add": last_row.l_add,
+            }
+        }
+    else:
+        final_rx = {}
+    
+    # Clean up session
+    del sessions[session_id]
+    
+    return jsonify({
+        "session_id": session_id,
+        "status": "ended",
+        "total_rows": len(session.session_history),
+        "final_prescription": final_rx
+    })
+
+
+if __name__ == '__main__':
+    print("Starting Eye Test API Server...")
+    print("Available endpoints:")
+    print("  POST /api/session/start")
+    print("  POST /api/session/<id>/respond")
+    print("  GET  /api/session/<id>/status")
+    print("  POST /api/session/<id>/end")
+    app.run(host='0.0.0.0', port=5000, debug=True)

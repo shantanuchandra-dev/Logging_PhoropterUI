@@ -1,0 +1,75 @@
+Timestamp,R_SPH,R_CYL,R_AXIS,R_ADD,L_SPH,L_CYL,L_AXIS,L_ADD,PD,Chart_Number,Occluder_State,Chart_Display,Optometrist_Question,Patient_Answer_Intent,Patient_Confidence
+02:05,0.00,0.00,180,0.00,0.00,0.00,180,0.00,,-1,BINO,echart_400,Are you able to see big E clearly.,Reads the chart.,Confident
+02:22,0.00,0.00,180,0.00,0.00,0.00,180,0.00,,-1,BINO,snellen_chart_12_9_7_5,Please read the line you can see clearly.,Blurry.,Confused
+02:24,0.00,0.00,180,0.00,0.00,0.00,180,0.00,,-1,BINO,snellen_chart_40_30_25_25,Please read the line you can see clearly.,Blurry.,Confused
+05:04,0.00,0.00,35,0.00,0.00,0.00,180,0.00,,-1,BINO,snellen_chart_40_30_25_25,Please read the line you can see clearly.,Unable to read.,Confident
+05:10,0.00,0.00,35,0.00,-0.25,0.00,180,0.00,,-1,BINO,snellen_chart_40_30_25_25,Please read the line you can see clearly.,Unable to read.,Confident
+05:12,0.00,0.00,35,0.00,-0.50,0.00,180,0.00,,-1,BINO,snellen_chart_40_30_25_25,Please read the line you can see clearly.,Getting better.,Confused
+05:14,0.00,0.00,35,0.00,-0.50,0.00,10,0.00,,-1,BINO,snellen_chart_40_30_25_25,Please read the line you can see clearly.,Able to read.,Confident
+05:16,0.00,0.00,35,0.00,-0.50,0.00,10,0.00,,-1,BINO,snellen_chart_6_4_5,Please read the line you can see clearly.,Able to read.,Confused
+05:18,0.00,0.00,35,0.00,-0.50,0.00,10,0.00,,-1,BINO,snellen_chart_40_30_25_25,Please read the line you can see clearly.,Unable to read.,Confident
+06:20,0.00,0.00,35,0.00,-0.50,0.00,10,0.00,,-1,Right_Occluded,snellen_chart_40_30_25_25,I'm covering your right eye. Please read the line you can see clearly.,Blurry.,Confused
+06:22,0.00,0.00,5,0.00,-0.50,0.00,10,0.00,,-1,Right_Occluded,snellen_chart_40_30_25_25,I'm covering your right eye. Please read the line you can see clearly.,Blurry.,Confused
+06:26,0.00,0.00,35,0.00,-0.50,0.00,10,0.00,,-1,Right_Occluded,snellen_chart_40_30_25_25,I'm covering your right eye. Please read the line you can see clearly.,Blurry.,Confident
+06:28,0.00,0.00,35,0.00,-0.50,0.00,10,0.00,,-1,Left_Axis_Flip1,jcc_chart,Focus on the dot chart. Is this better? (Flip 1),-,Confident
+06:42,0.00,0.00,35,0.00,-0.50,0.00,10,0.00,,-1,Left_Axis_Flip2,jcc_chart,Or is this better? (Flip 2),No change,Confident
+06:46,0.00,0.00,35,0.00,-0.50,0.00,10,0.00,,-1,Left_Axis_Flip1,jcc_chart,Focus on the dot chart. Is this better? (Flip 1),-,Confident
+06:50,0.00,0.00,35,0.00,-0.50,0.00,5,0.00,,-1,Left_Axis_Flip1,jcc_chart,Focus on the dot chart. Is this better? (Flip 1),-,Confident
+06:52,0.00,0.00,35,0.00,-0.50,0.00,170,0.00,,-1,Left_Axis_Flip2,jcc_chart,Or is this better? (Flip 2),No change,Confident
+06:54,0.00,0.00,75,0.00,-0.50,0.00,170,0.00,,-1,Left_Axis_Flip1,jcc_chart,Focus on the dot chart. Is this better? (Flip 1),-,Confident
+06:56,0.00,0.00,75,0.00,-0.50,0.00,5,0.00,,-1,Left_Axis_Flip1,jcc_chart,Focus on the dot chart. Is this better? (Flip 1),-,Confident
+06:58,0.00,0.00,55,0.00,-0.50,0.00,10,0.00,,-1,Left_Power_Flip2,jcc_chart,Or is this better? (Flip 2),No change,Confident
+07:00,0.00,0.00,5,0.00,-0.50,0.00,10,0.00,,-1,Left_Power_Flip1,jcc_chart,Focus on the dot chart. Is this better? (Flip 1),-,Confident
+07:02,0.00,0.00,5,0.00,-0.25,0.00,10,0.00,,-1,Left_Axis_Flip2,jcc_chart,Or is this better? (Flip 2),No change,Confident
+07:04,0.00,0.00,55,0.00,-0.25,0.00,10,0.00,,-1,Left_Power_Flip1,jcc_chart,Focus on the dot chart. Is this better? (Flip 1),-,Confident
+07:08,0.00,0.00,35,0.00,-0.25,0.00,10,0.00,,-1,Left_Power_Flip2,jcc_chart,Or is this better? (Flip 2),No change,Confident
+07:10,0.00,0.00,35,0.00,-0.25,0.00,10,0.00,,-1,Left_Power_Flip1,jcc_chart,Focus on the dot chart. Is this better? (Flip 1),-,Confident
+07:12,0.00,0.00,5,0.00,-0.50,0.00,10,0.00,,-1,Left_Power_Flip1,jcc_chart,Focus on the dot chart. Is this better? (Flip 1),-,Confident
+07:14,0.00,0.00,5,0.00,-0.50,0.00,10,0.00,,-1,Left_Power_Flip1,duochrome,Focus on the dot chart. Is this better? (Flip 1),-,Confident
+07:16,0.00,0.00,5,0.00,-0.50,0.00,10,0.00,,-1,Right_Occluded,duochrome,"Which is clearer: red or green, or are they the same?",Responds red/green preference.,Confused
+07:32,0.00,0.00,5,0.00,-0.25,0.00,10,0.00,,-1,Right_Occluded,duochrome,"Which is clearer: red or green, or are they the same?",Responds red/green preference.,Confused
+07:38,0.00,0.00,35,0.00,-0.25,0.00,10,0.00,,-1,Right_Occluded,duochrome,"Which is clearer: red or green, or are they the same?",Responds red/green preference.,Confident
+07:42,0.00,0.00,35,0.00,-0.25,0.00,10,0.00,,-1,BINO,duochrome,"Which is clearer: red or green, or are they the same?",Responds red/green preference.,Confident
+07:44,0.00,0.00,35,0.00,-0.50,0.00,10,0.00,,-1,Right_Occluded,snellen_chart_6_4_5,I'm covering your right eye. Please read the line you can see clearly.,Blurry.,Confused
+07:46,0.00,0.00,35,0.00,-0.50,0.00,10,0.00,,-1,Right_Occluded,snellen_chart_12_9_7_5,I'm covering your right eye. Please read the line you can see clearly.,Unable to read.,Confused
+07:48,0.00,0.00,35,0.00,-0.50,0.00,10,0.00,,-1,Right_Occluded,snellen_chart_40_30_25_25,I'm covering your right eye. Please read the line you can see clearly.,Blurry.,Confused
+07:50,0.00,0.00,5,0.00,-0.50,0.00,10,0.00,,-1,Right_Occluded,snellen_chart_40_30_25_25,I'm covering your right eye. Please read the line you can see clearly.,Blurry.,Confident
+07:52,0.00,0.00,35,0.00,-0.50,0.00,10,0.00,,-1,Right_Axis_Flip1,jcc_chart,Focus on the dot chart. Is this better? (Flip 1),-,Confident
+08:08,0.00,0.00,35,0.00,-0.50,0.00,10,0.00,,-1,Right_Axis_Flip1,snellen_chart_12_9_7_5,Focus on the dot chart. Is this better? (Flip 1),-,Confident
+08:10,0.00,0.00,35,0.00,-0.50,0.00,10,0.00,,-1,Left_Occluded,snellen_chart_40_30_25_25,I'm covering your left eye. Please read the line you can see clearly.,Blurry.,Confused
+08:16,0.00,0.00,20,0.00,-0.50,0.00,10,0.00,,-1,Left_Occluded,snellen_chart_40_30_25_25,I'm covering your left eye. Please read the line you can see clearly.,Blurry.,Confused
+08:18,0.00,0.00,,0.00,-0.50,0.00,10,0.00,,-1,Left_Occluded,snellen_chart_40_30_25_25,I'm covering your left eye. Please read the line you can see clearly.,Blurry.,Confused
+08:20,0.00,0.00,180,0.00,-0.50,0.00,10,0.00,,-1,Left_Occluded,snellen_chart_40_30_25_25,I'm covering your left eye. Please read the line you can see clearly.,Blurry.,Confident
+08:48,0.00,0.00,180,0.00,-0.50,0.00,10,0.00,,-1,Right_Axis_Flip1,jcc_chart,Focus on the dot chart. Is this better? (Flip 1),-,Confident
+09:02,0.00,0.00,180,0.00,-0.50,0.00,10,0.00,,-1,Right_Axis_Flip2,jcc_chart,Or is this better? (Flip 2),No change,Confident
+09:06,0.00,0.00,180,0.00,-0.50,0.00,10,0.00,,-1,Right_Axis_Flip1,jcc_chart,Focus on the dot chart. Is this better? (Flip 1),-,Confident
+09:10,0.00,0.00,170,0.00,-0.50,0.00,10,0.00,,-1,Right_Axis_Flip1,jcc_chart,Focus on the dot chart. Is this better? (Flip 1),-,Confident
+09:12,0.00,0.00,170,0.00,-0.50,0.00,10,0.00,,-1,Right_Axis_Flip2,jcc_chart,Or is this better? (Flip 2),No change,Confident
+09:14,0.00,0.00,170,0.00,-0.50,0.00,10,0.00,,-1,Right_Axis_Flip1,jcc_chart,Focus on the dot chart. Is this better? (Flip 1),-,Confident
+09:16,0.00,0.00,180,0.00,-0.50,0.00,10,0.00,,-1,Right_Axis_Flip1,jcc_chart,Focus on the dot chart. Is this better? (Flip 1),-,Confident
+09:18,0.00,0.00,180,0.00,-0.50,0.00,10,0.00,,-1,Right_Power_Flip2,jcc_chart,Or is this better? (Flip 2),No change,Confident
+09:20,0.00,0.00,180,0.00,-0.50,0.00,10,0.00,,-1,Right_Power_Flip1,jcc_chart,Focus on the dot chart. Is this better? (Flip 1),-,Confident
+09:22,0.00,0.00,180,0.00,-0.50,0.00,10,0.00,,-1,Right_Power_Flip2,jcc_chart,Or is this better? (Flip 2),No change,Confident
+09:24,0.00,0.00,180,0.00,-0.50,0.00,10,0.00,,-1,Right_Power_Flip1,jcc_chart,Focus on the dot chart. Is this better? (Flip 1),-,Confident
+09:26,+0.25,0.00,180,0.00,-0.50,0.00,10,0.00,,-1,Right_Power_Flip2,jcc_chart,Or is this better? (Flip 2),No change,Confident
+09:28,-0.50,0.00,180,0.00,-0.50,0.00,10,0.00,,-1,Right_Power_Flip1,jcc_chart,Focus on the dot chart. Is this better? (Flip 1),-,Confident
+09:30,+0.25,0.00,180,0.00,-0.50,0.00,10,0.00,,-1,Right_Power_Flip2,jcc_chart,Or is this better? (Flip 2),No change,Confident
+09:32,+0.25,0.00,180,0.00,-0.50,0.00,10,0.00,,-1,Right_Power_Flip1,jcc_chart,Focus on the dot chart. Is this better? (Flip 1),-,Confident
+09:36,+0.25,0.00,180,0.00,-0.50,0.00,10,0.00,,-1,Right_Power_Flip2,jcc_chart,Or is this better? (Flip 2),No change,Confident
+09:38,+0.25,0.00,180,0.00,-0.50,0.00,10,0.00,,-1,Right_Power_Flip1,jcc_chart,Focus on the dot chart. Is this better? (Flip 1),-,Confident
+09:46,+0.25,0.00,180,0.00,-0.50,0.00,10,0.00,,-1,Right_Power_Flip1,duochrome,Focus on the dot chart. Is this better? (Flip 1),-,Confident
+09:48,+0.25,0.00,180,0.00,-0.50,0.00,10,0.00,,-1,Left_Occluded,duochrome,"Which is clearer: red or green, or are they the same?",Responds red/green preference.,Confused
+09:58,+0.50,0.00,180,0.00,-0.50,0.00,10,0.00,,-1,Left_Occluded,duochrome,"Which is clearer: red or green, or are they the same?",Responds red/green preference.,Confused
+10:02,+1.00,0.00,180,0.00,-0.50,0.00,10,0.00,,-1,Left_Occluded,duochrome,"Which is clearer: red or green, or are they the same?",Responds red/green preference.,Confused
+10:04,+0.75,0.00,180,0.00,-0.50,0.00,10,0.00,,-1,Left_Occluded,duochrome,"Which is clearer: red or green, or are they the same?",Responds red/green preference.,Confused
+10:14,+0.50,0.00,180,0.00,-0.50,0.00,10,0.00,,-1,Left_Occluded,duochrome,"Which is clearer: red or green, or are they the same?",Responds red/green preference.,Confused
+10:20,+0.25,0.00,180,0.00,-0.50,0.00,10,0.00,,-1,Left_Occluded,duochrome,"Which is clearer: red or green, or are they the same?",Responds red/green preference.,Confused
+10:24,0.00,0.00,180,0.00,-0.50,0.00,10,0.00,,-1,Left_Occluded,duochrome,"Which is clearer: red or green, or are they the same?",Responds red/green preference.,Confident
+10:28,0.00,0.00,180,0.00,-0.50,0.00,10,0.00,,-1,Left_Occluded,snellen_chart_12_9_7_5,I'm covering your left eye. Please read the line you can see clearly.,Blurry.,Confident
+10:30,0.00,0.00,180,0.00,-0.50,0.00,10,0.00,,-1,BINO,snellen_chart_40_30_25_25,Please read the line you can see clearly.,Blurry.,Confused
+10:56,0.00,0.00,35,0.00,-0.50,0.00,10,0.00,,-1,BINO,snellen_chart_40_30_25_25,Please read the line you can see clearly.,Blurry.,Confused
+11:02,0.00,0.00,180,0.00,-0.50,0.00,10,0.00,,-1,BINO,near_vision,Please read the nearest line you can see comfortably.,Reads near chart.,Confident
+11:16,0.00,0.00,180,0.00,-0.50,0.00,10,0.00,,-1,BINO,snellen_chart_12_9_7_5,Please read the line you can see clearly.,Blurry.,Confused
+11:18,0.00,0.00,180,0.00,-0.50,0.00,10,0.00,,-1,BINO,snellen_chart_40_30_25_25,Please read the line you can see clearly.,Unable to read.,Confident
+14:40,0.00,0.00,180,0.00,-0.25,0.00,10,-0.25,,-1,BINO,snellen_chart_40_30_25_25,Please read the line you can see clearly.,Getting better.,Confused
+15:08,0.00,0.00,180,-0.25,-0.25,0.00,10,-0.25,,-1,BINO,snellen_chart_40_30_25_25,Please read the line you can see clearly.,Blurry.,Confident

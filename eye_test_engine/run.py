@@ -7,10 +7,10 @@ import argparse
 from pathlib import Path
 from typing import List
 
-from core.context import RowContext
-from core.state_machine import StateMachine
-from io.inputs import load_csv, load_directory
-from io.outputs import write_annotated_csv, generate_summary, write_summary_report
+from .core.context import RowContext
+from .core.state_machine import StateMachine
+from .io.inputs import load_csv, load_directory
+from .io.outputs import write_annotated_csv, generate_summary, write_summary_report
 
 
 def process_session(rows: List[RowContext], state_machine: StateMachine) -> List[RowContext]:

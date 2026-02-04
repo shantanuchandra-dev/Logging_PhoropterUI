@@ -84,25 +84,27 @@ def generate_summary(rows: List[RowContext]) -> dict:
             phase_counts[row.phase_id] = phase_counts.get(row.phase_id, 0) + 1
     
     # Extract final prescription
-    last_row = rows[-1]
-    final_rx = {
-        "right_eye": {
-            "sph": last_row.r_sph,
-            "cyl": last_row.r_cyl,
-            "axis": last_row.r_axis,
-            "add": last_row.r_add,
-        },
-        "left_eye": {
-            "sph": last_row.l_sph,
-            "cyl": last_row.l_cyl,
-            "axis": last_row.l_axis,
-            "add": last_row.l_add,
-        },
-    }
+    final_rx = {}
+    if rows:
+        last_row = rows[-1]
+        final_rx = {
+            "right_eye": {
+                "sph": last_row.r_sph,
+                "cyl": last_row.r_cyl,
+                "axis": last_row.r_axis,
+                "add": last_row.r_add,
+            },
+            "left_eye": {
+                "sph": last_row.l_sph,
+                "cyl": last_row.l_cyl,
+                "axis": last_row.l_axis,
+                "add": last_row.l_add,
+            },
+        }
     
     # Calculate duration
-    start_time = rows[0].timestamp
-    end_time = rows[-1].timestamp
+    start_time = rows[0].timestamp if rows else ""
+    end_time = rows[-1].timestamp if rows else ""
     
     return {
         "total_rows": len(rows),

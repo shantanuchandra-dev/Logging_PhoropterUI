@@ -1,0 +1,295 @@
+#!/usr/bin/env python3
+"""
+Interactive eye test session orchestrator.
+Manages conversation flow with patient and phoropter API calls.
+"""
+import json
+import subprocess
+from typing import Optional, List, Dict
+from pathlib import Path
+
+from .core.state_machine import StateMachine
+from .core.context import RowContext
+
+
+class InteractiveSession:
+    """Orchestrates an interactive eye test session."""
+    
+    def __init__(self, base_url: str = "https://rajasthan-royals.preprod.lenskart.com",
+                 phoropter_id: str = "phoropter-1"):
+        self.base_url = base_url
+        self.phoropter_id = phoropter_id
+        self.api_endpoint = f"{base_url}/phoropter/{phoropter_id}/run-tests"
+        
+        # Initialize state machine
+        self.state_machine = StateMachine()
+        
+        # Current test state
+        self.current_phase = "distance_vision"
+        self.current_row = self._init_row()
+        self.session_history: List[RowContext] = []
+        
+        # Chart mappings
+        self.chart_map = {
+            "echart_400": "chart_9",
+            "snellen_chart_200_150": "chart_10",
+            "snellen_chart_100_90": "chart_11",
+            "snellen_chart_70_60_50": "chart_12",
+            "snellen_chart_40_30_25": "chart_13",
+            "snellen_chart_20_15_10": "chart_14",
+            "snellen_chart_20_20_20": "chart_15",
+            "snellen_chart_25_20_15": "chart_16",
+            "duochrome": "chart_17",
+            "jcc_chart": "chart_19",
+        }
+    
+    def _init_row(self) -> RowContext:
+        """Initialize a row with restart state."""
+        return RowContext(
+            timestamp="00:00",
+            r_sph=0.0, r_cyl=0.0, r_axis=180.0, r_add=0.0,
+            l_sph=0.0, l_cyl=0.0, l_axis=180.0, l_add=0.0,
+            pd="", chart_number=-1,
+            occluder_state="BINO",
+            chart_display="",
+            ocr_fields_read=0,
+            anomalies_fixed=0,
+        )
+    
+    def reset_phoropter(self):
+        """Reset phoropter to neutral state."""
+        cmd = f'curl -X POST {self.base_url}/phoropter/{self.phoropter_id}/reset'
+        subprocess.run(cmd, shell=True, capture_output=True)
+        print("✓ Phoropter reset to 0/0/180")
+    
+    def set_chart(self, chart_name: str):
+        """Display a chart on the phoropter."""
+        chart_id = self.chart_map.get(chart_name)
+        if not chart_id:
+            print(f"Warning: Unknown chart {chart_name}")
+            return
+        
+        payload = {
+            "test_cases": [{
+                "chart": {
+                    "tab": "Chart1",
+                    "chart_items": [chart_id]
+                }
+            }]
+        }
+        
+        cmd = f"""curl -X POST {self.api_endpoint} \\
+  -H "Content-Type: application/json" \\
+  -d '{json.dumps(payload)}'"""
+        
+        subprocess.run(cmd, shell=True, capture_output=True)
+        self.current_row.chart_display = chart_name
+        print(f"✓ Displaying: {chart_name}")
+    
+    def set_power(self, r_sph: float = None, r_cyl: float = None, r_axis: float = None,
+                  l_sph: float = None, l_cyl: float = None, l_axis: float = None,
+                  occluder: str = None):
+        """Set power and occluder on phoropter."""
+        # Build payload
+        right_eye = {}
+        if r_sph is not None:
+            right_eye["sph"] = r_sph
+            self.current_row.r_sph = r_sph
+        if r_cyl is not None:
+            right_eye["cyl"] = r_cyl
+            self.current_row.r_cyl = r_cyl
+        if r_axis is not None:
+            right_eye["axis"] = r_axis
+            self.current_row.r_axis = r_axis
+        
+        left_eye = {}
+        if l_sph is not None:
+            left_eye["sph"] = l_sph
+            self.current_row.l_sph = l_sph
+        if l_cyl is not None:
+            left_eye["cyl"] = l_cyl
+            self.current_row.l_cyl = l_cyl
+        if l_axis is not None:
+            left_eye["axis"] = l_axis
+            self.current_row.l_axis = l_axis
+        
+        payload = {"test_cases": [{}]}
+        
+        if right_eye:
+            payload["test_cases"][0]["right_eye"] = right_eye
+        if left_eye:
+            payload["test_cases"][0]["left_eye"] = left_eye
+        
+        # Map occluder
+        if occluder:
+            if occluder == "Left_Occluded":
+                payload["test_cases"][0]["aux_lens"] = "AuxLensL"
+            elif occluder == "Right_Occluded":
+                payload["test_cases"][0]["aux_lens"] = "AuxLensR"
+            elif occluder == "BINO":
+                payload["test_cases"][0]["aux_lens"] = "OFF"
+            self.current_row.occluder_state = occluder
+        
+        cmd = f"""curl -X POST {self.api_endpoint} \\
+  -H "Content-Type: application/json" \\
+  -d '{json.dumps(payload)}'"""
+        
+        subprocess.run(cmd, shell=True, capture_output=True)
+        print(f"✓ Power set: R({r_sph}/{r_cyl}/{r_axis}) L({l_sph}/{l_cyl}/{l_axis}) Occ: {occluder}")
+    
+    def jcc_flip(self, action: str):
+        """Perform JCC action (handle, increase, decrease, etc.)."""
+        payload = {"test_cases": [{"jcc": action}]}
+        
+        cmd = f"""curl -X POST {self.api_endpoint} \\
+  -H "Content-Type: application/json" \\
+  -d '{json.dumps(payload)}'"""
+        
+        subprocess.run(cmd, shell=True, capture_output=True)
+        print(f"✓ JCC action: {action}")
+    
+    def get_question(self) -> str:
+        """Get current question based on phase and state."""
+        phase_config = self.state_machine.protocol["phases"].get(self.current_phase, {})
+        questions = phase_config.get("questions", [])
+        
+        if isinstance(questions, dict):
+            # JCC phase with flip1/flip2
+            if self.current_row.is_flip1:
+                return questions.get("flip1", "")
+            elif self.current_row.is_flip2:
+                return questions.get("flip2", "")
+            return questions.get("flip1", "")
+        elif isinstance(questions, list) and questions:
+            return questions[0]
+        
+        return "Please describe what you see."
+    
+    def get_intents(self) -> List[str]:
+        """Get available intents for current phase."""
+        phase_config = self.state_machine.protocol["phases"].get(self.current_phase, {})
+        intents = phase_config.get("intents", [])
+        
+        if isinstance(intents, dict):
+            # JCC phase
+            if self.current_row.is_flip1:
+                return [intents.get("flip1", "No response expected")]
+            elif self.current_row.is_flip2:
+                flip2_intents = intents.get("flip2", [])
+                return flip2_intents if isinstance(flip2_intents, list) else [flip2_intents]
+            return [intents.get("flip1", "No response expected")]
+        elif isinstance(intents, list):
+            return intents
+        
+        return ["Responds to instruction."]
+    
+    def start_distance_vision(self):
+        """Start Phase A: Distance Vision."""
+        print("\n" + "="*60)
+        print("PHASE A: DISTANCE VISION (Step 2.1)")
+        print("="*60)
+        
+        self.current_phase = "distance_vision"
+        self.reset_phoropter()
+        self.set_chart("echart_400")
+        self.current_row.occluder_state = "BINO"
+        
+        question = self.get_question()
+        intents = self.get_intents()
+        
+        return {
+            "phase": "Distance Vision (Step 2.1)",
+            "question": question,
+            "intents": intents,
+            "chart": "echart_400",
+            "occluder": "BINO",
+            "power": {
+                "right": {"sph": 0.0, "cyl": 0.0, "axis": 180.0},
+                "left": {"sph": 0.0, "cyl": 0.0, "axis": 180.0},
+            }
+        }
+    
+    def process_response(self, intent: str) -> Dict:
+        """Process patient response and return next question."""
+        # Record current row
+        self.current_row.patient_answer_intent = intent
+        self.session_history.append(self.current_row)
+        
+        # Determine next action based on phase and intent
+        # This is a simplified version - full logic would be in state machine
+        
+        if self.current_phase == "distance_vision":
+            if intent == "Able to read":
+                # Move to right eye refraction
+                self.current_phase = "right_eye_refraction"
+                self.set_chart("snellen_chart_20_20_20")
+                self.set_power(occluder="Left_Occluded")
+                self.current_row = self._init_row()
+                self.current_row.occluder_state = "Left_Occluded"
+                self.current_row.chart_display = "snellen_chart_20_20_20"
+        
+        question = self.get_question()
+        intents = self.get_intents()
+        
+        return {
+            "phase": self.current_phase,
+            "question": question,
+            "intents": intents,
+            "chart": self.current_row.chart_display,
+            "occluder": self.current_row.occluder_state,
+        }
+
+
+def main():
+    """Interactive CLI demo."""
+    session = InteractiveSession()
+    
+    print("\n" + "="*60)
+    print("EYE TEST ENGINE - INTERACTIVE SESSION")
+    print("="*60)
+    
+    # Start test
+    state = session.start_distance_vision()
+    
+    print(f"\n📋 Phase: {state['phase']}")
+    print(f"👁️  Chart: {state['chart']}")
+    print(f"🔒 Occluder: {state['occluder']}")
+    print(f"\n❓ Question: {state['question']}")
+    print(f"\n💬 Available Intents:")
+    for i, intent in enumerate(state['intents'], 1):
+        print(f"   {i}. {intent}")
+    
+    print(f"\n🔧 Power: R({state['power']['right']['sph']}/{state['power']['right']['cyl']}/{state['power']['right']['axis']})")
+    print(f"          L({state['power']['left']['sph']}/{state['power']['left']['cyl']}/{state['power']['left']['axis']})")
+    
+    # Wait for user input
+    print(f"\n{'='*60}")
+    print("Select an intent number (1-{}) or 'q' to quit:".format(len(state['intents'])))
+    choice = input("> ")
+    
+    if choice.lower() == 'q':
+        print("Session ended.")
+        return
+    
+    try:
+        idx = int(choice) - 1
+        if 0 <= idx < len(state['intents']):
+            selected_intent = state['intents'][idx]
+            print(f"\n✓ Patient response: {selected_intent}")
+            
+            # Process response
+            next_state = session.process_response(selected_intent)
+            
+            print(f"\n📋 Next Phase: {next_state['phase']}")
+            print(f"❓ Next Question: {next_state['question']}")
+            print(f"\n💬 Available Intents:")
+            for i, intent in enumerate(next_state['intents'], 1):
+                print(f"   {i}. {intent}")
+        else:
+            print("Invalid choice.")
+    except ValueError:
+        print("Invalid input.")
+
+
+if __name__ == "__main__":
+    main()

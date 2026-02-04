@@ -1,0 +1,123 @@
+Timestamp,R_SPH,R_CYL,R_AXIS,R_ADD,L_SPH,L_CYL,L_AXIS,L_ADD,PD,Chart_Number,Occluder_State,Chart_Display,Optometrist_Question,Patient_Answer_Intent,Patient_Confidence
+00:49,0.00,0.00,180,0.00,0.00,0.00,180,0.00,,-1,BINO,echart_400,Are you able to see big E clearly.,Reads the chart.,Confident
+01:28,0.00,0.00,180,0.00,0.00,0.00,180,0.00,,-1,Both_Occluded,echart_400,Are you able to see big E clearly.,Reads the chart.,Confident
+01:36,0.00,0.00,180,0.00,0.00,0.00,180,0.00,,-1,BINO,snellen_chart_40_35,Please read the line you can see clearly.,Blurry.,Confident
+04:06,+0.50,0.00,180,0.00,+0.50,0.00,180,0.00,,-1,BINO,snellen_chart_40_35,Please read the line you can see clearly.,Unable to read.,Confident
+04:08,+1.00,0.00,180,0.00,+1.00,0.00,180,0.00,,-1,BINO,snellen_chart_40_35,Please read the line you can see clearly.,Getting better.,Confused
+04:18,+1.00,0.00,90,0.00,+1.00,0.00,90,0.00,,-1,BINO,snellen_chart_40_35,Please read the line you can see clearly.,Blurry.,Confused
+04:20,+1.00,0.00,90,0.00,+1.00,0.00,80,0.00,,-1,BINO,snellen_chart_40_35,Please read the line you can see clearly.,Blurry.,Confused
+04:24,+1.00,+0.25,90,0.00,+1.00,+0.25,80,0.00,,-1,BINO,snellen_chart_40_35,Please read the line you can see clearly.,Blurry.,Confident
+04:26,+1.00,+0.25,0,0.00,+1.00,+0.25,90,0.00,,-1,BINO,near_vision,Please read the nearest line you can see comfortably.,Reads near chart.,Confused
+04:28,0.00,+0.25,0,+1.25,+1.00,+0.25,90,+1.25,,-1,BINO,near_vision,Please read the nearest line you can see comfortably.,Reads near chart.,Confused
+04:30,+1.00,+0.25,90,+1.50,+1.00,+0.25,90,+1.50,,-1,BINO,near_vision,Please read the nearest line you can see comfortably.,Reads near chart.,Confident
+04:32,+1.00,+0.25,90,+1.50,+1.00,+0.25,90,+1.50,,-1,BINO,snellen_chart_12_9_7_5,Please read the line you can see clearly.,Blurry.,Confused
+04:36,+1.00,0.25,115,+1.50,+1.00,+0.25,90,+1.50,,-1,BINO,snellen_chart_12_9_7_5,Please read the line you can see clearly.,Blurry.,Confused
+04:38,+1.00,+0.25,120,+1.50,+1.00,+0.25,80,+1.50,,-1,BINO,snellen_chart_12_9_7_5,Please read the line you can see clearly.,Blurry.,Confused
+04:40,+1.00,+0.25,120,+1.50,+1.00,+0.25,55,+1.50,,-1,BINO,snellen_chart_12_9_7_5,Please read the line you can see clearly.,Blurry.,Confused
+04:42,+1.00,+0.25,120,+1.50,+1.00,+0.25,40,+1.50,,-1,BINO,snellen_chart_12_9_7_5,Please read the line you can see clearly.,Blurry.,Confused
+04:48,+1.00,+0.25,120,+1.50,+1.00,+0.25,40,+1.50,,-1,BINO,snellen_chart_21_18_15,Please read the line you can see clearly.,Unable to read.,Confused
+05:00,+1.00,+0.25,120,+1.50,+1.00,+0.50,40,+1.25,,-1,BINO,snellen_chart_21_18_15,Please read the line you can see clearly.,Unable to read.,Confident
+05:02,+1.00,+0.25,120,+1.50,-1.00,+0.50,40,+1.25,,-1,BINO,snellen_chart_21_18_15,Please read the line you can see clearly.,Unable to read.,Confident
+05:08,+1.00,+0.25,120,+1.50,+1.00,+0.50,40,+1.25,,-1,BINO,snellen_chart_21_18_15,Please read the line you can see clearly.,Unable to read.,Confused
+05:12,+1.00,+0.25,120,+1.50,+1.00,+40.50,0,+1.25,,-1,BINO,snellen_chart_70_60_50_50,Please read the line you can see clearly.,Unable to read.,Confident
+05:14,+1.25,0.25,80,+1.50,+1.50,40.5,10,+1.25,,-1,BINO,snellen_chart_70_60_50_50,Please read the line you can see clearly.,Getting better.,Confused
+05:16,+1.25,0.25,80,+1.50,+1.50,40.5,130,+1.25,,-1,BINO,snellen_chart_70_60_50_50,Please read the line you can see clearly.,Able to read.,Confident
+05:24,+1.25,0.25,80,+1.50,+1.50,40.5,130,+1.25,,-1,Left_Occluded,snellen_chart_40_30_25_25,I'm covering your left eye. Please read the line you can see clearly.,Able to read.,Confident
+05:28,+1.25,0.25,80,+1.50,+1.50,40.5,130,+1.25,,-1,Left_Occluded,near_vision,Please read the nearest line you can see comfortably.,Reads near chart.,Confident
+05:30,+1.25,0.25,80,+1.50,+1.50,40.5,130,+1.25,,-1,Right_Pinhole,snellen_chart_6_4.5,Please read the line you can see clearly.,Blurry.,Confident
+05:32,+1.25,0.25,80,+1.50,+1.50,40.5,130,+1.25,,-1,Right_Pinhole,snellen_chart_20_20_20,Please read the line you can see clearly.,Able to read.,Confused
+05:38,+1.25,0.25,80,+1.50,+1.50,40.5,0,+1.25,,-1,Right_Pinhole,snellen_chart_20_20_20,Please read the line you can see clearly.,Able to read.,Confident
+05:42,+1.25,0.25,80,+1.50,+1.50,40.5,0,+1.25,,-1,Left_Occluded,snellen_chart_21_18_15,I'm covering your left eye. Please read the line you can see clearly.,Able to read.,Confused
+05:46,+1.25,0.25,80,+1.50,+1.50,40.5,0,+1.25,,-1,Left_Occluded,snellen_chart_70_60_50_50,I'm covering your left eye. Please read the line you can see clearly.,Blurry.,Confused
+05:48,+1.25,0.25,0,+1.50,+1.50,40.5,0,+1.25,,-1,Left_Occluded,snellen_chart_70_60_50_50,I'm covering your left eye. Please read the line you can see clearly.,Unable to read.,Confident
+05:50,+1.50,0.25,0,+1.25,+1.50,40.5,0,+1.25,,-1,Left_Occluded,snellen_chart_70_60_50_50,I'm covering your left eye. Please read the line you can see clearly.,Getting better.,Confident
+05:54,+1.50,0.25,30,+1.25,+1.50,40.5,0,+1.25,,-1,Right_Axis_Flip1,jcc_chart,Focus on the dot chart. Is this better? (Flip 1),-,Confident
+05:56,+1.50,0.25,30,+1.25,-1.50,40.5,130,+1.25,,-1,Right_Axis_Flip1,jcc_chart,Focus on the dot chart. Is this better? (Flip 1),-,Confident
+06:06,+1.50,0.25,30,+1.25,-1.50,40.5,130,+1.25,,-1,Right_Axis_Flip2,jcc_chart,Or is this better? (Flip 2),Flip 1 - RAM Axis,Confident
+06:08,+1.50,0.25,80,+1.25,-1.50,40.5,130,+1.25,,-1,Right_Axis_Flip1,jcc_chart,Focus on the dot chart. Is this better? (Flip 1),-,Confident
+06:10,+1.50,0.25,55,+1.25,-1.50,40.5,130,+1.25,,-1,Right_Axis_Flip1,jcc_chart,Focus on the dot chart. Is this better? (Flip 1),-,Confident
+06:12,+1.50,0.25,5,+1.25,-1.50,40.5,130,+1.25,,-1,Right_Axis_Flip1,jcc_chart,Focus on the dot chart. Is this better? (Flip 1),-,Confident
+06:14,+1.50,0.25,5,+1.25,+1.50,40.5,130,+1.25,,-1,Right_Axis_Flip1,jcc_chart,Focus on the dot chart. Is this better? (Flip 1),-,Confident
+06:16,+1.50,0.25,80,+1.25,+1.50,40.5,130,+1.25,,-1,Right_Axis_Flip2,jcc_chart,Or is this better? (Flip 2),No change,Confident
+06:18,+1.50,0.25,80,+1.25,+1.50,40.5,130,+1.25,,-1,Right_Axis_Flip1,jcc_chart,Focus on the dot chart. Is this better? (Flip 1),-,Confident
+06:20,+1.50,0.25,30,+1.25,+1.50,40.5,30,+1.25,,-1,Right_Axis_Flip1,jcc_chart,Focus on the dot chart. Is this better? (Flip 1),-,Confident
+06:22,+1.50,0.25,95,+1.25,+1.50,40.5,30,-1.25,,-1,Right_Power_Flip1,jcc_chart,Focus on the dot chart. Is this better? (Flip 1),-,Confident
+06:24,+1.50,0.25,95,+1.25,+1.50,40.5,30,-1.25,,-1,Right_Power_Flip2,jcc_chart,Or is this better? (Flip 2),No change,Confident
+06:26,+1.50,0.25,5,+1.25,+1.50,40.5,30,+1.25,,-1,Right_Power_Flip2,jcc_chart,Or is this better? (Flip 2),No change,Confident
+06:28,+1.50,0.25,5,+1.25,+1.50,40.5,30,+1.25,,-1,Right_Power_Flip2,duochrome,Or is this better? (Flip 2),No change,Confident
+06:30,+1.50,0.25,5,+1.25,+1.50,40.5,130,+1.25,,-1,Left_Occluded,duochrome,"Which is clearer: red or green, or are they the same?",Responds red/green preference.,Confused
+06:50,+1.75,0.25,5,+1.00,+1.50,40.5,130,+1.25,,-1,Left_Occluded,duochrome,"Which is clearer: red or green, or are they the same?",Responds red/green preference.,Confused
+06:52,+1.75,0.25,95,+1.00,+42.50,40.5,130,+1.25,,-1,Left_Occluded,duochrome,"Which is clearer: red or green, or are they the same?",Responds red/green preference.,Confident
+06:56,+1.75,0.25,95,+1.00,-1.50,40.5,130,+1.25,,-1,Left_Occluded,snellen_chart_12_9_7_5,I'm covering your left eye. Please read the line you can see clearly.,Blurry.,Confused
+06:58,+1.75,0.25,95,+1.00,-1.50,40.5,130,+1.25,,-1,Left_Occluded,snellen_chart_40_30_25_25,I'm covering your left eye. Please read the line you can see clearly.,Unable to read.,Confident
+07:00,+1.75,0.25,95,+1.00,+2.50,40.5,130,+1.25,,-1,Left_Occluded,snellen_chart_40_30_25_25,I'm covering your left eye. Please read the line you can see clearly.,Unable to read.,Confident
+07:08,+2.00,0.25,95,+0.75,+2.50,40.5,130,+1.25,,-1,Left_Occluded,snellen_chart_40_30_25_25,I'm covering your left eye. Please read the line you can see clearly.,Unable to read.,Confident
+07:10,+2.00,0.25,95,+0.75,-41.50,40.5,130,+1.25,,-1,Left_Occluded,snellen_chart_40_30_25_25,I'm covering your left eye. Please read the line you can see clearly.,Unable to read.,Confident
+07:12,+1.25,0.25,95,+1.50,-41.50,40.5,0,+1.25,,-1,Left_Occluded,snellen_chart_40_30_25_25,I'm covering your left eye. Please read the line you can see clearly.,Unable to read.,Confident
+07:14,+2.00,0.25,95,+0.75,-41.5,40.5,0,+1.25,,-1,Left_Occluded,snellen_chart_40_30_25_25,I'm covering your left eye. Please read the line you can see clearly.,Unable to read.,Confused
+07:16,+2.00,0.25,5,+0.75,-41.50,40.5,130,+1.25,,-1,Left_Occluded,snellen_chart_40_30_25_25,I'm covering your left eye. Please read the line you can see clearly.,Blurry.,Confused
+07:20,+2.00,0.25,5,+0.75,-41.50,40.5,130,+1.25,,-1,Left_Occluded,snellen_chart_20_20_20,I'm covering your left eye. Please read the line you can see clearly.,Able to read.,Confident
+07:26,+2.00,0.25,95,+0.75,-41.50,40.5,0,+1.25,,-1,Left_Occluded,snellen_chart_21_18_15,I'm covering your left eye. Please read the line you can see clearly.,Able to read.,Confident
+07:28,+2.00,0.25,95,+0.75,+1.50,40.5,0,+1.25,,-1,Right_Occluded,snellen_chart_70_60_50_50,I'm covering your right eye. Please read the line you can see clearly.,Getting better.,Confused
+07:30,+2.00,0.25,5,+0.75,+1.50,40.5,0,+1.25,,-1,Right_Occluded,snellen_chart_70_60_50_50,I'm covering your right eye. Please read the line you can see clearly.,Able to read.,Confident
+07:38,+2.00,0.25,5,+0.75,+1.50,40.5,0,+1.25,,-1,Right_Occluded,snellen_chart_12_9_7_5,I'm covering your right eye. Please read the line you can see clearly.,Able to read.,Confused
+07:40,+2.00,0.25,5,+0.75,+1.50,40.5,0,+1.25,,-1,Right_Occluded,snellen_chart_40_30_25_25,I'm covering your right eye. Please read the line you can see clearly.,Blurry.,Confused
+07:46,+2.00,0.25,5,+0.75,+1.50,40.5,0,+1.25,,-1,Right_Occluded,snellen_chart_6_4.5,I'm covering your right eye. Please read the line you can see clearly.,Able to read.,Confident
+07:48,+2.00,0.25,5,+0.75,+1.50,40.5,0,+1.25,,-1,Right_Occluded,snellen_chart_20_20_20,I'm covering your right eye. Please read the line you can see clearly.,Able to read.,Confused
+07:52,+2.00,0.25,5,+0.75,+1.50,40.5,0,+1.25,,-1,Right_Occluded,snellen_chart_70_60_50_70,I'm covering your right eye. Please read the line you can see clearly.,Blurry.,Confused
+07:54,+2.00,0.25,5,+0.75,+1.50,40.5,0,+1.25,,-1,Right_Occluded,pictorial_chart,Please describe what you see.,Reads the chart.,Confident
+07:56,+2.00,0.25,5,+0.75,+1.50,40.5,0,+1.25,,-1,Right_Occluded,snellen_chart_20_20_20,I'm covering your right eye. Please read the line you can see clearly.,Blurry.,Confident
+07:58,+2.00,0.25,5,+0.75,+1.50,40.5,0,+1.25,,-1,Right_Occluded,snellen_chart_40_30_25_40,I'm covering your right eye. Please read the line you can see clearly.,Unable to read.,Confident
+08:00,+2.00,0.25,5,+0.75,+1.75,40.5,130,+1.00,,-1,Right_Occluded,snellen_chart_40_30_25_40,I'm covering your right eye. Please read the line you can see clearly.,Getting better.,Confident
+08:04,+2.00,0.25,5,+0.75,+1.75,40.5,130,+1.00,,-1,Left_Axis_Flip1,jcc_chart,Focus on the dot chart. Is this better? (Flip 1),-,Confident
+08:10,+2.00,0.25,5,+0.75,+1.75,40.5,130,+1.00,,-1,Left_Axis_Flip2,jcc_chart,Or is this better? (Flip 2),Flip 2 - LAM Axis,Confident
+08:14,+2.00,0.25,5,+0.75,+1.75,40.5,115,+1.00,,-1,Left_Axis_Flip2,jcc_chart,Or is this better? (Flip 2),No change,Confident
+08:16,+2.00,0.25,5,+0.75,+1.75,40.5,115,+1.00,,-1,Left_Power_Flip2,jcc_chart,Or is this better? (Flip 2),No change,Confident
+08:18,+2.00,0.25,5,+0.75,+1.75,40.5,115,+1.25,,-1,Left_Power_Flip2,jcc_chart,Or is this better? (Flip 2),No change,Confident
+08:20,+2.00,0.25,5,+0.75,+1.75,40.5,115,+1.25,,-1,Left_Axis_Flip2,jcc_chart,Or is this better? (Flip 2),Flip 2 - LAM Axis,Confident
+08:22,+2.00,0.25,5,+0.75,+1.75,40.5,100,+1.25,,-1,Left_Axis_Flip2,jcc_chart,Or is this better? (Flip 2),No change,Confident
+08:24,+2.00,0.25,5,+0.75,+1.75,40.5,100,+1.25,,-1,Left_Axis_Flip1,jcc_chart,Focus on the dot chart. Is this better? (Flip 1),-,Confident
+08:26,+2.00,0.25,5,+0.75,+1.75,40.5,100,+1.25,,-1,Left_Axis_Flip2,jcc_chart,Or is this better? (Flip 2),Flip 2 - LAM Axis,Confident
+08:28,+2.00,0.25,5,+0.75,+1.75,40.5,90,+1.25,,-1,Left_Axis_Flip2,jcc_chart,Or is this better? (Flip 2),No change,Confident
+08:30,+2.00,0.25,5,+0.75,+1.75,40.5,90,+1.25,,-1,Left_Axis_Flip1,jcc_chart,Focus on the dot chart. Is this better? (Flip 1),-,Confident
+08:32,+2.00,0.25,5,+0.75,+1.75,40.5,90,+1.25,,-1,Left_Axis_Flip2,jcc_chart,Or is this better? (Flip 2),No change,Confident
+08:36,+2.00,0.25,5,+0.75,+1.75,40.5,90,+1.25,,-1,Left_Axis_Flip2,duochrome,Or is this better? (Flip 2),No change,Confident
+08:38,+2.00,0.25,5,+0.75,+1.75,40.5,90,+1.25,,-1,Right_Occluded,duochrome,"Which is clearer: red or green, or are they the same?",Responds red/green preference.,Confused
+08:40,+2.00,0.25,95,+0.75,+1.75,40.5,90,+1.25,,-1,Right_Occluded,duochrome,"Which is clearer: red or green, or are they the same?",Responds red/green preference.,Confused
+08:42,+2.00,0.25,95,+0.75,+2.00,40.5,90,+1.00,,-1,Right_Occluded,duochrome,"Which is clearer: red or green, or are they the same?",Responds red/green preference.,Confident
+08:44,+2.00,0.25,95,+0.75,+2.00,40.5,90,+1.00,,-1,Right_Occluded,snellen_chart_6_4.5,I'm covering your right eye. Please read the line you can see clearly.,Blurry.,Confident
+08:46,+2.00,0.25,95,+0.75,+2.00,40.5,90,+1.00,,-1,Right_Occluded,snellen_chart_20_20_20,I'm covering your right eye. Please read the line you can see clearly.,Unable to read.,Confident
+09:00,2,0.25,95,+1.50,+1.50,40.5,90,+1.25,,-1,Right_Occluded,snellen_chart_20_20_20,I'm covering your right eye. Please read the line you can see clearly.,Unable to read.,Confident
+09:02,+2.00,0.25,95,+0.75,-2.00,40.5,90,+1.00,,-1,Right_Occluded,snellen_chart_20_20_20,I'm covering your right eye. Please read the line you can see clearly.,Getting better.,Confident
+09:08,+2.00,0.25,95,+0.75,-2.00,40.5,90,+1.00,,-1,BINO,snellen_chart_20_20_20,Please read the line you can see clearly.,Blurry.,Confident
+09:12,+2.00,0.25,95,+0.75,+2.00,40.5,90,+1.00,,-1,BINO,near_vision,Please read the nearest line you can see comfortably.,Reads near chart.,Confused
+09:14,+2.00,0.25,180,+0.75,+2.00,40.5,180,+1.00,,-1,BINO,near_vision,Please read the nearest line you can see comfortably.,Reads near chart.,Confused
+09:18,+2.00,0.25,180,+1.25,+2.00,40.5,180,+1,,-1,BINO,near_vision,Please read the nearest line you can see comfortably.,Reads near chart.,Confused
+09:20,+2.00,0.25,180,+1.50,+2.00,40.5,180,+1.25,,-1,BINO,near_vision,Please read the nearest line you can see comfortably.,Reads near chart.,Confused
+09:22,+2.00,0.25,180,+1.50,+2.00,40.5,180,+1.50,,-1,BINO,near_vision,Please read the nearest line you can see comfortably.,Reads near chart.,Confident
+09:26,+2.00,0.25,180,+1.50,+2.00,40.5,180,+1.50,,-1,Left_Occluded,near_vision,Please read the nearest line you can see comfortably.,Reads near chart.,Confused
+09:34,+2.00,0.25,180,,+2.00,40.5,180,+1.50,,-1,Left_Occluded,near_vision,Please read the nearest line you can see comfortably.,Reads near chart.,Confused
+09:36,+2.00,0.25,180,+2.00,+2.00,40.5,180,+1.50,,-1,Left_Occluded,near_vision,Please read the nearest line you can see comfortably.,Reads near chart.,Confused
+09:38,+2.00,0.25,180,+2.00,+2.00,40.5,0,+1.50,,-1,Left_Occluded,near_vision,Please read the nearest line you can see comfortably.,Reads near chart.,Confident
+09:40,+2.00,0.25,180,+2.00,+2.00,40.5,180,+1.50,,-1,Right_Occluded,near_vision,Please read the nearest line you can see comfortably.,Reads near chart.,Confused
+09:42,+2.00,0.25,180,+2.00,+2.00,40.5,180,+1.00,,-1,Right_Occluded,near_vision,Please read the nearest line you can see comfortably.,Reads near chart.,Confused
+09:48,+2.00,0.25,180,+2.00,+2.00,40.5,180,+1.75,,-1,Right_Occluded,near_vision,Please read the nearest line you can see comfortably.,Reads near chart.,Confused
+09:50,+2.00,0.25,180,+2.00,+2.00,40.5,180,+2.00,,-1,Right_Occluded,near_vision,Please read the nearest line you can see comfortably.,Reads near chart.,Confident
+09:54,+2.00,0.25,180,+2.00,+2.00,40.5,180,+2.00,,-1,BINO,near_vision,Please read the nearest line you can see comfortably.,Reads near chart.,Confident
+09:58,+2.00,0.25,180,+2.00,+2.00,40.5,90,+2.00,,-1,BINO,snellen_chart_12_9_7_5,Please read the line you can see clearly.,Blurry.,Confused
+10:00,+2.00,0.25,5,+2.00,+2.00,40.5,90,+2.00,,-1,BINO,snellen_chart_12_9_7_5,Please read the line you can see clearly.,Blurry.,Confused
+10:04,+2.00,0.25,5,+2.00,+2.00,40.5,90,+2.00,,-1,BINO,snellen_chart_40_35,Please read the line you can see clearly.,Unable to read.,Confused
+10:12,+2.00,0.25,5,+2.00,+2.00,40.5,90,+2.00,,-1,Both_Occluded,snellen_chart_40_35,Please read the line you can see clearly.,Blurry.,Confused
+10:22,+2.00,0.25,95,+2.00,+2.00,40.5,90,+2.00,,-1,BINO,snellen_chart_40_35,Please read the line you can see clearly.,Blurry.,Confused
+10:24,+2.00,0.25,95,+2.00,+2.00,40.5,90,+2.00,,-1,Both_Occluded,snellen_chart_40_35,Please read the line you can see clearly.,Blurry.,Confident
+10:46,+2.00,0.25,95,+2.00,+2.00,40.5,90,+2.00,,-1,BINO,snellen_chart_40_35,Please read the line you can see clearly.,Blurry.,Confused
+10:58,+2.00,0.25,95,+2.00,+2.00,40.5,90,+2.00,,-1,BINO,snellen_chart_6_4.5,Please read the line you can see clearly.,Able to read.,Confident
+11:00,+2.00,0.25,95,+2.00,+2.00,40.5,90,+2.00,,-1,BINO,snellen_chart_20_20_20,Please read the line you can see clearly.,Able to read.,Confident
+11:44,+2.00,0.25,95,+2.00,+2.00,40.5,90,+2.00,,-1,BINO,snellen_chart_12_9_7_5,Please read the line you can see clearly.,Unable to read.,Confident
+11:46,+1.25,0.25,30,+1.50,+1.50,40.5,90,+1.25,,-1,BINO,snellen_chart_12_9_7_5,Please read the line you can see clearly.,Unable to read.,Confident
+11:48,+2.00,0.25,5,+2.00,+2.00,40.5,90,+2.00,,-1,BINO,snellen_chart_12_9_7_5,Please read the line you can see clearly.,Unable to read.,Confused
+12:00,+2.00,0.25,5,+2.00,+2.00,40.5,90,+2.00,,-1,BINO,snellen_chart_40_35,Please read the line you can see clearly.,Unable to read.,Confused
+12:14,+2.00,0.25,95,+2.00,+2.00,40.5,90,+2.00,,-1,BINO,snellen_chart_40_35,Please read the line you can see clearly.,Blurry.,Confused
+13:26,+2.00,0.25,5,+2.00,+2.00,40.5,90,+2.00,,-1,BINO,snellen_chart_40_35,Please read the line you can see clearly.,Blurry.,Confused
+14:02,+2.00,0.25,95,+2.00,+2.00,40.5,90,+2.00,,-1,BINO,snellen_chart_40_35,Please read the line you can see clearly.,Blurry.,Confused
+15:44,+2.00,0.25,5,+2.00,+2.00,40.5,90,+2.00,,-1,BINO,snellen_chart_40_35,Please read the line you can see clearly.,Blurry.,Confident

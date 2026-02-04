@@ -1,0 +1,54 @@
+Timestamp,R_SPH,R_CYL,R_AXIS,R_ADD,L_SPH,L_CYL,L_AXIS,L_ADD,PD,Chart_Number,Occluder_State,Chart_Display,Optometrist_Question,Patient_Answer_Intent,Patient_Confidence
+00:49,0.00,0.00,180,0.00,0.00,0.00,180,0.00,,-1,BINO,echart_400,Are you able to see big E clearly.,Reads the chart.,Confused
+02:42,0.00,0.00,180,0.00,0.00,0.00,180,0.00,,-1,BINO,echart_200,Are you able to see big E clearly.,Reads the chart.,Confident
+04:04,0.00,0.00,180,0.00,0.00,0.00,180,0.00,,-1,Left_Occluded,echart_200,Are you able to see big E clearly.,Reads the chart.,Confident
+04:06,0.00,0.00,180,0.00,0.00,0.00,180,0.00,,-1,Left_Occluded,snellen_chart_12_9_7_5,I'm covering your left eye. Please read the line you can see clearly.,Blurry.,Confused
+04:08,0.00,0.00,180,0.00,0.00,0.00,180,0.00,,-1,Left_Occluded,snellen_chart_40_30_25_30,I'm covering your left eye. Please read the line you can see clearly.,Able to read.,Confident
+04:16,0.00,0.00,180,0.00,0.00,0.00,180,0.00,,-1,Left_Occluded,snellen_chart_6_4_5,I'm covering your left eye. Please read the line you can see clearly.,Able to read.,Confused
+04:20,0.00,0.00,180,0.00,0.00,0.00,180,0.00,,-1,Left_Occluded,snellen_chart_20_15_20,I'm covering your left eye. Please read the line you can see clearly.,Unable to read.,Confident
+04:24,+0.50,0.00,180,0.00,0.00,0.00,180,0.00,,-1,Left_Occluded,snellen_chart_20_15_20,I'm covering your left eye. Please read the line you can see clearly.,Getting better.,Confident
+04:30,+0.50,0.00,180,0.00,0.00,0.00,180,0.00,,-1,Left_Occluded,snellen_chart_40_30_25_25,I'm covering your left eye. Please read the line you can see clearly.,Unable to read.,Confident
+04:50,+0.25,0.00,180,0.00,0.00,0.00,180,0.00,,-1,Left_Occluded,snellen_chart_40_30_25_25,I'm covering your left eye. Please read the line you can see clearly.,Unable to read.,Confident
+04:56,+0.50,0.00,180,0.00,0.00,0.00,180,0.00,,-1,Left_Occluded,snellen_chart_40_30_25_25,I'm covering your left eye. Please read the line you can see clearly.,Unable to read.,Confused
+05:00,+0.50,0.00,180,0.00,0.00,0.00,180,0.00,,-1,Right_Axis_Flip1,jcc_chart,Focus on the dot chart. Is this better? (Flip 1),-,Confident
+05:06,+0.50,0.00,5,0.00,0.00,0.00,180,0.00,,-1,Right_Axis_Flip1,jcc_chart,Focus on the dot chart. Is this better? (Flip 1),-,Confident
+05:08,+0.50,0.00,65,0.00,0.00,0.00,180,0.00,,-1,Right_Axis_Flip1,jcc_chart,Focus on the dot chart. Is this better? (Flip 1),-,Confident
+05:14,+0.50,0.00,65,0.00,0.00,0.00,180,0.00,,-1,Right_Axis_Flip2,jcc_chart,Or is this better? (Flip 2),No change,Confident
+05:26,+0.50,0.00,65,0.00,0.00,0.00,180,0.00,,-1,Right_Axis_Flip1,jcc_chart,Focus on the dot chart. Is this better? (Flip 1),-,Confident
+05:32,+0.50,0.00,65,0.00,0.00,0.00,180,0.00,,-1,Right_Power_Flip1,jcc_chart,Focus on the dot chart. Is this better? (Flip 1),-,Confident
+05:34,+0.50,0.00,65,0.00,0.00,0.00,180,0.00,,-1,Right_Power_Flip2,jcc_chart,Or is this better? (Flip 2),No change,Confident
+05:40,+0.50,0.00,65,0.00,0.00,0.00,180,0.00,,-1,Right_Axis_Flip1,jcc_chart,Focus on the dot chart. Is this better? (Flip 1),-,Confident
+05:42,+0.50,0.00,65,0.00,0.00,0.00,180,0.00,,-1,Right_Power_Flip1,jcc_chart,Focus on the dot chart. Is this better? (Flip 1),-,Confident
+05:52,+0.50,0.00,65,0.00,0.00,0.00,180,0.00,,-1,Right_Power_Flip2,jcc_chart,Or is this better? (Flip 2),No change,Confident
+05:56,+0.50,0.00,65,0.00,0.00,0.00,180,0.00,,-1,Right_Power_Flip2,duochrome,Or is this better? (Flip 2),No change,Confident
+05:58,+0.50,0.00,65,0.00,0.00,0.00,180,0.00,,-1,Left_Occluded,duochrome,"Which is clearer: red or green, or are they the same?",Responds red/green preference.,Confused
+06:08,+0.75,0.00,65,0.00,0.00,0.00,180,0.00,,-1,Left_Occluded,duochrome,"Which is clearer: red or green, or are they the same?",Responds red/green preference.,Confident
+06:12,+0.50,0.00,65,0.00,0.00,0.00,180,0.00,,-1,Left_Occluded,snellen_chart_20_20_20,I'm covering your left eye. Please read the line you can see clearly.,Blurry.,Confused
+06:16,+0.50,0.00,5,0.00,0.00,0.00,180,0.00,,-1,Left_Occluded,snellen_chart_20_20_20,I'm covering your left eye. Please read the line you can see clearly.,Blurry.,Confident
+06:24,+0.50,0.00,65,0.00,0.00,0.00,180,0.00,,-1,Right_Occluded,number_chart_30,Please read the nearest line you can see comfortably.,Reads near chart.,Confused
+06:30,+0.50,0.00,65,0.00,0.00,0.00,180,0.00,,-1,Right_Occluded,number_chart_40,Please read the nearest line you can see comfortably.,Reads near chart.,Confused
+06:32,+0.50,0.00,65,0.00,0.00,0.00,180,0.00,,-1,Right_Occluded,number_chart_50,Please read the nearest line you can see comfortably.,Reads near chart.,Confused
+06:42,+0.50,0.00,65,0.00,+0.25,0.00,180,0.00,,-1,Right_Occluded,number_chart_50,Please read the nearest line you can see comfortably.,Reads near chart.,Confident
+06:48,+0.50,0.00,65,0.00,+0.25,0.00,180,0.00,,-1,Left_Pinhole,number_chart_50,Please read the nearest line you can see comfortably.,Reads near chart.,Confident
+07:20,+0.50,0.00,65,0.00,+0.25,0.00,180,0,,-1,Left_Axis_Flip1,jcc_chart,Focus on the dot chart. Is this better? (Flip 1),-,Confident
+07:22,+0.50,0.00,65,0.00,+0.25,0.00,,0.00,,-1,Left_Power_Flip1,jcc_chart,Focus on the dot chart. Is this better? (Flip 1),-,Confident
+07:24,+0.50,0.00,65,0.00,+0.25,0.00,,0.00,,-1,Left_Power_Flip2,jcc_chart,Or is this better? (Flip 2),No change,Confident
+07:26,+0.50,0.00,65,0.00,+0.25,0.00,,0.00,,-1,Left_Power_Flip1,jcc_chart,Focus on the dot chart. Is this better? (Flip 1),-,Confident
+07:32,+0.50,0.00,65,0.00,+0.25,0.00,5,0.00,,-1,Left_Power_Flip1,jcc_chart,Focus on the dot chart. Is this better? (Flip 1),-,Confident
+07:34,+0.50,0.00,65,0.00,+0.25,0.00,,0.00,,-1,Left_Power_Flip1,duochrome,Focus on the dot chart. Is this better? (Flip 1),-,Confident
+07:36,+0.50,0.00,65,0.00,+0.25,0.00,,0.00,,-1,Right_Occluded,duochrome,"Which is clearer: red or green, or are they the same?",Responds red/green preference.,Confident
+07:46,+0.50,0.00,65,0.00,+0.25,0.00,,0.00,,-1,Right_Occluded,number_chart_40,Please read the nearest line you can see comfortably.,Reads near chart.,Confused
+07:48,+0.50,0.00,65,0.00,+0.25,0.00,,0.00,,-1,Right_Occluded,number_chart_50,Please read the nearest line you can see comfortably.,Reads near chart.,Confused
+07:52,+0.50,0.00,65,0.00,+0.25,0.00,0,0.00,,-1,Right_Occluded,number_chart_50,Please read the nearest line you can see comfortably.,Reads near chart.,Confused
+08:22,+0.50,0.00,65,0.00,+0.25,0.00,0,0.00,,-1,BINO,number_chart_50,Please read the nearest line you can see comfortably.,Reads near chart.,Confused
+08:26,+0.50,0.00,65,0.00,+0.25,0.00,,0.00,,-1,BINO,near_vision,Please read the nearest line you can see comfortably.,Reads near chart.,Confident
+08:28,+0.50,0.00,65,0.00,+0.25,0.00,,0.00,,-1,Right_Occluded,near_vision,Please read the nearest line you can see comfortably.,Reads near chart.,Confident
+08:40,+0.50,0.00,65,0.00,+0.25,0.00,54,0.00,,-1,Left_Occluded,near_vision,Please read the nearest line you can see comfortably.,Reads near chart.,Confused
+08:42,+0.50,0.00,65,0.00,+0.25,0.00,,0.00,,-1,Left_Occluded,near_vision,Please read the nearest line you can see comfortably.,Reads near chart.,Confused
+08:44,+0.50,0.00,65,0.00,+0.25,0.00,3,0.00,,-1,Left_Occluded,near_vision,Please read the nearest line you can see comfortably.,Reads near chart.,Confused
+08:48,+0.50,0.00,65,0.00,+0.25,0.00,,0.00,,-1,Left_Occluded,near_vision,Please read the nearest line you can see comfortably.,Reads near chart.,Confident
+08:52,+0.50,0.00,65,0.00,+0.25,0.00,,0.00,,-1,BINO,number_chart_200,Please read the nearest line you can see comfortably.,Reads near chart.,Confused
+09:04,+0.50,0.00,65,0.00,+0.25,0.00,0,0.00,,-1,BINO,number_chart_200,Please read the nearest line you can see comfortably.,Reads near chart.,Confident
+10:22,+0.50,0.00,65,0.00,+0.25,0.00,0,0.00,,-1,BINO,snellen_chart_20_20_20,Please read the line you can see clearly.,Blurry.,Confused
+11:54,+0.50,0.00,65,0.00,+0.25,0.00,0,0.00,,-1,Both_Occluded,snellen_chart_20_20_20,Please read the line you can see clearly.,Blurry.,Confident
+11:56,+0.50,0.00,65,0.00,+0.25,0.00,0,0.00,,-1,BINO,snellen_chart_20_20_20,Please read the line you can see clearly.,Blurry.,Confident

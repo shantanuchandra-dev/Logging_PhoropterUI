@@ -26,13 +26,13 @@ class RowContext:
     ocr_fields_read: int
     anomalies_fixed: int
     
-    # Derived fields
-    chart_type: str  # snellen, echart, jcc, duochrome, near, number, pictorial
-    is_flip1: bool
-    is_flip2: bool
-    is_axis_flip: bool
-    is_power_flip: bool
-    eye_tested: str  # right, left, both, none
+    # Derived fields (set in __post_init__)
+    chart_type: str = ""  # snellen, echart, jcc, duochrome, near, number, pictorial
+    is_flip1: bool = False
+    is_flip2: bool = False
+    is_axis_flip: bool = False
+    is_power_flip: bool = False
+    eye_tested: str = ""  # right, left, both, none
     
     # Conversation fields (if present)
     optometrist_question: Optional[str] = None
