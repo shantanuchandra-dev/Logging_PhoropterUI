@@ -24,6 +24,20 @@ class InteractiveSession:
         # Initialize state machine
         self.state_machine = StateMachine()
         
+        # Phase name mapping
+        self.phase_names = {
+            "distance_vision": "Phase A: Distance Vision (Step 2.1)",
+            "right_eye_refraction": "Phase B: Right Eye Refraction (Step 6.1)",
+            "jcc_axis_right": "Phase E: JCC Axis Right (Step 6.2)",
+            "jcc_power_right": "Phase F: JCC Power Right (Step 6.2)",
+            "duochrome_right": "Phase G: Duochrome Right (Step 6.2)",
+            "left_eye_refraction": "Phase D: Left Eye Refraction (Step 6.3)",
+            "jcc_axis_left": "Phase H: JCC Axis Left (Step 6.4)",
+            "jcc_power_left": "Phase I: JCC Power Left (Step 6.4)",
+            "duochrome_left": "Phase J: Duochrome Left (Step 6.4)",
+            "binocular_balance": "Phase K: Binocular Balance (Step 6.5)",
+        }
+        
         # Current test state
         self.current_phase = "distance_vision"
         self.current_row = self._init_row()
@@ -32,7 +46,7 @@ class InteractiveSession:
         # Refraction state tracking
         self.snellen_charts = [
             "snellen_chart_200_150",
-            "snellen_chart_100_90",
+            "snellen_chart_100_80",
             "snellen_chart_70_60_50",
             "snellen_chart_40_30_25",
             "snellen_chart_25_20_15",
@@ -48,7 +62,7 @@ class InteractiveSession:
         self.chart_map = {
             "echart_400": "chart_9",
             "snellen_chart_200_150": "chart_10",
-            "snellen_chart_100_90": "chart_11",
+            "snellen_chart_100_80": "chart_11",
             "snellen_chart_70_60_50": "chart_12",
             "snellen_chart_40_30_25": "chart_13",
             "snellen_chart_20_15_10": "chart_14",
@@ -135,14 +149,20 @@ class InteractiveSession:
         if left_eye:
             payload["test_cases"][0]["left_eye"] = left_eye
         
-        # Map occluder
+        # Map occluder and set JCC eye mode for non-JCC phases
+        jcc_eye_mode = None
+        is_jcc_phase = self.current_phase in ["jcc_axis_right", "jcc_power_right", "jcc_axis_left", "jcc_power_left"]
+        
         if occluder:
             if occluder == "Left_Occluded":
                 payload["test_cases"][0]["aux_lens"] = "AuxLensL"
+                jcc_eye_mode = "R"  # Use L when left is occluded
             elif occluder == "Right_Occluded":
                 payload["test_cases"][0]["aux_lens"] = "AuxLensR"
+                jcc_eye_mode = "L"  # Use R when right is occluded
             elif occluder == "BINO":
                 payload["test_cases"][0]["aux_lens"] = "OFF"
+                jcc_eye_mode = "BINO"
             self.current_row.occluder_state = occluder
         
         cmd = f"""curl -X POST {self.api_endpoint} \\
@@ -151,8 +171,14 @@ class InteractiveSession:
         
         subprocess.run(cmd, shell=True, capture_output=True)
         print(f"✓ Power set: R({r_sph}/{r_cyl}/{r_axis}) L({l_sph}/{l_cyl}/{l_axis}) Occ: {occluder}")
+        
+        # Set JCC eye mode for non-JCC phases only
+        # JCC phases handle their own state when chart is displayed
+        if jcc_eye_mode and not is_jcc_phase:
+            self.jcc_control(jcc_eye_mode)
+            print(f"✓ JCC eye mode set: {jcc_eye_mode}")
     
-    def jcc_flip(self, action: str):
+    def jcc_control(self, action: str):
         """Perform JCC action (handle, increase, decrease, etc.)."""
         payload = {"test_cases": [{"jcc": action}]}
         
@@ -188,11 +214,13 @@ class InteractiveSession:
         if isinstance(intents, dict):
             # JCC phase
             if self.current_row.is_flip1:
-                return [intents.get("flip1", "No response expected")]
+                flip1_intents = intents.get("flip1", [])
+                # Return empty list for flip1 (no response needed, auto-flip)
+                return flip1_intents if isinstance(flip1_intents, list) else []
             elif self.current_row.is_flip2:
                 flip2_intents = intents.get("flip2", [])
                 return flip2_intents if isinstance(flip2_intents, list) else [flip2_intents]
-            return [intents.get("flip1", "No response expected")]
+            return []
         elif isinstance(intents, list):
             return intents
         
@@ -200,12 +228,14 @@ class InteractiveSession:
     
     def start_distance_vision(self):
         """Start Phase A: Distance Vision."""
+        self.current_phase = "distance_vision"
+        
         print("\n" + "="*60)
-        print("PHASE A: DISTANCE VISION (Step 2.1)")
+        print(self.phase_names[self.current_phase].upper())
         print("="*60)
         
-        self.current_phase = "distance_vision"
-        self.reset_phoropter()
+        # Note: Frontend already calls resetPhoropter() before starting session
+        # self.reset_phoropter()
         self.set_chart("echart_400")
         self.current_row.occluder_state = "BINO"
         
@@ -213,7 +243,7 @@ class InteractiveSession:
         intents = self.get_intents()
         
         return {
-            "phase": "Distance Vision (Step 2.1)",
+            "phase": self.phase_names[self.current_phase],
             "question": question,
             "intents": intents,
             "chart": "echart_400",
@@ -264,6 +294,8 @@ class InteractiveSession:
         """Process distance vision phase."""
         # Move to right eye refraction
         self.current_phase = "right_eye_refraction"
+        print(f"\n→ Transitioning to {self.phase_names[self.current_phase]}")
+        
         self.current_chart_index = 0  # Start with largest chart
         self.unable_read_count = 0
         
@@ -374,86 +406,134 @@ class InteractiveSession:
     def _process_jcc_axis_right(self, intent: str) -> Dict:
         """Process JCC axis refinement for right eye."""
         if self.jcc_flip_state == "flip1":
-            # Flip1 shown, now show Flip2
-            self.jcc_flip_state = "flip2"
-            self.current_row = self._copy_row_state()
-            self.current_row.occluder_state = "Right_Axis_Flip2"
-            self.jcc_flip("handle")  # Flip to position 2
-            return self._build_response()
+            # Auto-progress from Flip1 to Flip2
+            if intent == "AUTO_FLIP":
+                # This is the automatic call after 2 seconds
+                # Call handle to flip from position 1 to position 2
+                self.jcc_flip_state = "flip2"
+                self.current_row = self._copy_row_state()
+                self._update_state(occluder="Right_Axis_Flip2")
+                self.jcc_control("handle")  # Flip to position 2
+                return self._build_response()
+            else:
+                # Initial entry - show Flip1 and request auto-flip
+                response = self._build_response()
+                response['auto_flip'] = True  # Tell frontend to auto-progress
+                response['flip_wait_seconds'] = 2
+                return response
         
         elif self.jcc_flip_state == "flip2":
             # Process Flip2 response
-            if "GAP Axis" in intent:
-                # Increase axis by 5°
+            if "GAP Axis" in intent or "Flip 1" in intent:
+                # Patient chose Flip 1 - Use JCC increase operation
+                self.jcc_control("increase")  # Phoropter increases axis by 5°
+                
+                # Update internal state (phoropter handles actual value)
                 self.current_row = self._copy_row_state()
                 self.current_row.r_axis += 5
                 if self.current_row.r_axis > 180:
                     self.current_row.r_axis -= 180
-                self.set_power(r_axis=self.current_row.r_axis, occluder="Left_Occluded")
-                self.jcc_flip("increase")
-                # Reset for next cycle
+                
+                # Reset to Flip1 for next cycle
+                self.jcc_control("handle")
                 self.jcc_flip_state = "flip1"
-                self.current_row.occluder_state = "Right_Axis_Flip1"
-                return self._build_response()
+                self._update_state(occluder="Right_Axis_Flip1")
+                response = self._build_response()
+                response['auto_flip'] = True
+                response['flip_wait_seconds'] = 2
+                return response
             
-            elif "RAM Axis" in intent:
-                # Decrease axis by 5°
+            elif "RAM Axis" in intent or "Flip 2" in intent:
+                # Patient chose Flip 2 - Use JCC decrease operation
+                self.jcc_control("decrease")  # Phoropter decreases axis by 5°
+                
+                # Update internal state (phoropter handles actual value)
                 self.current_row = self._copy_row_state()
                 self.current_row.r_axis -= 5
                 if self.current_row.r_axis < 0:
                     self.current_row.r_axis += 180
-                self.set_power(r_axis=self.current_row.r_axis, occluder="Left_Occluded")
-                self.jcc_flip("decrease")
-                # Reset for next cycle
+                
+                # Reset to Flip1 for next cycle
+                self.jcc_control("handle")
                 self.jcc_flip_state = "flip1"
-                self.current_row.occluder_state = "Right_Axis_Flip1"
-                return self._build_response()
+                self._update_state(occluder="Right_Axis_Flip1")
+                response = self._build_response()
+                response['auto_flip'] = True
+                response['flip_wait_seconds'] = 2
+                return response
             
             elif "Both Same" in intent or "Reverse" in intent:
                 # Move to JCC Power
                 return self._transition_to_jcc_power_right()
             
             elif "Repeat" in intent:
-                # Repeat the flip cycle
+                # Repeat the flip cycle - reset to flip1 and request auto-flip
                 self.jcc_flip_state = "flip1"
                 self.current_row = self._copy_row_state()
-                self.current_row.occluder_state = "Right_Axis_Flip1"
-                self.jcc_flip("handle")  # Flip to position 1
-                return self._build_response()
+                self._update_state(occluder="Right_Axis_Flip1")
+                # Note: JCC handle was already called, just need to show Flip1 again
+                response = self._build_response()
+                response['auto_flip'] = True
+                response['flip_wait_seconds'] = 2
+                return response
         
         return self._build_response()
     
     def _process_jcc_axis_left(self, intent: str) -> Dict:
         """Process JCC axis refinement for left eye."""
         if self.jcc_flip_state == "flip1":
-            self.jcc_flip_state = "flip2"
-            self.current_row = self._copy_row_state()
-            self.current_row.occluder_state = "Left_Axis_Flip2"
-            self.jcc_flip("handle")
-            return self._build_response()
+            # Auto-progress from Flip1 to Flip2
+            if intent == "AUTO_FLIP":
+                self.jcc_flip_state = "flip2"
+                self.current_row = self._copy_row_state()
+                self._update_state(occluder="Left_Axis_Flip2")
+                self.jcc_control("handle")
+                return self._build_response()
+            else:
+                # Initial entry - show Flip1 and request auto-flip
+                response = self._build_response()
+                response['auto_flip'] = True
+                response['flip_wait_seconds'] = 2
+                return response
         
         elif self.jcc_flip_state == "flip2":
-            if "GAP Axis" in intent:
+            if "GAP Axis" in intent or "Flip 1" in intent:
+                # Patient chose Flip 1 - Use JCC increase operation
+                self.jcc_control("increase")  # Phoropter increases axis by 5°
+                
+                # Update internal state (phoropter handles actual value)
                 self.current_row = self._copy_row_state()
                 self.current_row.l_axis += 5
                 if self.current_row.l_axis > 180:
                     self.current_row.l_axis -= 180
-                self.set_power(l_axis=self.current_row.l_axis, occluder="Right_Occluded")
-                self.jcc_flip("increase")
+                
+                # Reset to Flip1 for next cycle
+                self.jcc_control("handle")
                 self.jcc_flip_state = "flip1"
-                self.current_row.occluder_state = "Left_Axis_Flip1"
-                return self._build_response()
+                self._update_state(occluder="Left_Axis_Flip1")
+                response = self._build_response()
+                response['auto_flip'] = True
+                response['flip_wait_seconds'] = 2
+                return response
             
-            elif "RAM Axis" in intent:
+            elif "RAM Axis" in intent or "Flip 2" in intent:
+                # Patient chose Flip 2 - Use JCC decrease operation
+                self.jcc_control("decrease")  # Phoropter decreases axis by 5°
+                
+                # Update internal state (phoropter handles actual value)
                 self.current_row = self._copy_row_state()
                 self.current_row.l_axis -= 5
                 if self.current_row.l_axis < 0:
                     self.current_row.l_axis += 180
-                self.set_power(l_axis=self.current_row.l_axis, occluder="Right_Occluded")
-                self.jcc_flip("decrease")
+                
+                # Reset to Flip1 for next cycle
+                self.jcc_control("handle")
                 self.jcc_flip_state = "flip1"
-                self.current_row.occluder_state = "Left_Axis_Flip1"
-                return self._build_response()
+                self._update_state(occluder="Left_Axis_Flip1")
+                response = self._build_response()
+                response['auto_flip'] = True
+                response['flip_wait_seconds'] = 2
+                return response
             
             elif "Both Same" in intent or "Reverse" in intent:
                 return self._transition_to_jcc_power_left()
@@ -461,41 +541,65 @@ class InteractiveSession:
             elif "Repeat" in intent:
                 self.jcc_flip_state = "flip1"
                 self.current_row = self._copy_row_state()
-                self.current_row.occluder_state = "Left_Axis_Flip1"
-                self.jcc_flip("handle")
-                return self._build_response()
+                self._update_state(occluder="Left_Axis_Flip1")
+                response = self._build_response()
+                response['auto_flip'] = True
+                response['flip_wait_seconds'] = 2
+                return response
         
         return self._build_response()
     
     def _process_jcc_power_right(self, intent: str) -> Dict:
         """Process JCC power refinement for right eye."""
         if self.jcc_flip_state == "flip1":
-            self.jcc_flip_state = "flip2"
-            self.current_row = self._copy_row_state()
-            self.current_row.occluder_state = "Right_Power_Flip2"
-            self.jcc_flip("handle")
-            return self._build_response()
+            # Auto-progress from Flip1 to Flip2
+            if intent == "AUTO_FLIP":
+                self.jcc_flip_state = "flip2"
+                self.current_row = self._copy_row_state()
+                self._update_state(occluder="Right_Power_Flip2")
+                self.jcc_control("handle")
+                return self._build_response()
+            else:
+                # Initial entry - show Flip1 and request auto-flip
+                response = self._build_response()
+                response['auto_flip'] = True
+                response['flip_wait_seconds'] = 2
+                return response
         
         elif self.jcc_flip_state == "flip2":
-            if "GAP Power" in intent:
-                # Increase cylinder by 0.25D (more positive/less negative)
+            if "GAP Power" in intent or "Flip 1" in intent:
+                # Patient chose Flip 1 - Use JCC increase operation
+                self.jcc_control("increase")  # Phoropter increases cylinder by 0.25D
+                
+                # Update internal state (phoropter handles actual value)
                 self.current_row = self._copy_row_state()
                 self.current_row.r_cyl += 0.25
-                self.set_power(r_cyl=self.current_row.r_cyl, occluder="Left_Occluded")
-                self.jcc_flip("increase")
+                
+                # Reset to Flip1 for next cycle
+                self.jcc_control("handle")
                 self.jcc_flip_state = "flip1"
-                self.current_row.occluder_state = "Right_Power_Flip1"
-                return self._build_response()
+                self._update_state(occluder="Right_Power_Flip1")
+                response = self._build_response()
+                response['auto_flip'] = True
+                response['flip_wait_seconds'] = 2
+                return response
             
-            elif "RAM Power" in intent:
-                # Decrease cylinder by 0.25D (more negative)
+            elif "RAM Power" in intent or "Flip 2" in intent:
+                # Patient chose Flip 2 - Use JCC decrease operation
+                self.jcc_control("decrease")  # Phoropter decreases cylinder by 0.25D
+                
+                # Update internal state (phoropter handles actual value)
                 self.current_row = self._copy_row_state()
                 self.current_row.r_cyl -= 0.25
-                self.set_power(r_cyl=self.current_row.r_cyl, occluder="Left_Occluded")
-                self.jcc_flip("decrease")
+                
+                # Reset to Flip1 for next cycle
+                self.jcc_control("handle")
                 self.jcc_flip_state = "flip1"
-                self.current_row.occluder_state = "Right_Power_Flip1"
-                return self._build_response()
+                self._update_state(occluder="Right_Power_Flip1")
+                response = self._build_response()
+                response['auto_flip'] = True
+                response['flip_wait_seconds'] = 2
+                return response
             
             elif "Both Same" in intent or "Reverse" in intent or (self.current_row.r_cyl == 0.0 and "GAP" in intent):
                 return self._transition_to_duochrome_right()
@@ -503,39 +607,66 @@ class InteractiveSession:
             elif "Repeat" in intent:
                 self.jcc_flip_state = "flip1"
                 self.current_row = self._copy_row_state()
-                self.current_row.occluder_state = "Right_Power_Flip1"
-                self.jcc_flip("handle")
-                return self._build_response()
+                self._update_state(occluder="Right_Power_Flip1")
+                # Already at Flip1, just request auto-flip
+                response = self._build_response()
+                response['auto_flip'] = True
+                response['flip_wait_seconds'] = 2
+                return response
         
         return self._build_response()
     
     def _process_jcc_power_left(self, intent: str) -> Dict:
         """Process JCC power refinement for left eye."""
         if self.jcc_flip_state == "flip1":
-            self.jcc_flip_state = "flip2"
-            self.current_row = self._copy_row_state()
-            self.current_row.occluder_state = "Left_Power_Flip2"
-            self.jcc_flip("handle")
-            return self._build_response()
+            # Auto-progress from Flip1 to Flip2
+            if intent == "AUTO_FLIP":
+                self.jcc_flip_state = "flip2"
+                self.current_row = self._copy_row_state()
+                self._update_state(occluder="Left_Power_Flip2")
+                self.jcc_control("handle")
+                return self._build_response()
+            else:
+                # Initial entry - show Flip1 and request auto-flip
+                response = self._build_response()
+                response['auto_flip'] = True
+                response['flip_wait_seconds'] = 2
+                return response
         
         elif self.jcc_flip_state == "flip2":
-            if "GAP Power" in intent:
+            if "GAP Power" in intent or "Flip 1" in intent:
+                # Patient chose Flip 1 - Use JCC increase operation
+                self.jcc_control("increase")  # Phoropter increases cylinder by 0.25D
+                
+                # Update internal state (phoropter handles actual value)
                 self.current_row = self._copy_row_state()
                 self.current_row.l_cyl += 0.25
-                self.set_power(l_cyl=self.current_row.l_cyl, occluder="Right_Occluded")
-                self.jcc_flip("increase")
+                
+                # Reset to Flip1 for next cycle
+                self.jcc_control("handle")
                 self.jcc_flip_state = "flip1"
-                self.current_row.occluder_state = "Left_Power_Flip1"
-                return self._build_response()
+                self._update_state(occluder="Left_Power_Flip1")
+                response = self._build_response()
+                response['auto_flip'] = True
+                response['flip_wait_seconds'] = 2
+                return response
             
-            elif "RAM Power" in intent:
+            elif "RAM Power" in intent or "Flip 2" in intent:
+                # Patient chose Flip 2 - Use JCC decrease operation
+                self.jcc_control("decrease")  # Phoropter decreases cylinder by 0.25D
+                
+                # Update internal state (phoropter handles actual value)
                 self.current_row = self._copy_row_state()
                 self.current_row.l_cyl -= 0.25
-                self.set_power(l_cyl=self.current_row.l_cyl, occluder="Right_Occluded")
-                self.jcc_flip("decrease")
+                
+                # Reset to Flip1 for next cycle
+                self.jcc_control("handle")
                 self.jcc_flip_state = "flip1"
-                self.current_row.occluder_state = "Left_Power_Flip1"
-                return self._build_response()
+                self._update_state(occluder="Left_Power_Flip1")
+                response = self._build_response()
+                response['auto_flip'] = True
+                response['flip_wait_seconds'] = 2
+                return response
             
             elif "Both Same" in intent or "Reverse" in intent or (self.current_row.l_cyl == 0.0 and "GAP" in intent):
                 return self._transition_to_duochrome_left()
@@ -543,9 +674,11 @@ class InteractiveSession:
             elif "Repeat" in intent:
                 self.jcc_flip_state = "flip1"
                 self.current_row = self._copy_row_state()
-                self.current_row.occluder_state = "Left_Power_Flip1"
-                self.jcc_flip("handle")
-                return self._build_response()
+                self._update_state(occluder="Left_Power_Flip1")
+                response = self._build_response()
+                response['auto_flip'] = True
+                response['flip_wait_seconds'] = 2
+                return response
         
         return self._build_response()
     
@@ -601,13 +734,25 @@ class InteractiveSession:
         new_row.chart_display = self.current_row.chart_display
         return new_row
     
+    def _update_state(self, occluder: str = None, chart: str = None):
+        """Update occluder and/or chart state and refresh derived fields."""
+        if occluder is not None:
+            self.current_row.occluder_state = occluder
+        if chart is not None:
+            self.current_row.chart_display = chart
+        # Recalculate derived fields after manual changes
+        self.current_row.update_derived_fields()
+    
     def _build_response(self) -> Dict:
         """Build response with current state."""
         question = self.get_question()
         intents = self.get_intents()
         
+        # Get formatted phase name with letter (A, B, etc.)
+        phase_display = self.phase_names.get(self.current_phase, self.current_phase)
+        
         return {
-            "phase": self.current_phase,
+            "phase": phase_display,
             "question": question,
             "intents": intents,
             "chart": self.current_row.chart_display,
@@ -629,56 +774,83 @@ class InteractiveSession:
     def _transition_to_jcc_axis_right(self) -> Dict:
         """Transition to JCC axis refinement for right eye."""
         self.current_phase = "jcc_axis_right"
+        print(f"\n→ Transitioning to {self.phase_names[self.current_phase]}")
+        
         self.jcc_flip_state = "flip1"
         self.current_row = self._copy_row_state()
         self.current_row.occluder_state = "Right_Axis_Flip1"
         self.current_row.chart_display = "jcc_chart"
         
+        # JCC chart defaults to Flip 1 of Axis when displayed
         self.set_chart("jcc_chart")
-        self.jcc_flip("R")  # Set to right eye mode
+        # Note: No need to call jcc_flip("R") - chart defaults to correct state
         
-        return self._build_response()
+        # Tell frontend to auto-flip after 2 seconds
+        response = self._build_response()
+        response['auto_flip'] = True
+        response['flip_wait_seconds'] = 2
+        return response
     
     def _transition_to_jcc_axis_left(self) -> Dict:
         """Transition to JCC axis refinement for left eye."""
         self.current_phase = "jcc_axis_left"
+        print(f"\n→ Transitioning to {self.phase_names[self.current_phase]}")
+        
         self.jcc_flip_state = "flip1"
         self.current_row = self._copy_row_state()
         self.current_row.occluder_state = "Left_Axis_Flip1"
         self.current_row.chart_display = "jcc_chart"
         
-        self.set_chart("jcc_chart")
-        self.jcc_flip("L")  # Set to left eye mode
+        # JCC chart already displayed, no need to call any JCC APIs
+        # Note: Chart maintains its state, defaults to Flip 1
         
-        return self._build_response()
+        # Tell frontend to auto-flip after 2 seconds
+        response = self._build_response()
+        response['auto_flip'] = True
+        response['flip_wait_seconds'] = 2
+        return response
     
     def _transition_to_jcc_power_right(self) -> Dict:
         """Transition to JCC power refinement for right eye."""
         self.current_phase = "jcc_power_right"
+        print(f"\n→ Transitioning to {self.phase_names[self.current_phase]}")
+        
         self.jcc_flip_state = "flip1"
         self.current_row = self._copy_row_state()
         self.current_row.occluder_state = "Right_Power_Flip1"
         self.current_row.chart_display = "jcc_chart"
         
-        self.jcc_flip("power_axis_switch")  # Switch to power mode
+        self.jcc_control("power_axis_switch")  # Switch to power mode - this resets to Flip 1
         
-        return self._build_response()
+        # Tell frontend to auto-flip after 2 seconds
+        response = self._build_response()
+        response['auto_flip'] = True
+        response['flip_wait_seconds'] = 2
+        return response
     
     def _transition_to_jcc_power_left(self) -> Dict:
         """Transition to JCC power refinement for left eye."""
         self.current_phase = "jcc_power_left"
+        print(f"\n→ Transitioning to {self.phase_names[self.current_phase]}")
+        
         self.jcc_flip_state = "flip1"
         self.current_row = self._copy_row_state()
         self.current_row.occluder_state = "Left_Power_Flip1"
         self.current_row.chart_display = "jcc_chart"
         
-        self.jcc_flip("power_axis_switch")  # Switch to power mode
+        self.jcc_control("power_axis_switch")  # Switch to power mode - this resets to Flip 1
         
-        return self._build_response()
+        # Tell frontend to auto-flip after 2 seconds
+        response = self._build_response()
+        response['auto_flip'] = True
+        response['flip_wait_seconds'] = 2
+        return response
     
     def _transition_to_duochrome_right(self) -> Dict:
         """Transition to duochrome test for right eye."""
         self.current_phase = "duochrome_right"
+        print(f"\n→ Transitioning to {self.phase_names[self.current_phase]}")
+        
         self.current_row = self._copy_row_state()
         self.current_row.occluder_state = "Left_Occluded"
         self.current_row.chart_display = "duochrome"
@@ -691,6 +863,8 @@ class InteractiveSession:
     def _transition_to_duochrome_left(self) -> Dict:
         """Transition to duochrome test for left eye."""
         self.current_phase = "duochrome_left"
+        print(f"\n→ Transitioning to {self.phase_names[self.current_phase]}")
+        
         self.current_row = self._copy_row_state()
         self.current_row.occluder_state = "Right_Occluded"
         self.current_row.chart_display = "duochrome"
@@ -703,6 +877,8 @@ class InteractiveSession:
     def _transition_to_left_eye_refraction(self) -> Dict:
         """Transition to left eye refraction."""
         self.current_phase = "left_eye_refraction"
+        print(f"\n→ Transitioning to {self.phase_names[self.current_phase]}")
+        
         self.current_chart_index = 0  # Start with largest chart
         self.unable_read_count = 0
         
@@ -718,6 +894,8 @@ class InteractiveSession:
     def _transition_to_binocular_balance(self) -> Dict:
         """Transition to binocular balance."""
         self.current_phase = "binocular_balance"
+        print(f"\n→ Transitioning to {self.phase_names[self.current_phase]}")
+        
         self.current_row = self._copy_row_state()
         self.current_row.occluder_state = "BINO"
         self.current_row.chart_display = "snellen_chart_20_20_20"
@@ -766,13 +944,13 @@ class InteractiveSession:
             
         elif phase == "jcc_axis_right":
             self.set_chart("jcc_chart")
-            self.jcc_flip("R")  # Set to right eye mode
+            # JCC chart defaults to Flip 1 of Axis - no API calls needed
             self.current_row.occluder_state = "Right_Axis_Flip1"
             self.current_row.chart_display = "jcc_chart"
             
         elif phase == "jcc_power_right":
-            self.set_chart("jcc_chart")
-            self.jcc_flip("power_axis_switch")  # Switch to power mode
+            # Switch to power mode
+            self.jcc_control("power_axis_switch")
             self.current_row.occluder_state = "Right_Power_Flip1"
             self.current_row.chart_display = "jcc_chart"
             
@@ -789,14 +967,13 @@ class InteractiveSession:
             self.current_row.chart_display = "snellen_chart_20_20_20"
             
         elif phase == "jcc_axis_left":
-            self.set_chart("jcc_chart")
-            self.jcc_flip("L")  # Set to left eye mode
+            # JCC chart already displayed - no API calls needed
             self.current_row.occluder_state = "Left_Axis_Flip1"
             self.current_row.chart_display = "jcc_chart"
             
         elif phase == "jcc_power_left":
-            self.set_chart("jcc_chart")
-            self.jcc_flip("power_axis_switch")  # Switch to power mode
+            # Switch to power mode
+            self.jcc_control("power_axis_switch")
             self.current_row.occluder_state = "Left_Power_Flip1"
             self.current_row.chart_display = "jcc_chart"
             

@@ -13,7 +13,7 @@ The interactive session now implements **proper refraction logic** with chart pr
 **Correct Order (Big to Small):**
 ```
 snellen_chart_200_150  (biggest - start here)
-snellen_chart_100_90
+snellen_chart_100_80
 snellen_chart_70_60_50
 snellen_chart_40_30_25
 snellen_chart_25_20_15
@@ -133,10 +133,10 @@ Clean transitions between phases:
    Question: "I'm covering your left eye. Please read the line..."
    Patient: "Able to read"
    
-2. Next: snellen_chart_100_90, R_SPH=0.0
+2. Next: snellen_chart_100_80, R_SPH=0.0
    Patient: "Blurry"
    
-3. Same chart: snellen_chart_100_90, R_SPH=-0.25
+3. Same chart: snellen_chart_100_80, R_SPH=-0.25
    Patient: "Getting better"
    
 4. Next: snellen_chart_70_60_50, R_SPH=-0.25
@@ -212,8 +212,8 @@ Response: "Able to read"
 
 # Right Eye Refraction
 Chart: snellen_chart_200_150 → "Able to read"
-Chart: snellen_chart_100_90 → "Blurry"
-Chart: snellen_chart_100_90 (SPH=-0.25) → "Able to read"
+Chart: snellen_chart_100_80 → "Blurry"
+Chart: snellen_chart_100_80 (SPH=-0.25) → "Able to read"
 Chart: snellen_chart_70_60_50 → "Able to read"
 Chart: snellen_chart_40_30_25 → "Able to read"
 Chart: snellen_chart_25_20_15 → "Able to read"
@@ -248,8 +248,8 @@ Response: "Able to read"
 ```bash
 # Right Eye Refraction
 Chart: snellen_chart_200_150 → "Able to read"
-Chart: snellen_chart_100_90 → "Unable to read" (SPH: 0.0 → -0.25)
-Chart: snellen_chart_100_90 → "Unable to read" (SPH: -0.25 → -0.50, count=2)
+Chart: snellen_chart_100_80 → "Unable to read" (SPH: 0.0 → -0.25)
+Chart: snellen_chart_100_80 → "Unable to read" (SPH: -0.25 → -0.50, count=2)
 
 # Exit to JCC Axis (2 consecutive "Unable to read")
 ```
@@ -268,7 +268,7 @@ With the new logic, the history log will show:
 19:00:05 - Chart: snellen_chart_200_150
 19:00:05 - Power updated - Occluder: Left_Occluded
 19:00:10 - Response: Able to read
-19:00:10 - Chart: snellen_chart_100_90
+19:00:10 - Chart: snellen_chart_100_80
 19:00:15 - Response: Blurry
 19:00:15 - Power: R(-0.25/0.00/180)
 19:00:20 - Response: Able to read

@@ -101,7 +101,7 @@ Individual commands for specific chart items on **Chart1** and **Chart2**.
 | :--- | :--- | :--- |
 | **echart_400** | chart_9 | E-Chart 400 |
 | **snellen_chart_200_150** | chart_10 | Snellen 200/150 |
-| **snellen_chart_100_90** | chart_11 | Snellen 100/90 |
+| **snellen_chart_100_80** | chart_11 | Snellen 100/90 |
 | **snellen_chart_70_60_50** | chart_12 | Snellen 70/60/50 |
 | **snellen_chart_40_30_25** | chart_13 | Snellen 40/30/25 |
 | **snellen_chart_20_15_10** | chart_14 | Snellen 20/15/10 |
@@ -123,7 +123,7 @@ curl -X POST https://rajasthan-royals.preprod.lenskart.com/phoropter/phoropter-1
   -H "Content-Type: application/json" \
   -d '{ "test_cases": [{ "chart": { "tab": "Chart1", "chart_items": ["chart_10"] } }] }'
 
-# snellen_chart_100_90
+# snellen_chart_100_80
 curl -X POST https://rajasthan-royals.preprod.lenskart.com/phoropter/phoropter-1/run-tests \
   -H "Content-Type: application/json" \
   -d '{ "test_cases": [{ "chart": { "tab": "Chart1", "chart_items": ["chart_11"] } }] }'

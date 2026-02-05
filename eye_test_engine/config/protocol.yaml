@@ -71,13 +71,13 @@ phases:
       occluder: ["Right_Axis_Flip1", "Right_Axis_Flip2"]
       charts: ["jcc_chart"]
     questions:
-      flip1: "Focus on the dot chart. Is this better? (Flip 1)"
-      flip2: "Or is this better? (Flip 2)"
+      flip1: "Focus on the dot chart. This is Flip 1. (Flip 2 will show automatically in 2 seconds)"
+      flip2: "Now this is Flip 2. Which was better?"
     intents:
-      flip1: "No response expected (Flip 1 presented, awaiting Flip 2 comparison)"
+      flip1: []
       flip2:
-        - "Flip 1: GAP Axis (patient chose Flip 1, increase axis by 5°)"
-        - "Flip 2: RAM Axis (patient chose Flip 2, decrease axis by 5°)"
+        - "Flip 1 was better (GAP Axis - increase axis by 5°)"
+        - "Flip 2 was better (RAM Axis - decrease axis by 5°)"
         - "Both Same (no change needed)"
         - "Repeat (show Flip 1 and Flip 2 again)"
         - "Repeat (show Flip 1 and Flip 2 again)"
@@ -95,13 +95,13 @@ phases:
       occluder: ["Right_Power_Flip1", "Right_Power_Flip2"]
       charts: ["jcc_chart"]
     questions:
-      flip1: "Focus on the dot chart. Is this better? (Flip 1)"
-      flip2: "Or is this better? (Flip 2)"
+      flip1: "Focus on the dot chart. This is Flip 1. (Flip 2 will show automatically in 2 seconds)"
+      flip2: "Now this is Flip 2. Which was better?"
     intents:
-      flip1: "No response expected (Flip 1 presented, awaiting Flip 2 comparison)"
+      flip1: []
       flip2:
-        - "Flip 1: GAP Power (patient chose Flip 1, increase cylinder by 0.25D)"
-        - "Flip 2: RAM Power (patient chose Flip 2, decrease cylinder by 0.25D)"
+        - "Flip 1 was better (GAP Power - increase cylinder by 0.25D)"
+        - "Flip 2 was better (RAM Power - decrease cylinder by 0.25D)"
         - "Both Same (no change needed)"
         - "Repeat (show Flip 1 and Flip 2 again)"
     adjustment_rules:
@@ -169,13 +169,13 @@ phases:
       occluder: ["Left_Axis_Flip1", "Left_Axis_Flip2"]
       charts: ["jcc_chart"]
     questions:
-      flip1: "Focus on the dot chart. Is this better? (Flip 1)"
-      flip2: "Or is this better? (Flip 2)"
+      flip1: "Focus on the dot chart. This is Flip 1. (Flip 2 will show automatically in 2 seconds)"
+      flip2: "Now this is Flip 2. Which was better?"
     intents:
-      flip1: "No response expected (Flip 1 presented, awaiting Flip 2 comparison)"
+      flip1: []
       flip2:
-        - "Flip 1: GAP Axis (patient chose Flip 1, increase axis by 5°)"
-        - "Flip 2: RAM Axis (patient chose Flip 2, decrease axis by 5°)"
+        - "Flip 1 was better (GAP Axis - increase axis by 5°)"
+        - "Flip 2 was better (RAM Axis - decrease axis by 5°)"
         - "Both Same (no change needed)"
         - "Repeat (show Flip 1 and Flip 2 again)"
     adjustment_rules:
@@ -192,13 +192,13 @@ phases:
       occluder: ["Left_Power_Flip1", "Left_Power_Flip2"]
       charts: ["jcc_chart"]
     questions:
-      flip1: "Focus on the dot chart. Is this better? (Flip 1)"
-      flip2: "Or is this better? (Flip 2)"
+      flip1: "Focus on the dot chart. This is Flip 1. (Flip 2 will show automatically in 2 seconds)"
+      flip2: "Now this is Flip 2. Which was better?"
     intents:
-      flip1: "No response expected (Flip 1 presented, awaiting Flip 2 comparison)"
+      flip1: []
       flip2:
-        - "Flip 1: GAP Power (patient chose Flip 1, increase cylinder by 0.25D)"
-        - "Flip 2: RAM Power (patient chose Flip 2, decrease cylinder by 0.25D)"
+        - "Flip 1 was better (GAP Power - increase cylinder by 0.25D)"
+        - "Flip 2 was better (RAM Power - decrease cylinder by 0.25D)"
         - "Both Same (no change needed)"
         - "Repeat (show Flip 1 and Flip 2 again)"
     adjustment_rules:

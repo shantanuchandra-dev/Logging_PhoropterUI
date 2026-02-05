@@ -94,6 +94,12 @@ class RowContext:
         else:
             self.eye_tested = "unknown"
     
+    def update_derived_fields(self):
+        """Recalculate all derived fields after manual state changes."""
+        self._derive_chart_type()
+        self._derive_flip_state()
+        self._derive_eye_tested()
+    
     def has_sph_change(self, prev: Optional['RowContext']) -> bool:
         """Check if SPH changed from previous row."""
         if prev is None:

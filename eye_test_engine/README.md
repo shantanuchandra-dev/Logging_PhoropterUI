@@ -221,9 +221,28 @@ Processing 92 files from Curated_Conversations/
 - Integration with phoropter hardware
 - Machine learning for intent prediction
 
-## References
+## Documentation
 
-- `docs/STATE_MACHINE_DIAGRAM.md`: Detailed state machine diagram
-- `docs/CURATION_LOGIC.md`: Snellen and JCC curation logic
-- `refined_clinical_protocol.txt`: Clinical protocol mapping rules
-- `conversation_config.json`: Question and intent templates
+All detailed documentation has been consolidated in the `docs/` folder.
+
+### Quick Links
+- **[docs/INDEX.md](docs/INDEX.md)** - Complete documentation index
+- **[docs/QUICK_START.md](docs/QUICK_START.md)** - Get started quickly
+- **[docs/SUMMARY.md](docs/SUMMARY.md)** - Project summary and architecture
+- **[docs/API_USAGE.md](docs/API_USAGE.md)** - API endpoints and usage
+
+### For New Users
+1. Start with [docs/QUICK_START.md](docs/QUICK_START.md)
+2. Follow [docs/DEMO.md](docs/DEMO.md) for a walkthrough
+3. Review [docs/FRONTEND_GUIDE.md](docs/FRONTEND_GUIDE.md)
+
+### For Developers
+- [docs/REFRACTION_LOGIC_UPDATE.md](docs/REFRACTION_LOGIC_UPDATE.md) - Refraction implementation
+- [docs/JCC_FLOW_DIAGRAM.md](docs/JCC_FLOW_DIAGRAM.md) - JCC phase flow charts
+- [docs/FLIP2_INTENTS_FIX.md](docs/FLIP2_INTENTS_FIX.md) - Technical implementation details
+
+### For Testing
+- [docs/TESTING_CHECKLIST.md](docs/TESTING_CHECKLIST.md) - Comprehensive testing guide
+- [docs/FINAL_VERIFICATION_SUMMARY.md](docs/FINAL_VERIFICATION_SUMMARY.md) - Verification status
+
+See [docs/INDEX.md](docs/INDEX.md) for the complete documentation index.

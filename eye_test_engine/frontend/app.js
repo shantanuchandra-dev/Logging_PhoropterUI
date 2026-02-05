@@ -22,6 +22,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Start Test
 async function startTest() {
+    const btn = document.getElementById('startTestBtn');
+    if (btn) btn.disabled = true;
+    
     try {
         showLoading(true);
         
@@ -58,9 +61,15 @@ async function startTest() {
         addToHistory('Test started', 'success');
         updateStatusIndicator(true);
         
+        // Check if auto-flip is needed (JCC Flip1 → Flip2)
+        if (data.auto_flip) {
+            await handleAutoFlip(data.flip_wait_seconds || 2);
+        }
+        
     } catch (error) {
         console.error('Error starting test:', error);
         alert('Failed to start test. Make sure the backend server is running on port 5000.');
+        if (btn) btn.disabled = false;
     } finally {
         showLoading(false);
     }
@@ -101,11 +110,70 @@ async function submitIntent(intent) {
         // Update phoropter
         await setPhoropter(data);
         
+        // Check if auto-flip is needed (JCC Flip1 → Flip2)
+        if (data.auto_flip) {
+            await handleAutoFlip(data.flip_wait_seconds || 2);
+        }
+        
     } catch (error) {
         console.error('Error submitting intent:', error);
         alert('Failed to submit response. Please try again.');
     } finally {
         showLoading(false);
+    }
+}
+
+// Handle Automatic Flip (Flip1 → wait → Flip2)
+async function handleAutoFlip(waitSeconds) {
+    try {
+        // Disable all intent buttons during auto-flip
+        const intentButtons = document.querySelectorAll('.intent-button');
+        intentButtons.forEach(btn => btn.disabled = true);
+        
+        // Show countdown in question box
+        const questionBox = document.querySelector('.question-box');
+        const countdownDiv = document.createElement('div');
+        countdownDiv.id = 'flipCountdown';
+        countdownDiv.style.cssText = 'background: #fff3e0; padding: 15px; margin-top: 15px; border-radius: 5px; text-align: center; font-size: 1.2em; color: #f57c00; font-weight: bold;';
+        questionBox.appendChild(countdownDiv);
+        
+        // Countdown timer
+        for (let i = waitSeconds; i > 0; i--) {
+            countdownDiv.textContent = `⏱️ Showing Flip 2 in ${i} second${i > 1 ? 's' : ''}...`;
+            await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+        
+        countdownDiv.textContent = '⏱️ Now showing Flip 2...';
+        
+        // Call backend with AUTO_FLIP to show Flip2
+        const response = await fetch(`${CONFIG.backendUrl}/api/session/${sessionState.sessionId}/respond`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ intent: 'AUTO_FLIP' })
+        });
+        
+        if (!response.ok) {
+            throw new Error('Failed to auto-flip');
+        }
+        
+        const data = await response.json();
+        
+        // Remove countdown
+        if (countdownDiv.parentNode) {
+            countdownDiv.parentNode.removeChild(countdownDiv);
+        }
+        
+        // Update UI with Flip2 state
+        updateSessionInfo(data);
+        displayQuestion(data);
+        
+        // Note: displayQuestion() creates fresh enabled buttons, no need to re-enable
+        
+        addToHistory('Flip 2 displayed', 'info');
+        
+    } catch (error) {
+        console.error('Error during auto-flip:', error);
+        alert('Failed to show Flip 2. Please try again.');
     }
 }
 
@@ -123,6 +191,15 @@ function displayQuestion(data) {
     const intents = data.intents || [];
     const intentButtons = document.getElementById('intentButtons');
     intentButtons.innerHTML = '';
+    
+    // If no intents (Flip1 state), show waiting message
+    if (intents.length === 0 && data.auto_flip) {
+        const waitingMsg = document.createElement('div');
+        waitingMsg.className = 'alert alert-info';
+        waitingMsg.textContent = 'Please observe Flip 1. Flip 2 will show automatically...';
+        intentButtons.appendChild(waitingMsg);
+        return;
+    }
     
     intents.forEach((intent, index) => {
         const button = document.createElement('button');
@@ -196,7 +273,7 @@ async function setChart(chartName) {
     const chartMap = {
         "echart_400": "chart_9",
         "snellen_chart_200_150": "chart_10",
-        "snellen_chart_100_90": "chart_11",
+        "snellen_chart_100_80": "chart_11",
         "snellen_chart_70_60_50": "chart_12",
         "snellen_chart_40_30_25": "chart_13",
         "snellen_chart_20_15_10": "chart_14",
@@ -369,6 +446,65 @@ function addToHistory(message, type = 'info') {
     // Keep only last 20 items
     while (historyLog.children.length > 20) {
         historyLog.removeChild(historyLog.lastChild);
+    }
+}
+
+// Jump to Phase
+async function jumpToPhase() {
+    const select = document.getElementById('phaseSelect');
+    const jumpBtn = document.getElementById('jumpBtn');
+    const targetPhase = select.value;
+    
+    if (!targetPhase) {
+        alert('Please select a phase');
+        return;
+    }
+    
+    if (!sessionState.sessionId) {
+        alert('Please start a test session first');
+        return;
+    }
+    
+    jumpBtn.disabled = true;
+    
+    try {
+        showLoading(true);
+        
+        const response = await fetch(`${CONFIG.backendUrl}/api/session/${sessionState.sessionId}/jump`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ phase: targetPhase })
+        });
+        
+        if (!response.ok) {
+            throw new Error('Failed to jump to phase');
+        }
+        
+        const data = await response.json();
+        
+        // Update UI
+        updateSessionInfo(data);
+        displayQuestion(data);
+        
+        // Show test screen if not visible
+        document.getElementById('welcomeScreen').style.display = 'none';
+        document.getElementById('testScreen').style.display = 'block';
+        
+        addToHistory(`Jumped to ${data.phase}`, 'info');
+        
+        // If auto_flip is requested, start countdown
+        if (data.auto_flip) {
+            await handleAutoFlip(data.flip_wait_seconds || 2);
+        }
+        
+        showLoading(false);
+        
+    } catch (error) {
+        console.error('Error jumping to phase:', error);
+        alert('Failed to jump to phase. Please try again.');
+        showLoading(false);
+    } finally {
+        jumpBtn.disabled = false;
     }
 }
 

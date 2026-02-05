@@ -84,6 +84,32 @@ def get_status(session_id):
     })
 
 
+@app.route('/api/session/<session_id>/jump', methods=['POST'])
+def jump_to_phase(session_id):
+    """Jump directly to a specific phase."""
+    if session_id not in sessions:
+        return jsonify({"error": "Session not found"}), 404
+    
+    session = sessions[session_id]
+    target_phase = request.json.get('phase')
+    
+    if not target_phase:
+        return jsonify({"error": "Phase required"}), 400
+    
+    # Setup the target phase
+    try:
+        session._setup_phase(target_phase)
+        state = session._build_response()
+        
+        return jsonify({
+            "session_id": session_id,
+            "status": "active",
+            **state
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+
 @app.route('/api/session/<session_id>/end', methods=['POST'])
 def end_session(session_id):
     """End session and get final prescription."""
@@ -128,6 +154,7 @@ if __name__ == '__main__':
     print("Available endpoints:")
     print("  POST /api/session/start")
     print("  POST /api/session/<id>/respond")
+    print("  POST /api/session/<id>/jump")
     print("  GET  /api/session/<id>/status")
     print("  POST /api/session/<id>/end")
     app.run(host='0.0.0.0', port=5000, debug=True)
