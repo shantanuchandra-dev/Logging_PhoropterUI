@@ -10,6 +10,7 @@ const CONFIG = {
 let sessionState = {
     sessionId: null,
     currentPhase: null,
+    currentChart: null,  // Track current chart to avoid duplicate setChart calls
     responseCount: 0,
     history: []
 };
@@ -31,6 +32,7 @@ async function startTest() {
         // Generate session ID
         const sessionId = 'session_' + Date.now();
         sessionState.sessionId = sessionId;
+        sessionState.currentChart = null;  // Reset chart tracking for new session
         
         // Reset phoropter
         await resetPhoropter();
@@ -253,13 +255,16 @@ async function resetPhoropter() {
 
 async function setPhoropter(data) {
     try {
-        // Set chart
-        if (data.chart) {
+        // Set chart only if it has changed (avoids duplicate JCC chart calls during flip cycles)
+        if (data.chart && data.chart !== sessionState.currentChart) {
             await setChart(data.chart);
+            sessionState.currentChart = data.chart;
         }
         
-        // Set power and occluder
-        if (data.power) {
+        // Set power and occluder (skip for JCC phases - phoropter handles this internally)
+        const phaseText = (data.phase || '').toLowerCase();
+        const isJccPhase = phaseText.includes('jcc') || data.chart === 'jcc_chart';
+        if (data.power && !isJccPhase) {
             await setPower(data.power, data.occluder);
         }
         
@@ -309,7 +314,7 @@ async function setPower(power, occluder) {
     const left = power.left || { sph: 0, cyl: 0, axis: 180 };
     
     // Map occluder
-    let auxLens = "OFF";
+    // let auxLens = "OFF";
     if (occluder === "Left_Occluded") {
         auxLens = "AuxLensL";
     } else if (occluder === "Right_Occluded") {

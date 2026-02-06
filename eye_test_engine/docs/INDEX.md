@@ -30,6 +30,7 @@
 ## Testing & Verification
 - **[TESTING_CHECKLIST.md](TESTING_CHECKLIST.md)** - Comprehensive testing checklist
 - **[FINAL_VERIFICATION_SUMMARY.md](FINAL_VERIFICATION_SUMMARY.md)** - Final verification and status
+- **[DEBUGGING_GUIDE.md](DEBUGGING_GUIDE.md)** - VS Code debugging setup and workflow
 
 ## Frontend Guides
 - **[FRONTEND_GUIDE.md](FRONTEND_GUIDE.md)** - Frontend development guide

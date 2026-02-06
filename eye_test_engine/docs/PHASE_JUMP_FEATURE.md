@@ -1,284 +1,108 @@
 # Phase Jump Feature
 
 ## Overview
+The Phase Jump feature allows users to directly navigate to any phase of the eye test from the frontend UI, bypassing the normal sequential flow. This is useful for testing, debugging, and demonstrations.
 
-The frontend now includes a phase navigation dropdown in the header, allowing you to jump directly to any phase for testing purposes.
+## How It Works
 
----
+### Frontend (UI)
+1. **Phase Selector**: A dropdown menu in the header displays all available phases
+2. **Jump Button**: A "Go" button triggers the phase jump
+3. **Location**: `eye_test_engine/frontend/index.html` (header section)
 
-## UI Location
-
-The phase jump control is located in the **header** of the frontend, visible at all times:
-
-```
-┌─────────────────────────────────────────────────────────┐
-│  👁️ Eye Test Engine                                     │
-│  Interactive Phoropter-Controlled Eye Examination       │
-│  ─────────────────────────────────────────────────────  │
-│  Jump to Phase: [-- Select Phase --] [Go]              │
-└─────────────────────────────────────────────────────────┘
-```
-
----
+### Backend (API)
+1. **Endpoint**: `POST /api/session/<session_id>/jump`
+2. **Payload**: `{ "phase": "phase_name" }`
+3. **Response**: Returns the same structure as a normal response, including:
+   - `phase`: Current phase name (e.g., "Phase E: JCC Axis Right")
+   - `question`: The question to ask the patient
+   - `intents`: Available response options
+   - `chart`: Current chart displayed
+   - `occluder`: Current occluder state
+   - `power`: Current prescription values for both eyes
 
 ## Available Phases
 
-| Phase | Name |
-|-------|------|
-| **Phase A** | Distance Vision (Step 2.1) |
-| **Phase B** | Right Eye Refraction (Step 6.1) |
-| **Phase E** | JCC Axis Right (Step 6.2) |
-| **Phase F** | JCC Power Right (Step 6.2) |
-| **Phase G** | Duochrome Right (Step 6.2) |
-| **Phase D** | Left Eye Refraction (Step 6.3) |
-| **Phase H** | JCC Axis Left (Step 6.4) |
-| **Phase I** | JCC Power Left (Step 6.4) |
-| **Phase J** | Duochrome Left (Step 6.4) |
-| **Phase K** | Binocular Balance (Step 6.5) |
+| Phase ID | Display Name |
+|----------|-------------|
+| `distance_vision` | Phase A: Distance Vision |
+| `right_eye_refraction` | Phase B: Right Eye Refraction |
+| `jcc_axis_right` | Phase E: JCC Axis Right |
+| `jcc_power_right` | Phase F: JCC Power Right |
+| `duochrome_right` | Phase G: Duochrome Right |
+| `left_eye_refraction` | Phase D: Left Eye Refraction |
+| `jcc_axis_left` | Phase H: JCC Axis Left |
+| `jcc_power_left` | Phase I: JCC Power Left |
+| `duochrome_left` | Phase J: Duochrome Left |
+| `binocular_balance` | Phase K: Binocular Balance |
 
----
+## Implementation Details
 
-## How to Use
+### Phase Setup (`_setup_phase` method)
+When jumping to a phase, the backend:
 
-### Step 1: Start a Test Session
-Click **"Start Eye Test"** button to initialize a session.
+1. **Sets Current Phase**: Updates `self.current_phase` to the target phase
+2. **Creates New Row**: Initializes a new `RowContext` for the phase
+3. **Copies Power Values**: Preserves prescription values from the previous phase
+4. **Resets Refraction State**: Clears chart index and unable-read count
+5. **Phase-Specific Initialization**:
+   - Sets appropriate chart (e.g., `snellen_chart_20_20_20`, `jcc_chart`, `duochrome`)
+   - Sets occluder state (e.g., `BINO`, `Left_Occluded`, `Right_Occluded`)
+   - For JCC phases:
+     - Sets `self.jcc_flip_state = "flip1"`
+     - For power phases, calls `self.jcc_flip("power_axis_switch")`
+   - Updates state using `self._update_state()` to ensure derived fields are consistent
 
-### Step 2: Select Target Phase
-Use the dropdown in the header to select the phase you want to jump to.
+### State Consistency
+The `_update_state()` helper method ensures that:
+- `occluder_state` and `chart_display` are updated in `RowContext`
+- Derived fields (`is_flip1`, `is_flip2`, `is_jcc_axis`, `is_jcc_power`) are recalculated
+- This prevents issues where intents don't appear due to stale derived fields
 
-### Step 3: Click "Go"
-Click the **"Go"** button to jump to the selected phase.
+### Response Generation
+After phase setup, `_build_response()` is called to:
+1. Get the appropriate question using `get_question()`
+2. Get available intents using `get_intents()`
+3. Return all state information to the frontend
 
-### Result
-- The phoropter is set up for that phase
-- The appropriate chart is displayed
-- The correct occluder state is set
-- Questions and intents for that phase appear
-- If it's a JCC phase, auto-flip countdown starts automatically
+## Usage
 
----
-
-## Use Cases
-
-### Testing Specific Phases
-Jump directly to a phase to test its behavior without going through the entire sequence.
-
-**Example:**
-- Want to test JCC Axis Right? Jump to Phase E
-- Want to test Duochrome? Jump to Phase G or J
-- Want to test Binocular Balance? Jump to Phase K
-
-### Debugging
-Quickly reproduce issues in specific phases without completing the full test.
-
-### Development
-Test new features in specific phases without manual progression.
-
----
-
-## Implementation
-
-### Frontend (`app.js`)
-
-```javascript
-async function jumpToPhase() {
-    const select = document.getElementById('phaseSelect');
-    const targetPhase = select.value;
-    
-    // Call backend API
-    const response = await fetch(
-        `${CONFIG.backendUrl}/api/session/${sessionState.sessionId}/jump`,
-        {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ phase: targetPhase })
-        }
-    );
-    
-    const data = await response.json();
-    
-    // Update UI
-    updateSessionInfo(data);
-    displayQuestion(data);
-    
-    // If auto_flip is requested (JCC phases), start countdown
-    if (data.auto_flip) {
-        await handleAutoFlip(data.flip_wait_seconds || 2);
-    }
-}
-```
-
-### Backend (`api_server.py`)
-
-```python
-@app.route('/api/session/<session_id>/jump', methods=['POST'])
-def jump_to_phase(session_id):
-    """Jump directly to a specific phase."""
-    session = sessions[session_id]
-    target_phase = request.json.get('phase')
-    
-    # Setup the target phase
-    session._setup_phase(target_phase)
-    state = session._build_response()
-    
-    return jsonify({
-        "session_id": session_id,
-        "status": "active",
-        **state
-    })
-```
-
-### Backend (`interactive_session.py`)
-
-The `_setup_phase()` method configures the phoropter for any phase:
-
-```python
-def _setup_phase(self, phase: str):
-    """Setup phoropter for a specific phase (for testing/jumping)."""
-    self.current_phase = phase
-    
-    if phase == "distance_vision":
-        self.set_chart("echart_400")
-        self.set_power(occluder="BINO")
-        self.current_row.occluder_state = "BINO"
-        self.current_row.chart_display = "echart_400"
-    
-    elif phase == "right_eye_refraction":
-        self.set_chart("snellen_chart_20_20_20")
-        self.set_power(occluder="Left_Occluded")
-        self.current_row.occluder_state = "Left_Occluded"
-        self.current_row.chart_display = "snellen_chart_20_20_20"
-    
-    # ... (all other phases)
-```
-
----
-
-## API Endpoint
-
-### POST `/api/session/<session_id>/jump`
-
-**Request:**
-```json
-{
-  "phase": "jcc_axis_right"
-}
-```
-
-**Response:**
-```json
-{
-  "session_id": "session_1738167890123",
-  "status": "active",
-  "phase": "Phase E: JCC Axis Right (Step 6.2)",
-  "question": "Focus on the dot chart. This is Flip 1...",
-  "intents": [],
-  "auto_flip": true,
-  "flip_wait_seconds": 2,
-  "chart": "jcc_chart",
-  "occluder": "Right_Axis_Flip1",
-  "power": {
-    "right": { "sph": 0.0, "cyl": 0.0, "axis": 180.0 },
-    "left": { "sph": 0.0, "cyl": 0.0, "axis": 180.0 }
-  }
-}
-```
-
----
-
-## Phase Setup Details
-
-### JCC Phases (E, F, H, I)
-When jumping to a JCC phase:
-1. ✅ Sets `current_phase` to target phase
-2. ✅ Displays JCC chart
-3. ✅ Sets `jcc_flip_state` to "flip1"
-4. ✅ Returns `auto_flip: true` to start countdown
-5. ❌ Does NOT call `set_power()` or set aux_lens
-6. ❌ Does NOT call JCC eye mode (chart handles it)
-
-### Non-JCC Phases (A, B, D, G, J, K)
-When jumping to a non-JCC phase:
-1. ✅ Sets `current_phase` to target phase
-2. ✅ Displays appropriate chart
-3. ✅ Calls `set_power()` with occluder
-4. ✅ Sets JCC eye mode (L/R/BINO)
-5. ✅ Returns questions and intents
-
----
-
-## Visual Design
-
-The phase jump control is styled to match the app's design:
-
-- **Dropdown**: Purple border, white background
-- **Button**: Purple gradient, white text
-- **Hover Effects**: Border color change, button lift
-- **Disabled State**: Reduced opacity, no pointer events
-
----
-
-## Keyboard Shortcuts
-
-The existing keyboard shortcuts still work:
-- **1-9**: Select intent by number
-- Phase jump requires mouse/touch interaction
-
----
-
-## Limitations
-
-1. **Session Required**: You must start a test session before jumping to phases
-2. **State Reset**: Jumping to a phase resets that phase's state (counters, etc.)
-3. **No History**: Jump doesn't preserve previous phase history
-4. **Testing Tool**: Intended for development/testing, not production use
-
----
-
-## Example Usage
-
-### Test JCC Axis Right
-1. Start test session
-2. Select "Phase E: JCC Axis Right (Step 6.2)" from dropdown
+### For Testing
+1. Start a test session
+2. Select a phase from the dropdown in the header
 3. Click "Go"
-4. **Result**: JCC chart appears, Flip 1 shown, countdown starts
+4. The UI will immediately show the question and intents for that phase
 
-### Test Duochrome Left
-1. Start test session
-2. Select "Phase J: Duochrome Left (Step 6.4)" from dropdown
-3. Click "Go"
-4. **Result**: Duochrome chart appears with Red/Green/Both Same intents
+### For Debugging
+- Jump to specific phases to test their logic
+- Verify that questions and intents are correct for each phase
+- Test JCC flip sequences without going through the entire test
 
-### Test Binocular Balance
-1. Start test session
-2. Select "Phase K: Binocular Balance (Step 6.5)" from dropdown
-3. Click "Go"
-4. **Result**: Snellen chart with BINO occluder
+## Code Locations
 
----
+### Backend
+- **Phase Setup**: `eye_test_engine/interactive_session.py` → `_setup_phase()` method (lines ~925-1000)
+- **API Endpoint**: `eye_test_engine/api_server.py` → `/api/session/<session_id>/jump` (lines ~87-110)
+- **State Update**: `eye_test_engine/interactive_session.py` → `_update_state()` method (lines ~917-923)
 
-## Files Modified
+### Frontend
+- **UI Elements**: `eye_test_engine/frontend/index.html` → Header section
+- **Jump Function**: `eye_test_engine/frontend/app.js` → `jumpToPhase()` (lines ~453-502)
+- **Display Logic**: `eye_test_engine/frontend/app.js` → `displayQuestion()` (lines ~181-211)
 
-1. **`frontend/index.html`**
-   - Added CSS for `.header-controls` and `.phase-jump`
-   - Added phase navigation dropdown in header
-   - Added "Go" button
+## Important Notes
 
-2. **`frontend/app.js`**
-   - Added `jumpToPhase()` function
-   - Handles API call to `/jump` endpoint
-   - Updates UI with new phase state
-   - Triggers auto-flip if needed
+### JCC Phases
+- When jumping to JCC axis phases, the chart defaults to Flip 1 of Axis
+- No explicit `jcc_flip("R")` or `jcc_flip("L")` calls are needed after `set_chart("jcc_chart")`
+- `AuxLens OFF` is not called after JCC chart display
+- For JCC power phases, `jcc_flip("power_axis_switch")` is called to switch from axis to power mode
 
-3. **`api_server.py`**
-   - Added `/api/session/<id>/jump` endpoint
-   - Calls `session._setup_phase(target_phase)`
-   - Returns new phase state
+### State Preservation
+- Prescription values (SPH, CYL, AXIS) are preserved when jumping between phases
+- This allows testing later phases with realistic prescription values
 
----
-
-## Date
-February 5, 2026
-
-## Status
-✅ Complete - Phase jump feature implemented in header
+### Derived Fields
+- Always use `_update_state()` when modifying `occluder_state` or `chart_display`
+- This ensures `RowContext`'s derived fields remain consistent
+- Failure to do so can result in missing intents or incorrect questions

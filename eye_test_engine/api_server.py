@@ -16,10 +16,17 @@ CORS(app)
 sessions = {}
 
 
+def _log_api_command(action: str, payload: dict) -> None:
+    """Log incoming API commands for debugging."""
+    print(f"[API] {action}: {json.dumps(payload, ensure_ascii=False)}")
+
+
 @app.route('/api/session/start', methods=['POST'])
 def start_session():
     """Start a new eye test session."""
-    session_id = request.json.get('session_id', 'default')
+    payload = request.json or {}
+    _log_api_command("/api/session/start", payload)
+    session_id = payload.get('session_id', 'default')
     
     # Create new session
     session = InteractiveSession()
@@ -42,7 +49,9 @@ def respond(session_id):
         return jsonify({"error": "Session not found"}), 404
     
     session = sessions[session_id]
-    intent = request.json.get('intent')
+    payload = request.json or {}
+    _log_api_command(f"/api/session/{session_id}/respond", payload)
+    intent = payload.get('intent')
     
     if not intent:
         return jsonify({"error": "Intent required"}), 400
@@ -91,7 +100,9 @@ def jump_to_phase(session_id):
         return jsonify({"error": "Session not found"}), 404
     
     session = sessions[session_id]
-    target_phase = request.json.get('phase')
+    payload = request.json or {}
+    _log_api_command(f"/api/session/{session_id}/jump", payload)
+    target_phase = payload.get('phase')
     
     if not target_phase:
         return jsonify({"error": "Phase required"}), 400
@@ -115,6 +126,8 @@ def end_session(session_id):
     """End session and get final prescription."""
     if session_id not in sessions:
         return jsonify({"error": "Session not found"}), 404
+
+    _log_api_command(f"/api/session/{session_id}/end", {})
     
     session = sessions[session_id]
     
