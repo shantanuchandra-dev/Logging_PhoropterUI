@@ -331,10 +331,11 @@ async function setPhoropter(data) {
             sessionState.currentChart = data.chart;
         }
         
-        // Set power and occluder (skip for JCC phases - phoropter handles this internally)
+        // Set power and occluder (skip for JCC and duochrome phases - phoropter handles internally)
         const phaseText = (data.phase || '').toLowerCase();
         const isJccPhase = phaseText.includes('jcc') || data.chart === 'jcc_chart';
-        if (data.power && !isJccPhase) {
+        const isDuochromePhase = phaseText.includes('duochrome') || data.chart === 'duochrome';
+        if (data.power && !isJccPhase && !isDuochromePhase) {
             await setPower(data.power, data.occluder);
         }
         

@@ -777,6 +777,7 @@ class InteractiveSession:
         if intent == "Red":
             # RAM: Red Add Minus - decrease SPH
             reversal = self._record_duochrome_choice("red")
+            self.jcc_control("decrease")  # Phoropter decreases SPH by 0.25D
             self.current_row = self._copy_row_state()
             self.current_row.r_sph -= 0.25
             if reversal:
@@ -787,6 +788,7 @@ class InteractiveSession:
         elif intent == "Green":
             # GAP: Green Add Plus - increase SPH
             reversal = self._record_duochrome_choice("green")
+            self.jcc_control("increase")  # Phoropter increases SPH by 0.25D
             self.current_row = self._copy_row_state()
             self.current_row.r_sph += 0.25
             if reversal:
@@ -813,6 +815,7 @@ class InteractiveSession:
         if intent == "Red":
             # RAM: Red Add Minus - decrease SPH
             reversal = self._record_duochrome_choice("red")
+            self.jcc_control("decrease")  # Phoropter decreases SPH by 0.25D
             self.current_row = self._copy_row_state()
             self.current_row.l_sph -= 0.25
             if reversal:
@@ -823,6 +826,7 @@ class InteractiveSession:
         elif intent == "Green":
             # GAP: Green Add Plus - increase SPH
             reversal = self._record_duochrome_choice("green")
+            self.jcc_control("increase")  # Phoropter increases SPH by 0.25D
             self.current_row = self._copy_row_state()
             self.current_row.l_sph += 0.25
             if reversal:
@@ -1029,7 +1033,9 @@ class InteractiveSession:
         self.current_row.chart_display = self.snellen_charts[0]
         
         self.set_chart(self.snellen_charts[0])
-        self.set_power(occluder="Right_Occluded")
+        # Don't call set_power - preserve current power from duochrome
+        # Just set JCC eye mode for left eye testing
+        self.jcc_control("L")
         
         return self._build_response()
     
