@@ -384,7 +384,7 @@ async function setPower(power, occluder) {
     const left = power.left || { sph: 0, cyl: 0, axis: 180 };
     
     // Map occluder
-    // let auxLens = "OFF";
+    let auxLens = "OFF";
     if (occluder === "Left_Occluded") {
         auxLens = "AuxLensL";
     } else if (occluder === "Right_Occluded") {
