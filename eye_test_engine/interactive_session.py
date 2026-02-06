@@ -8,8 +8,8 @@ import subprocess
 from typing import Optional, List, Dict
 from pathlib import Path
 
-from .core.state_machine import StateMachine
-from .core.context import RowContext
+from core.state_machine import StateMachine
+from core.context import RowContext
 
 
 class InteractiveSession:
@@ -1037,7 +1037,10 @@ class InteractiveSession:
         # Just set JCC eye mode for left eye testing
         self.jcc_control("L")
         
-        return self._build_response()
+        # Build response without power to prevent frontend from calling setPower
+        response = self._build_response()
+        response.pop('power', None)  # Remove power key to prevent frontend setPower call
+        return response
     
     def _transition_to_binocular_balance(self) -> Dict:
         """Transition to binocular balance."""

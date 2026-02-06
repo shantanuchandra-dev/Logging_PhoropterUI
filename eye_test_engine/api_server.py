@@ -7,7 +7,7 @@ from flask_cors import CORS
 import json
 from pathlib import Path
 
-from .interactive_session import InteractiveSession
+from interactive_session import InteractiveSession
 
 app = Flask(__name__)
 CORS(app)
