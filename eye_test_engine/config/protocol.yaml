@@ -80,7 +80,6 @@ phases:
         - "Flip 2 was better (RAM Axis - decrease axis by 5°)"
         - "Both Same (no change needed)"
         - "Repeat (show Flip 1 and Flip 2 again)"
-        - "Repeat (show Flip 1 and Flip 2 again)"
     adjustment_rules:
       flip1_chosen: "+5 degrees to R_AXIS"
       flip2_chosen: "-5 degrees to R_AXIS"

@@ -98,6 +98,88 @@
             transform: none;
         }
 
+        .ar-power-btn {
+            padding: 8px 20px;
+            background: #4caf50;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: transform 0.2s;
+        }
+
+        .ar-power-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.4);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-backdrop.active {
+            display: flex;
+        }
+
+        .modal {
+            background: white;
+            border-radius: 12px;
+            width: 520px;
+            max-width: 90vw;
+            padding: 24px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal h3 {
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        .modal p {
+            color: #666;
+            margin-bottom: 16px;
+        }
+
+        .modal-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .modal-grid input {
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 0.95em;
+        }
+
+        .modal-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+
+        .modal-row label {
+            font-weight: 600;
+            color: #444;
+            min-width: 70px;
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
         .main-content {
             display: grid;
             grid-template-columns: 2fr 1fr;
@@ -372,6 +454,7 @@
                     </select>
                     <button onclick="jumpToPhase()" id="jumpBtn">Go</button>
                 </div>
+                <button class="ar-power-btn" onclick="openArPowerModal()">Set AR Power</button>
             </div>
         </div>
 
@@ -473,6 +556,36 @@
                         <p style="color: #999;">No history yet</p>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-backdrop" id="arPowerModal">
+        <div class="modal">
+            <h3>Insert AR Power</h3>
+            <p>Enter autorefractor power and click Go to send to the phoropter.</p>
+
+            <div class="modal-row">
+                <label>Right</label>
+                <div class="modal-grid">
+                    <input id="arRightSph" type="number" step="0.25" placeholder="SPH">
+                    <input id="arRightCyl" type="number" step="0.25" placeholder="CYL">
+                    <input id="arRightAxis" type="number" step="1" min="0" max="180" placeholder="AXIS">
+                </div>
+            </div>
+
+            <div class="modal-row">
+                <label>Left</label>
+                <div class="modal-grid">
+                    <input id="arLeftSph" type="number" step="0.25" placeholder="SPH">
+                    <input id="arLeftCyl" type="number" step="0.25" placeholder="CYL">
+                    <input id="arLeftAxis" type="number" step="1" min="0" max="180" placeholder="AXIS">
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeArPowerModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="applyArPower()">Go</button>
             </div>
         </div>
     </div>

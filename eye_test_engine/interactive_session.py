@@ -471,6 +471,17 @@ class InteractiveSession:
         
         elif self.jcc_flip_state == "flip2":
             # Process Flip2 response
+            if "Repeat" in intent:
+                # Repeat the flip cycle - reset to flip1 and request auto-flip
+                self.jcc_control("handle")
+                self.jcc_flip_state = "flip1"
+                self.current_row = self._copy_row_state()
+                self._update_state(occluder="Right_Axis_Flip1")
+                # Note: JCC handle was already called, just need to show Flip1 again
+                response = self._build_response()
+                response['auto_flip'] = True
+                response['flip_wait_seconds'] = 2
+                return response
             if "GAP Axis" in intent or "Flip 1" in intent:
                 # Patient chose Flip 1 - Use JCC increase operation
                 reversal = self._record_jcc_choice("flip1")
@@ -521,17 +532,7 @@ class InteractiveSession:
                 # Move to JCC Power
                 return self._transition_to_jcc_power_right()
             
-            elif "Repeat" in intent:
-                # Repeat the flip cycle - reset to flip1 and request auto-flip
-                self.jcc_flip_state = "flip1"
-                self.current_row = self._copy_row_state()
-                self._update_state(occluder="Right_Axis_Flip1")
-                # Note: JCC handle was already called, just need to show Flip1 again
-                response = self._build_response()
-                response['auto_flip'] = True
-                response['flip_wait_seconds'] = 2
-                return response
-        
+
         return self._build_response()
     
     def _process_jcc_axis_left(self, intent: str) -> Dict:
@@ -552,6 +553,15 @@ class InteractiveSession:
                 return response
         
         elif self.jcc_flip_state == "flip2":
+            if "Repeat" in intent:
+                self.jcc_control("handle")
+                self.jcc_flip_state = "flip1"
+                self.current_row = self._copy_row_state()
+                self._update_state(occluder="Left_Axis_Flip1")
+                response = self._build_response()
+                response['auto_flip'] = True
+                response['flip_wait_seconds'] = 2
+                return response
             if "GAP Axis" in intent or "Flip 1" in intent:
                 # Patient chose Flip 1 - Use JCC increase operation
                 reversal = self._record_jcc_choice("flip1")
@@ -601,15 +611,7 @@ class InteractiveSession:
             elif "Both Same" in intent or "Reverse" in intent:
                 return self._transition_to_jcc_power_left()
             
-            elif "Repeat" in intent:
-                self.jcc_flip_state = "flip1"
-                self.current_row = self._copy_row_state()
-                self._update_state(occluder="Left_Axis_Flip1")
-                response = self._build_response()
-                response['auto_flip'] = True
-                response['flip_wait_seconds'] = 2
-                return response
-        
+
         return self._build_response()
     
     def _process_jcc_power_right(self, intent: str) -> Dict:
@@ -630,6 +632,16 @@ class InteractiveSession:
                 return response
         
         elif self.jcc_flip_state == "flip2":
+            if "Repeat" in intent:
+                self.jcc_control("handle")
+                self.jcc_flip_state = "flip1"
+                self.current_row = self._copy_row_state()
+                self._update_state(occluder="Right_Power_Flip1")
+                # Already at Flip1, just request auto-flip
+                response = self._build_response()
+                response['auto_flip'] = True
+                response['flip_wait_seconds'] = 2
+                return response
             if "GAP Power" in intent or "Flip 1" in intent:
                 # Patient chose Flip 1 - Use JCC increase operation
                 reversal = self._record_jcc_choice("flip1")
@@ -675,16 +687,7 @@ class InteractiveSession:
             elif "Both Same" in intent or "Reverse" in intent or (self.current_row.r_cyl == 0.0 and "GAP" in intent):
                 return self._transition_to_duochrome_right()
             
-            elif "Repeat" in intent:
-                self.jcc_flip_state = "flip1"
-                self.current_row = self._copy_row_state()
-                self._update_state(occluder="Right_Power_Flip1")
-                # Already at Flip1, just request auto-flip
-                response = self._build_response()
-                response['auto_flip'] = True
-                response['flip_wait_seconds'] = 2
-                return response
-        
+
         return self._build_response()
     
     def _process_jcc_power_left(self, intent: str) -> Dict:
@@ -705,6 +708,15 @@ class InteractiveSession:
                 return response
         
         elif self.jcc_flip_state == "flip2":
+            if "Repeat" in intent:
+                self.jcc_control("handle")
+                self.jcc_flip_state = "flip1"
+                self.current_row = self._copy_row_state()
+                self._update_state(occluder="Left_Power_Flip1")
+                response = self._build_response()
+                response['auto_flip'] = True
+                response['flip_wait_seconds'] = 2
+                return response
             if "GAP Power" in intent or "Flip 1" in intent:
                 # Patient chose Flip 1 - Use JCC increase operation
                 reversal = self._record_jcc_choice("flip1")
@@ -750,15 +762,7 @@ class InteractiveSession:
             elif "Both Same" in intent or "Reverse" in intent or (self.current_row.l_cyl == 0.0 and "GAP" in intent):
                 return self._transition_to_duochrome_left()
             
-            elif "Repeat" in intent:
-                self.jcc_flip_state = "flip1"
-                self.current_row = self._copy_row_state()
-                self._update_state(occluder="Left_Power_Flip1")
-                response = self._build_response()
-                response['auto_flip'] = True
-                response['flip_wait_seconds'] = 2
-                return response
-        
+
         return self._build_response()
     
     def _process_duochrome_right(self, intent: str) -> Dict:
@@ -773,7 +777,6 @@ class InteractiveSession:
         if intent == "Red":
             # RAM: Red Add Minus - decrease SPH
             reversal = self._record_duochrome_choice("red")
-            self.jcc_control("decrease")
             self.current_row = self._copy_row_state()
             self.current_row.r_sph -= 0.25
             if reversal:
@@ -784,7 +787,6 @@ class InteractiveSession:
         elif intent == "Green":
             # GAP: Green Add Plus - increase SPH
             reversal = self._record_duochrome_choice("green")
-            self.jcc_control("increase")
             self.current_row = self._copy_row_state()
             self.current_row.r_sph += 0.25
             if reversal:
@@ -811,7 +813,6 @@ class InteractiveSession:
         if intent == "Red":
             # RAM: Red Add Minus - decrease SPH
             reversal = self._record_duochrome_choice("red")
-            self.jcc_control("decrease")
             self.current_row = self._copy_row_state()
             self.current_row.l_sph -= 0.25
             if reversal:
@@ -822,7 +823,6 @@ class InteractiveSession:
         elif intent == "Green":
             # GAP: Green Add Plus - increase SPH
             reversal = self._record_duochrome_choice("green")
-            self.jcc_control("increase")
             self.current_row = self._copy_row_state()
             self.current_row.l_sph += 0.25
             if reversal:
@@ -1044,6 +1044,7 @@ class InteractiveSession:
         
         self.set_chart("snellen_chart_20_20_20")
         self.set_power(occluder="BINO")
+        self.jcc_control("BINO")
         
         return self._build_response()
     
@@ -1138,6 +1139,7 @@ class InteractiveSession:
         elif phase == "binocular_balance":
             self.set_chart("snellen_chart_20_20_20")
             self.set_power(occluder="BINO")
+            self.jcc_control("BINO")
             self._update_state(occluder="BINO", chart="snellen_chart_20_20_20")
 
 

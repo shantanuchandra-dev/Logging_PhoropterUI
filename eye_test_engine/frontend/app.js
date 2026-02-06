@@ -11,6 +11,7 @@ let sessionState = {
     sessionId: null,
     currentPhase: null,
     currentChart: null,  // Track current chart to avoid duplicate setChart calls
+    intentsLocked: false,
     responseCount: 0,
     history: []
 };
@@ -20,6 +21,64 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('Eye Test Engine Frontend Loaded');
     updateStatusIndicator(false);
 });
+
+function openArPowerModal() {
+    const modal = document.getElementById('arPowerModal');
+    if (modal) {
+        modal.classList.add('active');
+    }
+}
+
+function closeArPowerModal() {
+    const modal = document.getElementById('arPowerModal');
+    if (modal) {
+        modal.classList.remove('active');
+    }
+}
+
+function parseArValue(value, fallback) {
+    const parsed = Number.parseFloat(value);
+    return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+async function applyArPower() {
+    if (!sessionState.sessionId) {
+        alert('Please start a test session first.');
+        return;
+    }
+
+    const rightSph = parseArValue(document.getElementById('arRightSph').value, 0);
+    const rightCyl = parseArValue(document.getElementById('arRightCyl').value, 0);
+    const rightAxis = parseArValue(document.getElementById('arRightAxis').value, 180);
+    const leftSph = parseArValue(document.getElementById('arLeftSph').value, 0);
+    const leftCyl = parseArValue(document.getElementById('arLeftCyl').value, 0);
+    const leftAxis = parseArValue(document.getElementById('arLeftAxis').value, 180);
+
+    const power = {
+        right: { sph: rightSph, cyl: rightCyl, axis: rightAxis },
+        left: { sph: leftSph, cyl: leftCyl, axis: leftAxis }
+    };
+
+    try {
+        showLoading(true);
+        await setPower(power, 'BINO');
+        addToHistory('AR power applied (BINO)', 'info');
+
+        // Update UI display immediately
+        document.getElementById('rightPower').textContent =
+            `${rightSph.toFixed(2)} / ${rightCyl.toFixed(2)} / ${rightAxis.toFixed(0)}°`;
+        document.getElementById('leftPower').textContent =
+            `${leftSph.toFixed(2)} / ${leftCyl.toFixed(2)} / ${leftAxis.toFixed(0)}°`;
+        document.getElementById('occluderState').textContent = 'BINO';
+
+        closeArPowerModal();
+    } catch (error) {
+        console.error('Error applying AR power:', error);
+        alert('Failed to apply AR power. Please try again.');
+    } finally {
+        showLoading(false);
+    }
+}
 
 // Start Test
 async function startTest() {
@@ -79,8 +138,15 @@ async function startTest() {
 
 // Submit Intent Response
 async function submitIntent(intent) {
+    if (sessionState.intentsLocked) {
+        return;
+    }
     try {
         showLoading(true);
+        sessionState.intentsLocked = true;
+        // Lock intent buttons until next question is rendered
+        const intentButtons = document.querySelectorAll('.intent-button');
+        intentButtons.forEach(btn => btn.disabled = true);
         
         // Record response
         sessionState.responseCount++;
@@ -120,6 +186,9 @@ async function submitIntent(intent) {
     } catch (error) {
         console.error('Error submitting intent:', error);
         alert('Failed to submit response. Please try again.');
+        sessionState.intentsLocked = false;
+        const intentButtons = document.querySelectorAll('.intent-button');
+        intentButtons.forEach(btn => btn.disabled = false);
     } finally {
         showLoading(false);
     }
@@ -193,6 +262,7 @@ function displayQuestion(data) {
     const intents = data.intents || [];
     const intentButtons = document.getElementById('intentButtons');
     intentButtons.innerHTML = '';
+    sessionState.intentsLocked = false;
     
     // If no intents (Flip1 state), show waiting message
     if (intents.length === 0 && data.auto_flip) {
