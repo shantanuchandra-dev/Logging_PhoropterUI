@@ -239,6 +239,50 @@ class InteractiveSession:
             self.jcc_control(jcc_eye_mode)
             print(f"✓ JCC eye mode set: {jcc_eye_mode}")
     
+    def set_power_with_prev_state(self, 
+                                   prev_r_sph: float, prev_r_cyl: float, prev_r_axis: float,
+                                   prev_l_sph: float, prev_l_cyl: float, prev_l_axis: float,
+                                   r_sph: float, r_cyl: float, r_axis: float,
+                                   l_sph: float, l_cyl: float, l_axis: float,
+                                   prev_aux_lens: str = None, aux_lens: str = None):
+        """Set power with previous state for accurate click calculations.
+        
+        This uses the vision correction API with previous state to ensure
+        accurate click calculations when the agent's internal state might be out of sync.
+        """
+        # Build payload with previous and current state
+        payload = {
+            "test_cases": [{
+                "case_id": 1,
+                "prev_right_eye": {"sph": prev_r_sph, "cyl": prev_r_cyl, "axis": prev_r_axis},
+                "prev_left_eye": {"sph": prev_l_sph, "cyl": prev_l_cyl, "axis": prev_l_axis},
+                "right_eye": {"sph": r_sph, "cyl": r_cyl, "axis": r_axis},
+                "left_eye": {"sph": l_sph, "cyl": l_cyl, "axis": l_axis}
+            }]
+        }
+        
+        # Add aux_lens if provided
+        if prev_aux_lens:
+            payload["test_cases"][0]["prev_aux_lens"] = prev_aux_lens
+        if aux_lens:
+            payload["test_cases"][0]["aux_lens"] = aux_lens
+        
+        # Update internal state
+        self.current_row.r_sph = r_sph
+        self.current_row.r_cyl = r_cyl
+        self.current_row.r_axis = r_axis
+        self.current_row.l_sph = l_sph
+        self.current_row.l_cyl = l_cyl
+        self.current_row.l_axis = l_axis
+        
+        cmd = f"""curl -X POST {self.api_endpoint} \\
+  -H "Content-Type: application/json" \\
+  -d '{json.dumps(payload)}'"""
+        print(f"[CMD] {cmd}")
+        subprocess.run(cmd, shell=True, capture_output=True)
+        print(f"✓ Power set with prev state: R({r_sph}/{r_cyl}/{r_axis}) L({l_sph}/{l_cyl}/{l_axis})")
+        print(f"  Previous state: R({prev_r_sph}/{prev_r_cyl}/{prev_r_axis}) L({prev_l_sph}/{prev_l_cyl}/{prev_l_axis})")
+    
     def jcc_control(self, action: str):
         """Perform JCC action (handle, increase, decrease, etc.)."""
         payload = {"test_cases": [{"jcc": action}]}
@@ -1305,26 +1349,44 @@ class InteractiveSession:
         return self._build_response()
     
     def _transition_to_left_eye_refraction(self) -> Dict:
-        """Transition to left eye refraction."""
+        """Transition to left eye refraction.
+        
+        Uses vision correction API with previous state to ensure accurate click calculations
+        when transitioning from right to left eye. Sets both previous and current values
+        as the same to maintain current power while switching occluder.
+        """
         self.current_phase = "left_eye_refraction"
         print(f"\n→ Transitioning to {self.phase_names[self.current_phase]}")
         
         self.current_chart_index = 0  # Start with largest chart
         self.unable_read_count = 0
         
+        # Get current power values
+        curr_r_sph = self.current_row.r_sph
+        curr_r_cyl = self.current_row.r_cyl
+        curr_r_axis = self.current_row.r_axis
+        curr_l_sph = self.current_row.l_sph
+        curr_l_cyl = self.current_row.l_cyl
+        curr_l_axis = self.current_row.l_axis
+        
         self.current_row = self._copy_row_state()
         self.current_row.occluder_state = "Right_Occluded"
         self.current_row.chart_display = self.snellen_charts[0]
         
         self.set_chart(self.snellen_charts[0])
-        # Don't call set_power - preserve current power from duochrome
-        # Just set JCC eye mode for left eye testing
-        self.jcc_control("L")
         
-        # Build response without power to prevent frontend from calling setPower
-        response = self._build_response()
-        response.pop('power', None)  # Remove power key to prevent frontend setPower call
-        return response
+        # Use vision correction API with previous state
+        # Set both previous and current values as the same to maintain power while switching occluder
+        self.set_power_with_prev_state(
+            prev_r_sph=curr_r_sph, prev_r_cyl=curr_r_cyl, prev_r_axis=curr_r_axis,
+            prev_l_sph=curr_l_sph, prev_l_cyl=curr_l_cyl, prev_l_axis=curr_l_axis,
+            r_sph=curr_r_sph, r_cyl=curr_r_cyl, r_axis=curr_r_axis,
+            l_sph=curr_l_sph, l_cyl=curr_l_cyl, l_axis=curr_l_axis,
+            prev_aux_lens="AuxLensL",  # Previous state was testing right eye (left occluded)
+            aux_lens="AuxLensR"  # Now testing left eye (right occluded)
+        )
+        
+        return self._build_response()
     
     def _transition_to_binocular_balance(self) -> Dict:
         """Transition to binocular balance."""
@@ -1358,8 +1420,15 @@ class InteractiveSession:
         
         return phase_flow.get(self.current_phase, "complete")
     
-    def _setup_phase(self, phase: str):
-        """Setup phoropter for the given phase."""
+    def _setup_phase(self, phase: str) -> Dict:
+        """Setup phoropter for the given phase.
+        
+        This method is used for the "Jump to Phase" feature to directly navigate
+        to any phase with correct charts, sequences, and state initialization.
+        
+        Returns:
+            Response dict with phase state, including auto_flip flag for JCC phases
+        """
         # Set current phase
         self.current_phase = phase
         print(f"\n→ Jumping to {self.phase_names.get(phase, phase)}")
@@ -1386,45 +1455,95 @@ class InteractiveSession:
             self._update_state(occluder="BINO", chart="echart_400")
             
         elif phase == "right_eye_refraction":
-            self.set_chart("snellen_chart_20_20_20")
+            # Start with the first chart in the sequence (largest)
+            self.current_chart_index = 0
+            self.set_chart(self.snellen_charts[0])
             self.set_power(occluder="Left_Occluded")
-            self._update_state(occluder="Left_Occluded", chart="snellen_chart_20_20_20")
+            self._update_state(occluder="Left_Occluded", chart=self.snellen_charts[0])
             
         elif phase == "jcc_axis_right":
+            # Reset JCC choice tracking
+            self._reset_jcc_choice_tracking()
             self.jcc_flip_state = "flip1"
-            # self.set_chart("jcc_chart")
-            # JCC chart defaults to Flip 1 of Axis - no API calls needed
+            # Display JCC chart
+            self.set_chart("jcc_chart")
+            # Set JCC eye mode to R (testing right eye)
+            self.jcc_control("R")
             self._update_state(occluder="Right_Axis_Flip1", chart="jcc_chart")
+            # Return response with auto_flip flag
+            response = self._build_response()
+            response['auto_flip'] = True
+            response['flip_wait_seconds'] = 2
+            return response
             
         elif phase == "jcc_power_right":
+            # Reset JCC choice tracking and zero flip counter
+            self._reset_jcc_choice_tracking()
+            self.jcc_power_zero_flip1_count = 0
             self.jcc_flip_state = "flip1"
+            # Display JCC chart if not already shown
+            self.set_chart("jcc_chart")
+            # Set JCC eye mode to R
+            self.jcc_control("R")
             # Switch to power mode
-            self.jcc_flip("power_axis_switch")
+            self.jcc_control("power_axis_switch")
             self._update_state(occluder="Right_Power_Flip1", chart="jcc_chart")
+            # Return response with auto_flip flag
+            response = self._build_response()
+            response['auto_flip'] = True
+            response['flip_wait_seconds'] = 2
+            return response
             
         elif phase == "duochrome_right":
+            # Reset duochrome choice tracking
+            self._reset_duochrome_choice_tracking()
             self.set_chart("duochrome")
             self.set_power(occluder="Left_Occluded")
             self._update_state(occluder="Left_Occluded", chart="duochrome")
             
         elif phase == "left_eye_refraction":
-            self.set_chart("snellen_chart_20_20_20")
+            # Start with the first chart in the sequence (largest)
+            self.current_chart_index = 0
+            self.set_chart(self.snellen_charts[0])
             self.set_power(occluder="Right_Occluded")
-            self._update_state(occluder="Right_Occluded", chart="snellen_chart_20_20_20")
+            self._update_state(occluder="Right_Occluded", chart=self.snellen_charts[0])
             
         elif phase == "jcc_axis_left":
+            # Reset JCC choice tracking
+            self._reset_jcc_choice_tracking()
             self.jcc_flip_state = "flip1"
-            # self.set_chart("jcc_chart")
-            # JCC chart defaults to Flip 1 of Axis - no API calls needed
+            # Display JCC chart
+            self.set_chart("jcc_chart")
+            # Set JCC eye mode to L (testing left eye)
+            self.jcc_control("L")
             self._update_state(occluder="Left_Axis_Flip1", chart="jcc_chart")
+            # Return response with auto_flip flag
+            response = self._build_response()
+            response['auto_flip'] = True
+            response['flip_wait_seconds'] = 2
+            return response
             
         elif phase == "jcc_power_left":
+            # Reset JCC choice tracking and zero flip counter
+            self._reset_jcc_choice_tracking()
+            self.jcc_power_zero_flip1_count = 0
             self.jcc_flip_state = "flip1"
+            # Display JCC chart if not already shown
+            self.set_chart("jcc_chart")
+            # Set JCC eye mode to L
+            self.jcc_control("L")
             # Switch to power mode
-            self.jcc_flip("power_axis_switch")
+            self.jcc_control("power_axis_switch")
             self._update_state(occluder="Left_Power_Flip1", chart="jcc_chart")
+            # Return response with auto_flip flag
+            response = self._build_response()
+            response['auto_flip'] = True
+            response['flip_wait_seconds'] = 2
+            return response
             
         elif phase == "duochrome_left":
+            # Reset duochrome choice tracking
+            self._reset_duochrome_choice_tracking()
             self.set_chart("duochrome")
             self.set_power(occluder="Right_Occluded")
             self._update_state(occluder="Right_Occluded", chart="duochrome")
@@ -1434,6 +1553,9 @@ class InteractiveSession:
             self.set_power(occluder="BINO")
             self.jcc_control("BINO")
             self._update_state(occluder="BINO", chart="snellen_chart_20_20_20")
+        
+        # Return standard response for non-JCC phases
+        return self._build_response()
 
 
 def main():

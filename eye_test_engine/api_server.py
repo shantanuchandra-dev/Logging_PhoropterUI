@@ -109,8 +109,8 @@ def jump_to_phase(session_id):
     
     # Setup the target phase
     try:
-        session._setup_phase(target_phase)
-        state = session._build_response()
+        # _setup_phase now returns a response dict with all necessary state
+        state = session._setup_phase(target_phase)
         
         return jsonify({
             "session_id": session_id,
