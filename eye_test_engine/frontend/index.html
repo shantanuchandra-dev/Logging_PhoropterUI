@@ -513,9 +513,80 @@
             border-left: 4px solid #f57c00;
         }
 
+        .footer {
+            background: white;
+            border-radius: 15px;
+            padding: 20px 30px;
+            margin-top: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .footer .phase-jump {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .footer .phase-jump label {
+            color: #666;
+            font-weight: 600;
+        }
+
+        .footer .phase-jump select {
+            padding: 8px 15px;
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            background: white;
+            color: #333;
+            font-size: 1em;
+            cursor: pointer;
+            min-width: 300px;
+        }
+
+        .footer .phase-jump select:hover {
+            border-color: #764ba2;
+        }
+
+        .footer .phase-jump button {
+            padding: 8px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: transform 0.2s;
+        }
+
+        .footer .phase-jump button:hover {
+            transform: translateY(-2px);
+        }
+
+        .footer .phase-jump button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
         @media (max-width: 768px) {
             .main-content {
                 grid-template-columns: 1fr;
+            }
+            
+            .footer {
+                padding: 15px;
+            }
+            
+            .footer .phase-jump {
+                flex-direction: column;
+                width: 100%;
+            }
+            
+            .footer .phase-jump select {
+                width: 100%;
             }
         }
     </style>
@@ -523,28 +594,15 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>👁️ Eye Test Engine</h1>
-            <p>Interactive Phoropter-Controlled Eye Examination</p>
-            
-            <div class="header-controls">
-                <div class="phase-jump">
-                    <label for="phaseSelect">Jump to Phase:</label>
-                    <select id="phaseSelect">
-                        <option value="">-- Select Phase --</option>
-                        <option value="distance_vision">Phase A: Distance Vision (Step 2.1)</option>
-                        <option value="right_eye_refraction">Phase B: Right Eye Refraction (Step 6.1)</option>
-                        <option value="jcc_axis_right">Phase E: JCC Axis Right (Step 6.2)</option>
-                        <option value="jcc_power_right">Phase F: JCC Power Right (Step 6.2)</option>
-                        <option value="duochrome_right">Phase G: Duochrome Right (Step 6.2)</option>
-                        <option value="left_eye_refraction">Phase D: Left Eye Refraction (Step 6.3)</option>
-                        <option value="jcc_axis_left">Phase H: JCC Axis Left (Step 6.4)</option>
-                        <option value="jcc_power_left">Phase I: JCC Power Left (Step 6.4)</option>
-                        <option value="duochrome_left">Phase J: Duochrome Left (Step 6.4)</option>
-                        <option value="binocular_balance">Phase K: Binocular Balance (Step 6.5)</option>
-                    </select>
-                    <button onclick="jumpToPhase()" id="jumpBtn">Go</button>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h1>👁️ Eye Test Engine</h1>
+                    <p>Interactive Phoropter-Controlled Eye Examination</p>
                 </div>
-                <button class="ar-power-btn" onclick="openArPowerModal()">Set AR Power</button>
+                <div style="display: flex; gap: 10px;">
+                    <button class="ar-power-btn" onclick="openArPowerModal()">Set AR Power</button>
+                    <button class="ar-power-btn" onclick="openLensoPowerModal()">Set Lenso Power</button>
+                </div>
             </div>
         </div>
 
@@ -657,12 +715,56 @@
                 </div>
             </div>
         </div>
+
+        <!-- Footer with Phase Jump -->
+        <div class="footer">
+            <div class="phase-jump">
+                <label for="phaseSelect">Jump to Phase:</label>
+                <select id="phaseSelect">
+                    <option value="">-- Select Phase --</option>
+                    <option value="distance_vision">Phase A: Distance Vision (Step 2.1)</option>
+                    <option value="right_eye_refraction">Phase B: Right Eye Refraction (Step 6.1)</option>
+                    <option value="jcc_axis_right">Phase E: JCC Axis Right (Step 6.2)</option>
+                    <option value="jcc_power_right">Phase F: JCC Power Right (Step 6.2)</option>
+                    <option value="duochrome_right">Phase G: Duochrome Right (Step 6.2)</option>
+                    <option value="left_eye_refraction">Phase D: Left Eye Refraction (Step 6.3)</option>
+                    <option value="jcc_axis_left">Phase H: JCC Axis Left (Step 6.4)</option>
+                    <option value="jcc_power_left">Phase I: JCC Power Left (Step 6.4)</option>
+                    <option value="duochrome_left">Phase J: Duochrome Left (Step 6.4)</option>
+                    <option value="binocular_balance">Phase K: Binocular Balance (Step 6.5)</option>
+                </select>
+                <button onclick="jumpToPhase()" id="jumpBtn">Go</button>
+            </div>
+        </div>
     </div>
 
+    <!-- AR Power Modal -->
     <div class="modal-backdrop" id="arPowerModal">
         <div class="modal">
             <h3>Insert AR Power</h3>
             <p>Enter autorefractor power and click Go to send to the phoropter.</p>
+
+            <div class="modal-row">
+                <label style="font-weight: 600; margin-bottom: 10px;">Apply to:</label>
+                <div style="display: flex; gap: 15px; margin-bottom: 15px;">
+                    <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
+                        <input type="radio" name="arEyeSelection" value="none" checked>
+                        None
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
+                        <input type="radio" name="arEyeSelection" value="right">
+                        Right Eye Only
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
+                        <input type="radio" name="arEyeSelection" value="left">
+                        Left Eye Only
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
+                        <input type="radio" name="arEyeSelection" value="both">
+                        Both Eyes
+                    </label>
+                </div>
+            </div>
 
             <div class="modal-row">
                 <label>Right</label>
@@ -685,6 +787,59 @@
             <div class="modal-actions">
                 <button class="btn btn-secondary" onclick="closeArPowerModal()">Cancel</button>
                 <button class="btn btn-primary" onclick="applyArPower()">Go</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lenso Power Modal -->
+    <div class="modal-backdrop" id="lensoPowerModal">
+        <div class="modal">
+            <h3>Insert Lenso Power</h3>
+            <p>Enter lensometer power and click Go to send to the phoropter.</p>
+
+            <div class="modal-row">
+                <label style="font-weight: 600; margin-bottom: 10px;">Apply to:</label>
+                <div style="display: flex; gap: 15px; margin-bottom: 15px;">
+                    <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
+                        <input type="radio" name="lensoEyeSelection" value="none" checked>
+                        None
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
+                        <input type="radio" name="lensoEyeSelection" value="right">
+                        Right Eye Only
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
+                        <input type="radio" name="lensoEyeSelection" value="left">
+                        Left Eye Only
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
+                        <input type="radio" name="lensoEyeSelection" value="both">
+                        Both Eyes
+                    </label>
+                </div>
+            </div>
+
+            <div class="modal-row">
+                <label>Right</label>
+                <div class="modal-grid">
+                    <input id="lensoRightSph" type="number" step="0.25" placeholder="SPH">
+                    <input id="lensoRightCyl" type="number" step="0.25" placeholder="CYL">
+                    <input id="lensoRightAxis" type="number" step="1" min="0" max="180" placeholder="AXIS">
+                </div>
+            </div>
+
+            <div class="modal-row">
+                <label>Left</label>
+                <div class="modal-grid">
+                    <input id="lensoLeftSph" type="number" step="0.25" placeholder="SPH">
+                    <input id="lensoLeftCyl" type="number" step="0.25" placeholder="CYL">
+                    <input id="lensoLeftAxis" type="number" step="1" min="0" max="180" placeholder="AXIS">
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeLensoPowerModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="applyLensoPower()">Go</button>
             </div>
         </div>
     </div>

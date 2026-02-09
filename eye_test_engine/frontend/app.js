@@ -38,6 +38,20 @@ function closeArPowerModal() {
     }
 }
 
+function openLensoPowerModal() {
+    const modal = document.getElementById('lensoPowerModal');
+    if (modal) {
+        modal.classList.add('active');
+    }
+}
+
+function closeLensoPowerModal() {
+    const modal = document.getElementById('lensoPowerModal');
+    if (modal) {
+        modal.classList.remove('active');
+    }
+}
+
 function parseArValue(value, fallback) {
     const parsed = Number.parseFloat(value);
     return Number.isFinite(parsed) ? parsed : fallback;
@@ -49,6 +63,14 @@ async function applyArPower() {
         return;
     }
 
+    // Get eye selection
+    const eyeSelection = document.querySelector('input[name="arEyeSelection"]:checked').value;
+    
+    if (eyeSelection === 'none') {
+        alert('Please select which eye(s) to apply power to.');
+        return;
+    }
+
     const rightSph = parseArValue(document.getElementById('arRightSph').value, 0);
     const rightCyl = parseArValue(document.getElementById('arRightCyl').value, 0);
     const rightAxis = parseArValue(document.getElementById('arRightAxis').value, 180);
@@ -56,27 +78,94 @@ async function applyArPower() {
     const leftCyl = parseArValue(document.getElementById('arLeftCyl').value, 0);
     const leftAxis = parseArValue(document.getElementById('arLeftAxis').value, 180);
 
-    const power = {
-        right: { sph: rightSph, cyl: rightCyl, axis: rightAxis },
-        left: { sph: leftSph, cyl: leftCyl, axis: leftAxis }
-    };
+    // Build power object based on selection
+    const power = {};
+    if (eyeSelection === 'right' || eyeSelection === 'both') {
+        power.right = { sph: rightSph, cyl: rightCyl, axis: rightAxis };
+    }
+    if (eyeSelection === 'left' || eyeSelection === 'both') {
+        power.left = { sph: leftSph, cyl: leftCyl, axis: leftAxis };
+    }
 
     try {
         showLoading(true);
         await setPower(power, 'BINO');
-        addToHistory('AR power applied (BINO)', 'info');
+        
+        const eyeText = eyeSelection === 'both' ? 'both eyes' : `${eyeSelection} eye`;
+        addToHistory(`AR power applied (${eyeText})`, 'info');
 
-        // Update UI display immediately
-        document.getElementById('rightPower').textContent =
-            `${rightSph.toFixed(2)} / ${rightCyl.toFixed(2)} / ${rightAxis.toFixed(0)}°`;
-        document.getElementById('leftPower').textContent =
-            `${leftSph.toFixed(2)} / ${leftCyl.toFixed(2)} / ${leftAxis.toFixed(0)}°`;
+        // Update UI display for applied eyes
+        if (power.right) {
+            document.getElementById('rightPower').textContent =
+                `${rightSph.toFixed(2)} / ${rightCyl.toFixed(2)} / ${rightAxis.toFixed(0)}°`;
+        }
+        if (power.left) {
+            document.getElementById('leftPower').textContent =
+                `${leftSph.toFixed(2)} / ${leftCyl.toFixed(2)} / ${leftAxis.toFixed(0)}°`;
+        }
         document.getElementById('occluderState').textContent = 'BINO';
 
         closeArPowerModal();
     } catch (error) {
         console.error('Error applying AR power:', error);
         alert('Failed to apply AR power. Please try again.');
+    } finally {
+        showLoading(false);
+    }
+}
+
+async function applyLensoPower() {
+    if (!sessionState.sessionId) {
+        alert('Please start a test session first.');
+        return;
+    }
+
+    // Get eye selection
+    const eyeSelection = document.querySelector('input[name="lensoEyeSelection"]:checked').value;
+    
+    if (eyeSelection === 'none') {
+        alert('Please select which eye(s) to apply power to.');
+        return;
+    }
+
+    const rightSph = parseArValue(document.getElementById('lensoRightSph').value, 0);
+    const rightCyl = parseArValue(document.getElementById('lensoRightCyl').value, 0);
+    const rightAxis = parseArValue(document.getElementById('lensoRightAxis').value, 180);
+    const leftSph = parseArValue(document.getElementById('lensoLeftSph').value, 0);
+    const leftCyl = parseArValue(document.getElementById('lensoLeftCyl').value, 0);
+    const leftAxis = parseArValue(document.getElementById('lensoLeftAxis').value, 180);
+
+    // Build power object based on selection
+    const power = {};
+    if (eyeSelection === 'right' || eyeSelection === 'both') {
+        power.right = { sph: rightSph, cyl: rightCyl, axis: rightAxis };
+    }
+    if (eyeSelection === 'left' || eyeSelection === 'both') {
+        power.left = { sph: leftSph, cyl: leftCyl, axis: leftAxis };
+    }
+
+    try {
+        showLoading(true);
+        await setPower(power, 'BINO');
+        
+        const eyeText = eyeSelection === 'both' ? 'both eyes' : `${eyeSelection} eye`;
+        addToHistory(`Lenso power applied (${eyeText})`, 'info');
+
+        // Update UI display for applied eyes
+        if (power.right) {
+            document.getElementById('rightPower').textContent =
+                `${rightSph.toFixed(2)} / ${rightCyl.toFixed(2)} / ${rightAxis.toFixed(0)}°`;
+        }
+        if (power.left) {
+            document.getElementById('leftPower').textContent =
+                `${leftSph.toFixed(2)} / ${leftCyl.toFixed(2)} / ${leftAxis.toFixed(0)}°`;
+        }
+        document.getElementById('occluderState').textContent = 'BINO';
+
+        closeLensoPowerModal();
+    } catch (error) {
+        console.error('Error applying Lenso power:', error);
+        alert('Failed to apply Lenso power. Please try again.');
     } finally {
         showLoading(false);
     }

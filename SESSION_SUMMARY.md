@@ -272,6 +272,63 @@ Added a visual chart selector UI during Phase B (Right Eye and Left Eye Refracti
 
 ---
 
+## 9. ✅ UI Layout Improvements
+
+**Status**: Completed (ready for testing)
+
+### What Was Done
+Comprehensive UI improvements for better layout and power control functionality:
+
+1. **Phase Jump Moved to Footer**
+   - Removed from header
+   - Now in dedicated footer at bottom
+   - Cleaner header area
+   - Better visual hierarchy
+
+2. **Power Buttons in Header**
+   - "Set AR Power" button moved to top-right
+   - "Set Lenso Power" button added next to AR button
+   - Symmetrical, professional appearance
+   - Quick access to power controls
+
+3. **Lenso Power Modal Added**
+   - New modal matching AR Power design
+   - Same functionality as AR Power
+   - Separate controls for lensometer readings
+
+4. **Eye Selection for Power Application**
+   - Both AR and Lenso modals now have eye selection
+   - Options: None, Right Eye Only, Left Eye Only, Both Eyes
+   - "None" selected by default (requires explicit selection)
+   - Validates selection before applying
+   - Sends CURL command only for selected eyes
+   - Updates frontend display accordingly
+
+### Files Modified
+- `eye_test_engine/frontend/index.html`
+  - Restructured header layout
+  - Added footer with phase jump controls
+  - Added Lenso Power modal
+  - Updated AR Power modal with eye selection
+  - Added footer CSS styles
+  
+- `eye_test_engine/frontend/app.js`
+  - Added Lenso Power modal functions
+  - Updated AR Power with eye selection logic
+  - Added Lenso Power application logic
+
+### Files Created
+- `UI_IMPROVEMENTS.md` - Comprehensive documentation
+
+### Benefits
+- ✅ Cleaner, more organized layout
+- ✅ Flexible power application (per eye or both)
+- ✅ Professional appearance
+- ✅ Better user experience
+- ✅ Mobile-responsive design
+
+---
+
 ## Summary of All Files Modified
 
 ### Backend
@@ -309,7 +366,11 @@ Added a visual chart selector UI during Phase B (Right Eye and Left Eye Refracti
 5. `PROCESSING_UI_UPDATE.md`
 6. `DUOCHROME_REVERSAL_FIX.md`
 7. `CHART_SELECTOR_FEATURE.md`
-8. `SESSION_SUMMARY.md` (this file)
+8. `CHART_SELECTOR_VISUAL_GUIDE.md`
+9. `CHART_SELECTOR_POSITION_UPDATE.md`
+10. `OCCLUSION_MECHANISM.md`
+11. `UI_IMPROVEMENTS.md`
+12. `SESSION_SUMMARY.md` (this file)
 
 ### Tests (in `eye_test_engine/tests/`)
 9. `test_prev_state.py`
@@ -339,6 +400,7 @@ Added a visual chart selector UI during Phase B (Right Eye and Left Eye Refracti
 | Spherical Equivalent (Bidirectional) | ⚠️ Ready | Test created, needs phase setup fix |
 | Duochrome Reversal Power | ✅ Tested | Simple test passing |
 | Chart Selector (Phase B) | ⚠️ Ready | Needs manual testing in browser |
+| UI Layout Improvements | ⚠️ Ready | Needs manual testing in browser |
 
 ---
 
