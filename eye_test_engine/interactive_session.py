@@ -354,6 +354,38 @@ class InteractiveSession:
             "intents": [],
         }
     
+    def switch_chart(self, chart_index: int) -> Dict:
+        """Switch to a different chart during refraction phase.
+        
+        Args:
+            chart_index: Index of the chart in snellen_charts list
+            
+        Returns:
+            Response dict with updated state
+        """
+        # Only allow chart switching during refraction phases
+        if self.current_phase not in ["right_eye_refraction", "left_eye_refraction"]:
+            raise ValueError(f"Chart switching not allowed in phase: {self.current_phase}")
+        
+        # Validate chart index
+        if chart_index < 0 or chart_index >= len(self.snellen_charts):
+            raise ValueError(f"Invalid chart index: {chart_index}")
+        
+        # Update chart index
+        self.current_chart_index = chart_index
+        
+        # Update current row
+        self.current_row = self._copy_row_state()
+        self.current_row.chart_display = self.snellen_charts[chart_index]
+        
+        # Set the chart on phoropter
+        self.set_chart(self.snellen_charts[chart_index])
+        
+        print(f"✓ Switched to chart {chart_index}: {self.snellen_charts[chart_index]}")
+        
+        # Return updated state
+        return self._build_response()
+    
     def _process_distance_vision(self, intent: str) -> Dict:
         """Process distance vision phase."""
         # Move to right eye refraction
@@ -1121,7 +1153,7 @@ class InteractiveSession:
         # Get formatted phase name with letter (A, B, etc.)
         phase_display = self.phase_names.get(self.current_phase, self.current_phase)
         
-        return {
+        response = {
             "phase": phase_display,
             "question": question,
             "intents": intents,
@@ -1140,6 +1172,16 @@ class InteractiveSession:
                 }
             }
         }
+        
+        # Add chart information if in Phase B (refraction phases)
+        if self.current_phase in ["right_eye_refraction", "left_eye_refraction"]:
+            response["chart_info"] = {
+                "available_charts": self.snellen_charts,
+                "current_index": self.current_chart_index,
+                "current_chart": self.snellen_charts[self.current_chart_index]
+            }
+        
+        return response
     
     def _transition_to_jcc_axis_right(self) -> Dict:
         """Transition to JCC axis refinement for right eye."""

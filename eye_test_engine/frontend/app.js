@@ -11,6 +11,8 @@ let sessionState = {
     sessionId: null,
     currentPhase: null,
     currentChart: null,  // Track current chart to avoid duplicate setChart calls
+    currentChartIndex: 0,  // Track current chart index
+    availableCharts: [],  // List of available charts
     intentsLocked: false,
     responseCount: 0,
     history: []
@@ -263,6 +265,9 @@ function displayQuestion(data) {
     const question = data.question || 'Please describe what you see.';
     document.getElementById('questionText').textContent = question;
     
+    // Update chart selector visibility and content
+    updateChartSelector(data);
+    
     // Update intents
     const intents = data.intents || [];
     const intentButtons = document.getElementById('intentButtons');
@@ -285,6 +290,120 @@ function displayQuestion(data) {
         button.onclick = () => submitIntent(intent);
         intentButtons.appendChild(button);
     });
+}
+
+// Update Chart Selector
+function updateChartSelector(data) {
+    const chartSelector = document.getElementById('chartSelector');
+    const chartGrid = document.getElementById('chartGrid');
+    
+    // Check if we're in Phase B (right or left eye refraction)
+    const isPhaseB = data.phase && (
+        data.phase.includes('Right Eye Refraction') || 
+        data.phase.includes('Left Eye Refraction')
+    );
+    
+    if (isPhaseB && data.chart_info) {
+        // Show chart selector
+        chartSelector.classList.add('active');
+        
+        // Update session state
+        sessionState.availableCharts = data.chart_info.available_charts || [];
+        sessionState.currentChartIndex = data.chart_info.current_index || 0;
+        
+        // Build chart grid
+        chartGrid.innerHTML = '';
+        sessionState.availableCharts.forEach((chart, index) => {
+            const button = document.createElement('button');
+            button.className = 'chart-button';
+            if (index === sessionState.currentChartIndex) {
+                button.classList.add('active');
+            }
+            
+            const chartName = document.createElement('div');
+            chartName.className = 'chart-name';
+            chartName.textContent = formatChartName(chart);
+            
+            const chartSize = document.createElement('div');
+            chartSize.className = 'chart-size';
+            chartSize.textContent = extractChartSize(chart);
+            
+            button.appendChild(chartName);
+            button.appendChild(chartSize);
+            button.onclick = () => switchChart(index);
+            
+            chartGrid.appendChild(button);
+        });
+    } else {
+        // Hide chart selector for other phases
+        chartSelector.classList.remove('active');
+    }
+}
+
+// Format chart name for display
+function formatChartName(chartName) {
+    // Convert "snellen_chart_200_150" to "Chart 200/150"
+    const match = chartName.match(/snellen_chart_(.+)/);
+    if (match) {
+        return `Chart ${match[1].replace(/_/g, '/')}`;
+    }
+    return chartName;
+}
+
+// Extract chart size for display
+function extractChartSize(chartName) {
+    // Convert "snellen_chart_200_150" to "20/200 - 20/150"
+    const match = chartName.match(/snellen_chart_(\d+)_(\d+)(?:_(\d+))?/);
+    if (match) {
+        if (match[3]) {
+            return `20/${match[1]} - 20/${match[2]} - 20/${match[3]}`;
+        }
+        return `20/${match[1]} - 20/${match[2]}`;
+    }
+    return '';
+}
+
+// Switch to a different chart
+async function switchChart(chartIndex) {
+    if (!sessionState.sessionId) {
+        alert('No active session');
+        return;
+    }
+    
+    if (chartIndex === sessionState.currentChartIndex) {
+        return; // Already on this chart
+    }
+    
+    try {
+        showLoading(true);
+        
+        const response = await fetch(`${CONFIG.backendUrl}/api/session/${sessionState.sessionId}/switch-chart`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ chart_index: chartIndex })
+        });
+        
+        if (!response.ok) {
+            throw new Error('Failed to switch chart');
+        }
+        
+        const data = await response.json();
+        
+        // Update phoropter
+        await setPhoropter(data);
+        
+        // Update UI
+        updateSessionInfo(data);
+        displayQuestion(data);
+        
+        addToHistory(`Switched to chart ${chartIndex + 1}`, 'info');
+        
+    } catch (error) {
+        console.error('Error switching chart:', error);
+        alert('Failed to switch chart. Please try again.');
+    } finally {
+        showLoading(false);
+    }
 }
 
 // Update Session Info Panel

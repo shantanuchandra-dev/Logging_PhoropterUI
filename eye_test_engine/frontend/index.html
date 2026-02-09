@@ -231,6 +231,96 @@
             line-height: 1.6;
         }
 
+        .chart-selector {
+            background: #fff;
+            border: 2px solid #667eea;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            display: none;
+        }
+
+        .chart-selector.active {
+            display: block;
+        }
+
+        .chart-selector h4 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.1em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .chart-selector h4::before {
+            content: "📊";
+            font-size: 1.3em;
+        }
+
+        .chart-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .chart-button {
+            padding: 12px 15px;
+            background: #f5f5f5;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.95em;
+            text-align: left;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .chart-button:hover {
+            background: #e3f2fd;
+            border-color: #667eea;
+            transform: translateY(-2px);
+        }
+
+        .chart-button.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: #667eea;
+            font-weight: 600;
+        }
+
+        .chart-button .chart-name {
+            font-weight: 600;
+            font-size: 1em;
+        }
+
+        .chart-button .chart-size {
+            font-size: 0.85em;
+            opacity: 0.8;
+        }
+
+        .chart-button.active .chart-size {
+            opacity: 1;
+        }
+
+        .chart-info {
+            background: #f0f4ff;
+            padding: 10px 15px;
+            border-radius: 5px;
+            font-size: 0.9em;
+            color: #555;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .chart-info::before {
+            content: "ℹ️";
+        }
+
         .intents-container {
             margin: 30px 0;
         }
@@ -484,6 +574,15 @@
                     <div class="intents-container">
                         <h4>Please select your response:</h4>
                         <div id="intentButtons"></div>
+                    </div>
+
+                    <!-- Chart Selector (shown only during Phase B) -->
+                    <div id="chartSelector" class="chart-selector">
+                        <h4>Chart Selection</h4>
+                        <div class="chart-info">
+                            Click any chart below to switch to it. Current progress will be maintained.
+                        </div>
+                        <div id="chartGrid" class="chart-grid"></div>
                     </div>
 
                     <div class="loading" id="loadingIndicator">

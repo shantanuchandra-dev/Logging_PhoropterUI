@@ -121,6 +121,35 @@ def jump_to_phase(session_id):
         return jsonify({"error": str(e)}), 400
 
 
+@app.route('/api/session/<session_id>/switch-chart', methods=['POST'])
+def switch_chart(session_id):
+    """Switch to a different chart during refraction phase."""
+    if session_id not in sessions:
+        return jsonify({"error": "Session not found"}), 404
+    
+    session = sessions[session_id]
+    payload = request.json or {}
+    _log_api_command(f"/api/session/{session_id}/switch-chart", payload)
+    chart_index = payload.get('chart_index')
+    
+    if chart_index is None:
+        return jsonify({"error": "chart_index required"}), 400
+    
+    # Switch chart
+    try:
+        state = session.switch_chart(chart_index)
+        
+        return jsonify({
+            "session_id": session_id,
+            "status": "active",
+            **state
+        })
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    except Exception as e:
+        return jsonify({"error": f"Failed to switch chart: {str(e)}"}), 500
+
+
 @app.route('/api/session/<session_id>/end', methods=['POST'])
 def end_session(session_id):
     """End session and get final prescription."""
@@ -168,6 +197,7 @@ if __name__ == '__main__':
     print("  POST /api/session/start")
     print("  POST /api/session/<id>/respond")
     print("  POST /api/session/<id>/jump")
+    print("  POST /api/session/<id>/switch-chart")
     print("  GET  /api/session/<id>/status")
     print("  POST /api/session/<id>/end")
     app.run(host='0.0.0.0', port=5000, debug=True)
