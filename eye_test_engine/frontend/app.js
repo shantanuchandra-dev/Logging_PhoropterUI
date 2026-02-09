@@ -144,9 +144,10 @@ async function submitIntent(intent) {
     try {
         showLoading(true);
         sessionState.intentsLocked = true;
-        // Lock intent buttons until next question is rendered
-        const intentButtons = document.querySelectorAll('.intent-button');
-        intentButtons.forEach(btn => btn.disabled = true);
+        
+        // Hide all intent buttons during processing
+        const intentButtonsContainer = document.getElementById('intentButtons');
+        intentButtonsContainer.innerHTML = '<div class="alert alert-info">Processing...</div>';
         
         // Record response
         sessionState.responseCount++;
@@ -173,10 +174,12 @@ async function submitIntent(intent) {
         
         // Update UI for next question
         updateSessionInfo(data);
-        displayQuestion(data);
         
-        // Update phoropter
+        // Update phoropter first
         await setPhoropter(data);
+        
+        // Display question and intents AFTER processing is complete
+        displayQuestion(data);
         
         // Check if auto-flip is needed (JCC Flip1 → Flip2)
         if (data.auto_flip) {
@@ -187,6 +190,7 @@ async function submitIntent(intent) {
         console.error('Error submitting intent:', error);
         alert('Failed to submit response. Please try again.');
         sessionState.intentsLocked = false;
+        // Restore intents on error
         const intentButtons = document.querySelectorAll('.intent-button');
         intentButtons.forEach(btn => btn.disabled = false);
     } finally {
@@ -197,9 +201,10 @@ async function submitIntent(intent) {
 // Handle Automatic Flip (Flip1 → wait → Flip2)
 async function handleAutoFlip(waitSeconds) {
     try {
-        // Disable all intent buttons during auto-flip
-        const intentButtons = document.querySelectorAll('.intent-button');
-        intentButtons.forEach(btn => btn.disabled = true);
+        // Hide intent buttons during auto-flip countdown
+        const intentButtonsContainer = document.getElementById('intentButtons');
+        const originalContent = intentButtonsContainer.innerHTML;
+        intentButtonsContainer.innerHTML = '';
         
         // Show countdown in question box
         const questionBox = document.querySelector('.question-box');
@@ -238,7 +243,7 @@ async function handleAutoFlip(waitSeconds) {
         updateSessionInfo(data);
         displayQuestion(data);
         
-        // Note: displayQuestion() creates fresh enabled buttons, no need to re-enable
+        // Note: displayQuestion() creates fresh enabled buttons
         
         addToHistory('Flip 2 displayed', 'info');
         

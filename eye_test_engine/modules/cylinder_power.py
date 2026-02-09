@@ -64,11 +64,11 @@ class CylinderPowerModule:
         elif cyl_change > 0:
             # Cylinder became more positive (less negative)
             choice = "flip1"
-            intent = f"Flip 1: GAP Power (patient chose Flip 1, increase cylinder by {abs(cyl_change):.2f}D)"
+            intent = f"Flip 1: GAP Power (patient chose Flip 1, increase cylinder by +{abs(cyl_change):.2f}D)"
         else:
             # Cylinder became more negative
             choice = "flip2"
-            intent = f"Flip 2: RAM Power (patient chose Flip 2, decrease cylinder by {abs(cyl_change):.2f}D)"
+            intent = f"Flip 2: RAM Power (patient chose Flip 2, decrease cylinder by -{abs(cyl_change):.2f}D)"
         
         return {
             "choice": choice,

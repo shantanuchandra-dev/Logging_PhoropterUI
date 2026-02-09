@@ -43,6 +43,20 @@ class InteractiveSession:
         self.current_row = self._init_row()
         self.session_history: List[RowContext] = []
         
+        # Previous state tracking for "Prev State" functionality
+        self.previous_state = None
+        self.show_prev_state_option = False
+        
+        # JCC Power at 0.0 tracking
+        self.jcc_power_zero_flip1_count = 0
+        
+        # Spherical equivalent compensation tracking
+        # Track if we're at a -0.50D threshold (e.g., -0.50, -1.00, -1.50, etc.)
+        # When crossing into threshold: SPH +0.25D
+        # When crossing out of threshold: SPH -0.25D
+        self.r_at_cyl_threshold = False
+        self.l_at_cyl_threshold = False
+        
         # Refraction state tracking
         self.snellen_charts = [
             "snellen_chart_200_150",
@@ -269,6 +283,9 @@ class InteractiveSession:
                 return flip2_intents if isinstance(flip2_intents, list) else [flip2_intents]
             return []
         elif isinstance(intents, list):
+            # Add "Prev State" option if we have a previous state to restore
+            if self.show_prev_state_option and self.previous_state is not None:
+                return intents + ["Prev State"]
             return intents
         
         return ["Responds to instruction."]
@@ -361,6 +378,20 @@ class InteractiveSession:
         """Process right eye refraction with chart progression."""
         current_chart = self.snellen_charts[self.current_chart_index]
         
+        # Handle "Prev State" intent to restore previous power
+        if intent == "Prev State":
+            if self.previous_state is not None:
+                self.current_row = self._copy_row_from_dict(self.previous_state)
+                self.set_power(r_sph=self.current_row.r_sph, occluder="Left_Occluded")
+                self.previous_state = None
+                self.show_prev_state_option = False
+                print("✓ Restored to previous state")
+            return self._build_response()
+        
+        # Reset prev state option for non-power-changing responses
+        if intent not in ["Blurry", "Unable to read"]:
+            self.show_prev_state_option = False
+        
         if intent == "Able to read":
             # Move to next smaller chart
             if current_chart == "snellen_chart_20_20_20":
@@ -377,18 +408,44 @@ class InteractiveSession:
                 return self._transition_to_jcc_axis_right()
         
         elif intent == "Blurry":
+            # Save current state before making changes
+            self.previous_state = {
+                'r_sph': self.current_row.r_sph,
+                'r_cyl': self.current_row.r_cyl,
+                'r_axis': self.current_row.r_axis,
+                'l_sph': self.current_row.l_sph,
+                'l_cyl': self.current_row.l_cyl,
+                'l_axis': self.current_row.l_axis,
+                'occluder_state': self.current_row.occluder_state,
+                'chart_display': self.current_row.chart_display,
+            }
             # Add -0.25D SPH, stay on same chart
             self.current_row = self._copy_row_state()
             self.current_row.r_sph -= 0.25
             self.set_power(r_sph=self.current_row.r_sph, occluder="Left_Occluded")
             self.unable_read_count = 0
+            # Enable "Prev State" option for next response
+            self.show_prev_state_option = True
         
         elif intent == "Unable to read":
+            # Save current state before making changes
+            self.previous_state = {
+                'r_sph': self.current_row.r_sph,
+                'r_cyl': self.current_row.r_cyl,
+                'r_axis': self.current_row.r_axis,
+                'l_sph': self.current_row.l_sph,
+                'l_cyl': self.current_row.l_cyl,
+                'l_axis': self.current_row.l_axis,
+                'occluder_state': self.current_row.occluder_state,
+                'chart_display': self.current_row.chart_display,
+            }
             # Add -0.25D SPH, stay on same chart
             self.current_row = self._copy_row_state()
             self.current_row.r_sph -= 0.25
             self.set_power(r_sph=self.current_row.r_sph, occluder="Left_Occluded")
             self.unable_read_count += 1
+            # Enable "Prev State" option for next response
+            self.show_prev_state_option = True
             
             # Check exit condition: 2 consecutive "Unable to read"
             if self.unable_read_count >= 2:
@@ -411,6 +468,20 @@ class InteractiveSession:
         """Process left eye refraction (same logic as right eye)."""
         current_chart = self.snellen_charts[self.current_chart_index]
         
+        # Handle "Prev State" intent to restore previous power
+        if intent == "Prev State":
+            if self.previous_state is not None:
+                self.current_row = self._copy_row_from_dict(self.previous_state)
+                self.set_power(l_sph=self.current_row.l_sph, occluder="Right_Occluded")
+                self.previous_state = None
+                self.show_prev_state_option = False
+                print("✓ Restored to previous state")
+            return self._build_response()
+        
+        # Reset prev state option for non-power-changing responses
+        if intent not in ["Blurry", "Unable to read"]:
+            self.show_prev_state_option = False
+        
         if intent == "Able to read":
             if current_chart == "snellen_chart_20_20_20":
                 return self._transition_to_jcc_axis_left()
@@ -424,16 +495,42 @@ class InteractiveSession:
                 return self._transition_to_jcc_axis_left()
         
         elif intent == "Blurry":
+            # Save current state before making changes
+            self.previous_state = {
+                'r_sph': self.current_row.r_sph,
+                'r_cyl': self.current_row.r_cyl,
+                'r_axis': self.current_row.r_axis,
+                'l_sph': self.current_row.l_sph,
+                'l_cyl': self.current_row.l_cyl,
+                'l_axis': self.current_row.l_axis,
+                'occluder_state': self.current_row.occluder_state,
+                'chart_display': self.current_row.chart_display,
+            }
             self.current_row = self._copy_row_state()
             self.current_row.l_sph -= 0.25
             self.set_power(l_sph=self.current_row.l_sph, occluder="Right_Occluded")
             self.unable_read_count = 0
+            # Enable "Prev State" option for next response
+            self.show_prev_state_option = True
         
         elif intent == "Unable to read":
+            # Save current state before making changes
+            self.previous_state = {
+                'r_sph': self.current_row.r_sph,
+                'r_cyl': self.current_row.r_cyl,
+                'r_axis': self.current_row.r_axis,
+                'l_sph': self.current_row.l_sph,
+                'l_cyl': self.current_row.l_cyl,
+                'l_axis': self.current_row.l_axis,
+                'occluder_state': self.current_row.occluder_state,
+                'chart_display': self.current_row.chart_display,
+            }
             self.current_row = self._copy_row_state()
             self.current_row.l_sph -= 0.25
             self.set_power(l_sph=self.current_row.l_sph, occluder="Right_Occluded")
             self.unable_read_count += 1
+            # Enable "Prev State" option for next response
+            self.show_prev_state_option = True
             
             if self.unable_read_count >= 2:
                 return self._transition_to_jcc_axis_left()
@@ -644,12 +741,49 @@ class InteractiveSession:
                 return response
             if "GAP Power" in intent or "Flip 1" in intent:
                 # Patient chose Flip 1 - Use JCC increase operation
+                
+                # Special handling: If cylinder is 0.0, cannot increase (would go positive)
+                if self.current_row.r_cyl == 0.0:
+                    self.jcc_power_zero_flip1_count += 1
+                    
+                    if self.jcc_power_zero_flip1_count == 1:
+                        # First time: Repeat the flip cycle
+                        print("⚠️  Cylinder is 0.0, cannot increase. Repeating flip cycle...")
+                        self.jcc_control("handle")
+                        self.jcc_flip_state = "flip1"
+                        self.current_row = self._copy_row_state()
+                        self._update_state(occluder="Right_Power_Flip1")
+                        response = self._build_response()
+                        response['auto_flip'] = True
+                        response['flip_wait_seconds'] = 2
+                        return response
+                    else:
+                        # Second time: Move to next phase
+                        print("⚠️  Cylinder is 0.0 and patient chose Flip 1 again. Moving to duochrome...")
+                        self.jcc_power_zero_flip1_count = 0  # Reset counter
+                        return self._transition_to_duochrome_right()
+                
+                # Normal case: cylinder is not 0.0
                 reversal = self._record_jcc_choice("flip1")
+                
+                # Check if we're currently at a -0.50D threshold before increase
+                was_at_threshold = self._is_at_cyl_threshold(self.current_row.r_cyl)
+                
                 self.jcc_control("increase")  # Phoropter increases cylinder by 0.25D
                 
                 # Update internal state (phoropter handles actual value)
                 self.current_row = self._copy_row_state()
                 self.current_row.r_cyl += 0.25
+                
+                # Check if we crossed out of a -0.50D threshold
+                now_at_threshold = self._is_at_cyl_threshold(self.current_row.r_cyl)
+                
+                if was_at_threshold and not now_at_threshold:
+                    # Crossed out of threshold (e.g., -0.50 → -0.25)
+                    # Revert spherical equivalent compensation: SPH -0.25D
+                    self.current_row.r_sph -= 0.25
+                    print(f"✓ Spherical equivalent reversion: SPH decreased by -0.25D (now {self.current_row.r_sph:.2f}D)")
+                    # Note: Phoropter handles this automatically, we just track it
 
                 if reversal:
                     return self._transition_to_duochrome_right()
@@ -666,11 +800,25 @@ class InteractiveSession:
             elif "RAM Power" in intent or "Flip 2" in intent:
                 # Patient chose Flip 2 - Use JCC decrease operation
                 reversal = self._record_jcc_choice("flip2")
+                
+                # Check if we're currently at a -0.50D threshold before decrease
+                was_at_threshold = self._is_at_cyl_threshold(self.current_row.r_cyl)
+                
                 self.jcc_control("decrease")  # Phoropter decreases cylinder by 0.25D
                 
                 # Update internal state (phoropter handles actual value)
                 self.current_row = self._copy_row_state()
                 self.current_row.r_cyl -= 0.25
+                
+                # Check if we crossed into a -0.50D threshold
+                now_at_threshold = self._is_at_cyl_threshold(self.current_row.r_cyl)
+                
+                if not was_at_threshold and now_at_threshold:
+                    # Crossed into threshold (e.g., -0.25 → -0.50)
+                    # Apply spherical equivalent compensation: SPH +0.25D
+                    self.current_row.r_sph += 0.25
+                    print(f"✓ Spherical equivalent compensation: SPH increased by +0.25D (now {self.current_row.r_sph:.2f}D)")
+                    # Note: Phoropter handles this automatically, we just track it
 
                 if reversal:
                     return self._transition_to_duochrome_right()
@@ -719,12 +867,49 @@ class InteractiveSession:
                 return response
             if "GAP Power" in intent or "Flip 1" in intent:
                 # Patient chose Flip 1 - Use JCC increase operation
+                
+                # Special handling: If cylinder is 0.0, cannot increase (would go positive)
+                if self.current_row.l_cyl == 0.0:
+                    self.jcc_power_zero_flip1_count += 1
+                    
+                    if self.jcc_power_zero_flip1_count == 1:
+                        # First time: Repeat the flip cycle
+                        print("⚠️  Cylinder is 0.0, cannot increase. Repeating flip cycle...")
+                        self.jcc_control("handle")
+                        self.jcc_flip_state = "flip1"
+                        self.current_row = self._copy_row_state()
+                        self._update_state(occluder="Left_Power_Flip1")
+                        response = self._build_response()
+                        response['auto_flip'] = True
+                        response['flip_wait_seconds'] = 2
+                        return response
+                    else:
+                        # Second time: Move to next phase
+                        print("⚠️  Cylinder is 0.0 and patient chose Flip 1 again. Moving to duochrome...")
+                        self.jcc_power_zero_flip1_count = 0  # Reset counter
+                        return self._transition_to_duochrome_left()
+                
+                # Normal case: cylinder is not 0.0
                 reversal = self._record_jcc_choice("flip1")
+                
+                # Check if we're currently at a -0.50D threshold before increase
+                was_at_threshold = self._is_at_cyl_threshold(self.current_row.l_cyl)
+                
                 self.jcc_control("increase")  # Phoropter increases cylinder by 0.25D
                 
                 # Update internal state (phoropter handles actual value)
                 self.current_row = self._copy_row_state()
                 self.current_row.l_cyl += 0.25
+                
+                # Check if we crossed out of a -0.50D threshold
+                now_at_threshold = self._is_at_cyl_threshold(self.current_row.l_cyl)
+                
+                if was_at_threshold and not now_at_threshold:
+                    # Crossed out of threshold (e.g., -0.50 → -0.25)
+                    # Revert spherical equivalent compensation: SPH -0.25D
+                    self.current_row.l_sph -= 0.25
+                    print(f"✓ Spherical equivalent reversion: SPH decreased by -0.25D (now {self.current_row.l_sph:.2f}D)")
+                    # Note: Phoropter handles this automatically, we just track it
 
                 if reversal:
                     return self._transition_to_duochrome_left()
@@ -741,11 +926,25 @@ class InteractiveSession:
             elif "RAM Power" in intent or "Flip 2" in intent:
                 # Patient chose Flip 2 - Use JCC decrease operation
                 reversal = self._record_jcc_choice("flip2")
+                
+                # Check if we're currently at a -0.50D threshold before decrease
+                was_at_threshold = self._is_at_cyl_threshold(self.current_row.l_cyl)
+                
                 self.jcc_control("decrease")  # Phoropter decreases cylinder by 0.25D
                 
                 # Update internal state (phoropter handles actual value)
                 self.current_row = self._copy_row_state()
                 self.current_row.l_cyl -= 0.25
+                
+                # Check if we crossed into a -0.50D threshold
+                now_at_threshold = self._is_at_cyl_threshold(self.current_row.l_cyl)
+                
+                if not was_at_threshold and now_at_threshold:
+                    # Crossed into threshold (e.g., -0.25 → -0.50)
+                    # Apply spherical equivalent compensation: SPH +0.25D
+                    self.current_row.l_sph += 0.25
+                    print(f"✓ Spherical equivalent compensation: SPH increased by +0.25D (now {self.current_row.l_sph:.2f}D)")
+                    # Note: Phoropter handles this automatically, we just track it
 
                 if reversal:
                     return self._transition_to_duochrome_left()
@@ -781,7 +980,11 @@ class InteractiveSession:
             self.current_row = self._copy_row_state()
             self.current_row.r_sph -= 0.25
             if reversal:
-                return self._transition_to_left_eye_refraction()
+                # On reversal, transition but include updated power in response
+                response = self._transition_to_left_eye_refraction()
+                # Re-add power to response so frontend displays updated value
+                response['power'] = self._build_response()['power']
+                return response
             # Stay in duochrome for another round
             return self._build_response()
             
@@ -792,7 +995,11 @@ class InteractiveSession:
             self.current_row = self._copy_row_state()
             self.current_row.r_sph += 0.25
             if reversal:
-                return self._transition_to_left_eye_refraction()
+                # On reversal, transition but include updated power in response
+                response = self._transition_to_left_eye_refraction()
+                # Re-add power to response so frontend displays updated value
+                response['power'] = self._build_response()['power']
+                return response
             # Stay in duochrome for another round
             return self._build_response()
             
@@ -819,7 +1026,12 @@ class InteractiveSession:
             self.current_row = self._copy_row_state()
             self.current_row.l_sph -= 0.25
             if reversal:
-                return self._transition_to_binocular_balance()
+                # On reversal, transition but include updated power in response
+                response = self._transition_to_binocular_balance()
+                # Ensure power is in response so frontend displays updated value
+                if 'power' not in response:
+                    response['power'] = self._build_response()['power']
+                return response
             # Stay in duochrome for another round
             return self._build_response()
             
@@ -830,7 +1042,12 @@ class InteractiveSession:
             self.current_row = self._copy_row_state()
             self.current_row.l_sph += 0.25
             if reversal:
-                return self._transition_to_binocular_balance()
+                # On reversal, transition but include updated power in response
+                response = self._transition_to_binocular_balance()
+                # Ensure power is in response so frontend displays updated value
+                if 'power' not in response:
+                    response['power'] = self._build_response()['power']
+                return response
             # Stay in duochrome for another round
             return self._build_response()
             
@@ -863,6 +1080,29 @@ class InteractiveSession:
         new_row.occluder_state = self.current_row.occluder_state
         new_row.chart_display = self.current_row.chart_display
         return new_row
+    
+    def _copy_row_from_dict(self, state_dict: dict) -> RowContext:
+        """Copy row state from a saved state dictionary."""
+        new_row = self._init_row()
+        new_row.r_sph = state_dict.get('r_sph', 0.0)
+        new_row.r_cyl = state_dict.get('r_cyl', 0.0)
+        new_row.r_axis = state_dict.get('r_axis', 180.0)
+        new_row.l_sph = state_dict.get('l_sph', 0.0)
+        new_row.l_cyl = state_dict.get('l_cyl', 0.0)
+        new_row.l_axis = state_dict.get('l_axis', 180.0)
+        new_row.occluder_state = state_dict.get('occluder_state', 'BINO')
+        new_row.chart_display = state_dict.get('chart_display', '')
+        return new_row
+    
+    def _is_at_cyl_threshold(self, cyl_value: float) -> bool:
+        """Check if cylinder value is at a -0.50D threshold.
+        
+        Returns True if cyl is at -0.50, -1.00, -1.50, -2.00, etc.
+        These are the points where spherical equivalent compensation is applied.
+        """
+        # Check if cylinder is a multiple of -0.50D
+        # Account for floating point precision
+        return abs(cyl_value % 0.50) < 0.01 and cyl_value < -0.01
     
     def _update_state(self, occluder: str = None, chart: str = None):
         """Update occluder and/or chart state and refresh derived fields."""
@@ -952,6 +1192,7 @@ class InteractiveSession:
         print(f"\n→ Transitioning to {self.phase_names[self.current_phase]}")
 
         self._reset_jcc_choice_tracking()
+        self.jcc_power_zero_flip1_count = 0  # Reset counter for new phase
         
         self.jcc_flip_state = "flip1"
         self.current_row = self._copy_row_state()
@@ -972,6 +1213,7 @@ class InteractiveSession:
         print(f"\n→ Transitioning to {self.phase_names[self.current_phase]}")
 
         self._reset_jcc_choice_tracking()
+        self.jcc_power_zero_flip1_count = 0  # Reset counter for new phase
         
         self.jcc_flip_state = "flip1"
         self.current_row = self._copy_row_state()

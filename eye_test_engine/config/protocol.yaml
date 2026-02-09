@@ -45,7 +45,7 @@ phases:
       - "Able to read"
       - "Blurry"
       - "Unable to read"
-      - "Getting better"
+      # - "Getting better"  # Commented out
     exit_conditions:
       - type: "unable_read_2x_after_sph"
         next_phase: "jcc_axis_right"
@@ -142,7 +142,7 @@ phases:
       - "Able to read"
       - "Blurry"
       - "Unable to read"
-      - "Getting better"
+      # - "Getting better"  # Commented out
     exit_conditions:
       - type: "unable_read_2x_after_sph"
         next_phase: "jcc_axis_left"

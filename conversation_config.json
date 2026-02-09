@@ -46,10 +46,10 @@
       "No response expected (Flip 1 presented, awaiting Flip 2 comparison)"
     ],
     "question_flip2": [
-      "Flip 1: GAP Axis (patient chose Flip 1, increase axis by 5°)",
-      "Flip 1: GAP Power (patient chose Flip 1, increase cylinder by 0.25D)",
-      "Flip 2: RAM Axis (patient chose Flip 2, decrease axis by 5°)",
-      "Flip 2: RAM Power (patient chose Flip 2, decrease cylinder by 0.25D)",
+      "Flip 1: GAP Axis (patient chose Flip 1, increase axis by +5°)",
+      "Flip 1: GAP Power (patient chose Flip 1, increase cylinder by +0.25D)",
+      "Flip 2: RAM Axis (patient chose Flip 2, decrease axis by -5°)",
+      "Flip 2: RAM Power (patient chose Flip 2, decrease cylinder by -0.25D)",
       "Both Same (no change needed)"
     ],
     "question_duochrome": [
