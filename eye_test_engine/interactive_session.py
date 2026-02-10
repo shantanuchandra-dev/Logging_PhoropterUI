@@ -1475,8 +1475,13 @@ class InteractiveSession:
         - Green selected → GAP (Green Add Plus) → JCC increase, SPH += 0.25
         - Both Same → Complete process (move to next phase)
         - Reversal → Complete process (move to next phase)
+        - Prev State → Restore previous power values
         """
         if intent == "Red":
+            # Save current state before making changes
+            self.previous_state = self._copy_row_state()
+            self.show_prev_state_option = True
+            
             # RAM: Red Add Minus - decrease SPH
             reversal = self._record_duochrome_choice("red")
             self.jcc_control("decrease")  # Phoropter decreases SPH by 0.25D
@@ -1492,6 +1497,10 @@ class InteractiveSession:
             return self._build_response()
             
         elif intent == "Green":
+            # Save current state before making changes
+            self.previous_state = self._copy_row_state()
+            self.show_prev_state_option = True
+            
             # GAP: Green Add Plus - increase SPH
             reversal = self._record_duochrome_choice("green")
             self.jcc_control("increase")  # Phoropter increases SPH by 0.25D
@@ -1510,6 +1519,48 @@ class InteractiveSession:
             # Both Same - complete duochrome, move to next phase
             return self._transition_to_left_eye_refraction()
         
+        elif intent == "Prev State" and self.previous_state:
+            # Restore previous state
+            prev_r_sph = self.previous_state.r_sph
+            prev_r_cyl = self.previous_state.r_cyl
+            prev_r_axis = self.previous_state.r_axis
+            prev_l_sph = self.previous_state.l_sph
+            prev_l_cyl = self.previous_state.l_cyl
+            prev_l_axis = self.previous_state.l_axis
+            
+            # Current state before restoration
+            curr_r_sph = self.current_row.r_sph
+            curr_r_cyl = self.current_row.r_cyl
+            curr_r_axis = self.current_row.r_axis
+            curr_l_sph = self.current_row.l_sph
+            curr_l_cyl = self.current_row.l_cyl
+            curr_l_axis = self.current_row.l_axis
+            
+            # Restore previous state
+            self.current_row = self._copy_row_state()
+            self.current_row.r_sph = prev_r_sph
+            self.current_row.r_cyl = prev_r_cyl
+            self.current_row.r_axis = prev_r_axis
+            self.current_row.l_sph = prev_l_sph
+            self.current_row.l_cyl = prev_l_cyl
+            self.current_row.l_axis = prev_l_axis
+            
+            # Use set_power_with_prev_state to restore
+            self.set_power_with_prev_state(
+                prev_r_sph=curr_r_sph, prev_r_cyl=curr_r_cyl, prev_r_axis=curr_r_axis,
+                prev_l_sph=curr_l_sph, prev_l_cyl=curr_l_cyl, prev_l_axis=curr_l_axis,
+                r_sph=prev_r_sph, r_cyl=prev_r_cyl, r_axis=prev_r_axis,
+                l_sph=prev_l_sph, l_cyl=prev_l_cyl, l_axis=prev_l_axis,
+                prev_aux_lens="AuxLensL",
+                aux_lens="AuxLensL"
+            )
+            
+            # Clear previous state after restoration
+            self.previous_state = None
+            self.show_prev_state_option = False
+            
+            return self._build_response()
+        
         # Default fallback
         return self._build_response()
     
@@ -1521,8 +1572,13 @@ class InteractiveSession:
         - Green selected → GAP (Green Add Plus) → JCC increase, SPH += 0.25
         - Both Same → Complete process (move to next phase)
         - Reversal → Complete process (move to next phase)
+        - Prev State → Restore previous power values
         """
         if intent == "Red":
+            # Save current state before making changes
+            self.previous_state = self._copy_row_state()
+            self.show_prev_state_option = True
+            
             # RAM: Red Add Minus - decrease SPH
             reversal = self._record_duochrome_choice("red")
             self.jcc_control("decrease")  # Phoropter decreases SPH by 0.25D
@@ -1539,6 +1595,10 @@ class InteractiveSession:
             return self._build_response()
             
         elif intent == "Green":
+            # Save current state before making changes
+            self.previous_state = self._copy_row_state()
+            self.show_prev_state_option = True
+            
             # GAP: Green Add Plus - increase SPH
             reversal = self._record_duochrome_choice("green")
             self.jcc_control("increase")  # Phoropter increases SPH by 0.25D
@@ -1557,6 +1617,48 @@ class InteractiveSession:
         elif intent == "Both Same":
             # Both Same - complete duochrome, move to next phase
             return self._transition_to_binocular_balance()
+        
+        elif intent == "Prev State" and self.previous_state:
+            # Restore previous state
+            prev_r_sph = self.previous_state.r_sph
+            prev_r_cyl = self.previous_state.r_cyl
+            prev_r_axis = self.previous_state.r_axis
+            prev_l_sph = self.previous_state.l_sph
+            prev_l_cyl = self.previous_state.l_cyl
+            prev_l_axis = self.previous_state.l_axis
+            
+            # Current state before restoration
+            curr_r_sph = self.current_row.r_sph
+            curr_r_cyl = self.current_row.r_cyl
+            curr_r_axis = self.current_row.r_axis
+            curr_l_sph = self.current_row.l_sph
+            curr_l_cyl = self.current_row.l_cyl
+            curr_l_axis = self.current_row.l_axis
+            
+            # Restore previous state
+            self.current_row = self._copy_row_state()
+            self.current_row.r_sph = prev_r_sph
+            self.current_row.r_cyl = prev_r_cyl
+            self.current_row.r_axis = prev_r_axis
+            self.current_row.l_sph = prev_l_sph
+            self.current_row.l_cyl = prev_l_cyl
+            self.current_row.l_axis = prev_l_axis
+            
+            # Use set_power_with_prev_state to restore
+            self.set_power_with_prev_state(
+                prev_r_sph=curr_r_sph, prev_r_cyl=curr_r_cyl, prev_r_axis=curr_r_axis,
+                prev_l_sph=curr_l_sph, prev_l_cyl=curr_l_cyl, prev_l_axis=curr_l_axis,
+                r_sph=prev_r_sph, r_cyl=prev_r_cyl, r_axis=prev_r_axis,
+                l_sph=prev_l_sph, l_cyl=prev_l_cyl, l_axis=prev_l_axis,
+                prev_aux_lens="AuxLensR",
+                aux_lens="AuxLensR"
+            )
+            
+            # Clear previous state after restoration
+            self.previous_state = None
+            self.show_prev_state_option = False
+            
+            return self._build_response()
         
         # Default fallback
         return self._build_response()

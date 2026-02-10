@@ -1,14 +1,14 @@
 # Eye Test Engine
 
-Modular end-to-end eye test algorithm for processing phoropter CSV data and annotating with clinical phases.
+Interactive eye test session orchestrator with frontend and backend API server.
 
 ## Overview
 
-This engine processes curated conversation CSVs from eye tests and:
-- Identifies clinical phases (distance vision, refraction, JCC, duochrome, binocular balance)
-- Tracks state transitions using a state machine
-- Annotates rows with phase information
-- Generates summary reports with final prescriptions
+This engine provides an interactive eye test system that:
+- Manages conversation flow with patients through a web interface
+- Controls phoropter hardware via API calls
+- Implements clinical phases (distance vision, refraction, JCC, duochrome, binocular balance)
+- Tracks state transitions and power adjustments
 
 ## Architecture
 
@@ -16,75 +16,126 @@ This engine processes curated conversation CSVs from eye tests and:
 eye_test_engine/
 ├── config/
 │   ├── protocol.yaml          # Phase definitions and transition rules
-│   └── thresholds.yaml         # Configurable thresholds
+│   └── thresholds.yaml        # Configurable thresholds
 ├── core/
-│   ├── context.py              # Row-level context and normalization
-│   ├── state_machine.py        # Phase transition logic
-│   └── transitions.py          # (future) Advanced transition rules
-├── modules/
-│   ├── spherical.py            # Sphere refinement logic
-│   ├── cylinder_axis.py        # JCC axis refinement
-│   ├── cylinder_power.py       # JCC power refinement
-│   ├── duochrome.py            # Red/green balance
-│   └── binocular_balance.py    # Final verification
-├── io/
-│   ├── inputs.py               # CSV loading
-│   └── outputs.py              # CSV writing and reports
-├── analytics/
-│   ├── scoring.py              # (future) Quality scoring
-│   └── confidence.py           # (future) Confidence analysis
+│   ├── context.py             # Row-level context
+│   └── state_machine.py       # Phase transition logic
+├── frontend/
+│   ├── index.html             # Web interface
+│   └── app.js                 # Frontend logic
 ├── tests/
 │   └── (test files)
-├── run.py                      # Main execution script
-└── README.md                   # This file
+├── interactive_session.py     # Session orchestrator
+├── api_server.py              # Backend API server
+└── start_frontend.sh          # Frontend launcher script
 ```
 
 ## Installation
 
-```bash
-# Install dependencies
-pip install pyyaml
+### 1. Create and activate virtual environment
 
-# Make run.py executable
-chmod +x run.py
+```bash
+cd eye_test_engine
+python3 -m venv venv
+source venv/bin/activate  # On macOS/Linux
+```
+
+### 2. Install dependencies
+
+```bash
+pip install pyyaml flask flask-cors
 ```
 
 ## Usage
 
-### Process a single CSV file
+### Start the Backend API Server
+
+In the first terminal, activate venv and start the backend:
 
 ```bash
-python run.py path/to/curated_conversation.csv --output results/ --summary
+cd eye_test_engine
+source venv/bin/activate
+python api_server.py
 ```
 
-### Process a directory of CSVs
+The backend will start on `http://localhost:5001`
+
+### Start the Frontend
+
+In a second terminal, run the frontend launcher:
 
 ```bash
-python run.py Curated_Conversations/ --output results/ --summary --verbose
+cd eye_test_engine
+./start_frontend.sh
 ```
 
-### Command-line options
+Or manually:
 
-- `input`: Path to CSV file or directory
-- `--output DIR`: Output directory (default: `eye_test_output/`)
-- `--summary`: Generate summary reports with final prescriptions
-- `--verbose`: Print detailed progress
+```bash
+cd eye_test_engine/frontend
+python3 -m http.server 8000
+```
 
-## Output
+The frontend will be available at `http://localhost:8000`
 
-### Annotated CSV
+### Access the Application
 
-Each row includes two additional fields:
-- `Phase_ID`: Short phase identifier (A, B, E, F, G, D, H, I, J, K, etc.)
-- `Phase_Name`: Human-readable phase name
+Open your browser and navigate to:
+```
+http://localhost:8000
+```
 
-### Summary Report (with --summary)
+## Phase Flow
 
-Text file containing:
-- Total rows processed
-- Phase distribution (row counts per phase)
-- Final prescription (SPH, CYL, AXIS, ADD for both eyes)
-- Start/end timestamps
+```
+Phase A: Distance Vision
+    ↓
+Phase B: Right Eye Refraction
+    ↓
+Phase E: JCC Axis Right (±5° or ±10°)
+    ↓
+Phase F: JCC Power Right (±0.25D or ±0.50D)
+    ↓
+Phase G: Duochrome Right
+    ↓
+Phase D: Left Eye Refraction
+    ↓
+Phase H: JCC Axis Left (±5° or ±10°)
+    ↓
+Phase I: JCC Power Left (±0.25D or ±0.50D)
+    ↓
+Phase J: Duochrome Left
+    ↓
+Phase K: Binocular Balance (BINO)
+    ↓
+Test Complete
+```
+
+## Features
+
+### Interactive Session Management
+- Real-time patient interaction through web interface
+- Automatic phase transitions based on patient responses
+- Power adjustment tracking with previous state support
+- Chart selection and progression
+
+### JCC Refinement
+- Automatic flip timing (2 seconds)
+- Standard adjustments: ±5° axis, ±0.25D cylinder
+- Large adjustments: ±10° axis, ±0.50D cylinder
+- Reversal detection for phase transitions
+- Spherical equivalent compensation
+
+### Binocular Balance
+- Chart_20 (BINO chart) display
+- Top/bottom line blur detection
+- Iterative balancing until both eyes equal
+- Previous state restoration
+
+### Vision Correction API
+- All power adjustments use Vision Correction API with Previous State
+- Accurate click calculations with prev/current state tracking
+- Aux lens state tracking (AuxLensL, AuxLensR, BINO)
 
 ## Configuration
 
@@ -102,147 +153,33 @@ Configurable parameters:
 - `unable_read_threshold`: Number of "Unable to read" to exit sphere phase (default: 2)
 - `axis_increment`: Degrees to adjust per JCC axis flip (default: 5)
 - `power_increment`: Diopters to adjust per JCC power flip (default: 0.25)
-- `confidence_window_rows`: Rows to look ahead for repetition (default: 3)
 
-## Phase Flow
+## API Endpoints
 
+### Backend API (Port 5001)
+
+- `POST /start` - Start new test session
+- `POST /respond` - Process patient response
+- `POST /switch_chart` - Switch to different chart
+- `POST /jump_to_phase` - Jump to specific phase
+- `GET /state` - Get current session state
+
+### Phoropter API
+
+All phoropter commands are sent to:
 ```
-Distance Vision (A)
-    ↓
-Right Eye Refraction (B) → Pinhole Check (optional)
-    ↓ (2x "Unable to read" after SPH)
-JCC Axis Right (E)
-    ↓ (axis stable)
-JCC Power Right (F)
-    ↓ (power stable or 0.00)
-Duochrome Right (G)
-    ↓
-Left Eye Refraction (D) → Pinhole Check (optional)
-    ↓ (2x "Unable to read" after SPH)
-JCC Axis Left (H)
-    ↓ (axis stable)
-JCC Power Left (I)
-    ↓ (power stable or 0.00)
-Duochrome Left (J)
-    ↓
-Binocular Balance (K)
-    ↓
-Test Complete
+https://rajasthan-royals.preprod.lenskart.com/phoropter/phoropter-1/run-tests
 ```
 
-## Modules
-
-### Spherical Module
-- Tracks SPH changes and "Unable to read" count
-- Determines when to exit sphere refinement
-- Suggests next SPH values
-
-### Cylinder Axis Module
-- Analyzes Flip1→Flip2 pairs
-- Determines patient choice (GAP/RAM)
-- Calculates axis changes
-- Detects stability
-
-### Cylinder Power Module
-- Analyzes Flip1→Flip2 pairs
-- Determines patient choice (GAP/RAM)
-- Calculates cylinder changes
-- Handles 0.00 exception
-- Detects stability
-
-### Duochrome Module
-- Parses red/green/both responses
-- Provides adjustment recommendations
-
-### Binocular Balance Module
-- Analyzes final verification sequence
-- Determines if balance is achieved
-
-## State Machine
-
-The `StateMachine` class:
-- Tracks current phase and state variables
-- Processes each row and determines phase
-- Updates counters (unable_read_count, stability flags)
-- Triggers phase transitions based on exit conditions
-
-State variables tracked:
-- `current_phase`, `current_eye`
-- `duochrome_seen` (to distinguish distance vision vs binocular balance)
-- `right_sph_stable`, `left_sph_stable`
-- `right_axis_stable`, `left_axis_stable`
-- `right_cyl_stable`, `left_cyl_stable`
-- `unable_read_count_right`, `unable_read_count_left`
-
-## Examples
-
-### Example 1: Process single file with summary
-
-```bash
-python run.py Curated_Conversations/8ffQRG3mTI268sHa3N5DVQ.csv --summary
-```
-
-Output:
-```
-✓ Processed 137 rows
-  Output: eye_test_output/annotated_8ffQRG3mTI268sHa3N5DVQ.csv
-  Summary: eye_test_output/summary_8ffQRG3mTI268sHa3N5DVQ.txt
-```
-
-### Example 2: Process directory
-
-```bash
-python run.py Curated_Conversations/ --output results/ --verbose
-```
-
-Output:
-```
-Processing 92 files from Curated_Conversations/
-  Processing: 0Ut9GmQcRGm1r3F-f0yprg.csv
-    ✓ 88 rows
-  Processing: 1dumhM-RRQKEggsHCaJoNw.csv
-    ✓ 111 rows
-  ...
-
-✓ Processed 92 sessions
-  Output directory: results/
-```
-
-## Testing
-
-(Future: test suite in `tests/` directory)
-
-## Future Enhancements
-
-- `analytics/scoring.py`: Quality scoring for test sessions
-- `analytics/confidence.py`: Advanced confidence analysis
-- `core/transitions.py`: More sophisticated transition logic
-- Real-time execution mode (process rows as they arrive)
-- Integration with phoropter hardware
-- Machine learning for intent prediction
+See `../curl_API.md` for complete API documentation.
 
 ## Documentation
 
-All detailed documentation has been consolidated in the `docs/` folder.
+Detailed documentation is available in the `docs/` folder:
 
-### Quick Links
-- **[docs/INDEX.md](docs/INDEX.md)** - Complete documentation index
 - **[docs/QUICK_START.md](docs/QUICK_START.md)** - Get started quickly
-- **[docs/SUMMARY.md](docs/SUMMARY.md)** - Project summary and architecture
+- **[docs/DEMO.md](docs/DEMO.md)** - Interactive walkthrough
+- **[docs/FRONTEND_GUIDE.md](docs/FRONTEND_GUIDE.md)** - Frontend usage guide
 - **[docs/API_USAGE.md](docs/API_USAGE.md)** - API endpoints and usage
-
-### For New Users
-1. Start with [docs/QUICK_START.md](docs/QUICK_START.md)
-2. Follow [docs/DEMO.md](docs/DEMO.md) for a walkthrough
-3. Review [docs/FRONTEND_GUIDE.md](docs/FRONTEND_GUIDE.md)
-
-### For Developers
-- [docs/REFRACTION_LOGIC_UPDATE.md](docs/REFRACTION_LOGIC_UPDATE.md) - Refraction implementation
-- [docs/JCC_FLOW_DIAGRAM.md](docs/JCC_FLOW_DIAGRAM.md) - JCC phase flow charts
-- [docs/FLIP2_INTENTS_FIX.md](docs/FLIP2_INTENTS_FIX.md) - Technical implementation details
-
-### For Testing
-- [docs/TESTING_CHECKLIST.md](docs/TESTING_CHECKLIST.md) - Comprehensive testing guide
-- [docs/FINAL_VERIFICATION_SUMMARY.md](docs/FINAL_VERIFICATION_SUMMARY.md) - Verification status
 
 See [docs/INDEX.md](docs/INDEX.md) for the complete documentation index.

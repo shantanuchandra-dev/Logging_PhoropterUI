@@ -134,6 +134,9 @@ phases:
       - "Red"
       - "Green"
       - "Both Same"
+    adjustment_rules:
+      red_chosen: "-0.25D to R_SPH (RAM - Red Add Minus)"
+      green_chosen: "+0.25D to R_SPH (GAP - Green Add Plus)"
     exit_conditions:
       - type: "response_received"
         next_phase: "left_eye_refraction"
@@ -239,6 +242,9 @@ phases:
       - "Red"
       - "Green"
       - "Both Same"
+    adjustment_rules:
+      red_chosen: "-0.25D to L_SPH (RAM - Red Add Minus)"
+      green_chosen: "+0.25D to L_SPH (GAP - Green Add Plus)"
     exit_conditions:
       - type: "response_received"
         next_phase: "binocular_balance"
