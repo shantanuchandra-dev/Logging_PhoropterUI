@@ -272,7 +272,7 @@ Added a visual chart selector UI during Phase B (Right Eye and Left Eye Refracti
 
 ---
 
-## 9. ✅ UI Layout Improvements
+## 9. ✅ UI Layout Improvements & Power Control Redesign
 
 **Status**: Completed (ready for testing)
 
@@ -296,13 +296,15 @@ Comprehensive UI improvements for better layout and power control functionality:
    - Same functionality as AR Power
    - Separate controls for lensometer readings
 
-4. **Eye Selection for Power Application**
-   - Both AR and Lenso modals now have eye selection
-   - Options: None, Right Eye Only, Left Eye Only, Both Eyes
-   - "None" selected by default (requires explicit selection)
-   - Validates selection before applying
-   - Sends CURL command only for selected eyes
-   - Updates frontend display accordingly
+4. **Power Control Redesign** (Updated)
+   - Separated power storage from power application
+   - Modals now only store values (Save button)
+   - Apply buttons outside modals (AR, Lenso)
+   - AR/Lenso buttons enabled only when complete data is stored
+   - Can switch between AR and Lenso with one click
+   - Active button highlighted with gradient
+   - Complete validation (all 6 values required)
+   - Improved modal UI with gradient headers, better labels, and professional styling
 
 ### Files Modified
 - `eye_test_engine/frontend/index.html`
@@ -318,7 +320,9 @@ Comprehensive UI improvements for better layout and power control functionality:
   - Added Lenso Power application logic
 
 ### Files Created
-- `UI_IMPROVEMENTS.md` - Comprehensive documentation
+- `UI_IMPROVEMENTS.md` - Initial UI improvements documentation
+- `UI_LAYOUT_VISUAL_GUIDE.md` - Visual mockups
+- `POWER_CONTROL_REDESIGN.md` - Complete power control redesign documentation
 
 ### Benefits
 - ✅ Cleaner, more organized layout

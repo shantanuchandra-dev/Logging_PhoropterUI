@@ -18,6 +18,14 @@ let sessionState = {
     history: []
 };
 
+// Stored power values
+let storedPower = {
+    ar: null,  // {right: {sph, cyl, axis}, left: {sph, cyl, axis}}
+    lenso: null  // {right: {sph, cyl, axis}, left: {sph, cyl, axis}}
+};
+
+let currentAppliedPower = 'none';  // 'none', 'ar', or 'lenso'
+
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     console.log('Eye Test Engine Frontend Loaded');
@@ -53,121 +61,126 @@ function closeLensoPowerModal() {
 }
 
 function parseArValue(value, fallback) {
+    if (value === '' || value === null || value === undefined) {
+        return fallback;
+    }
     const parsed = Number.parseFloat(value);
     return Number.isFinite(parsed) ? parsed : fallback;
 }
 
-async function applyArPower() {
+function saveArPower() {
+    const rightSph = parseArValue(document.getElementById('arRightSph').value, null);
+    const rightCyl = parseArValue(document.getElementById('arRightCyl').value, null);
+    const rightAxis = parseArValue(document.getElementById('arRightAxis').value, null);
+    const leftSph = parseArValue(document.getElementById('arLeftSph').value, null);
+    const leftCyl = parseArValue(document.getElementById('arLeftCyl').value, null);
+    const leftAxis = parseArValue(document.getElementById('arLeftAxis').value, null);
+
+    // Check if all values are provided for both eyes
+    const rightComplete = rightSph !== null && rightCyl !== null && rightAxis !== null;
+    const leftComplete = leftSph !== null && leftCyl !== null && leftAxis !== null;
+
+    if (!rightComplete || !leftComplete) {
+        alert('Please enter complete power values for both eyes (SPH, CYL, AXIS).');
+        return;
+    }
+
+    // Store AR power
+    storedPower.ar = {
+        right: { sph: rightSph, cyl: rightCyl, axis: rightAxis },
+        left: { sph: leftSph, cyl: leftCyl, axis: leftAxis }
+    };
+
+    // Enable AR button
+    document.getElementById('applyArBtn').disabled = false;
+    document.getElementById('applyArBtn').title = 'Apply AR Power';
+
+    addToHistory('AR power values saved', 'info');
+    closeArPowerModal();
+}
+
+function saveLensoPower() {
+    const rightSph = parseArValue(document.getElementById('lensoRightSph').value, null);
+    const rightCyl = parseArValue(document.getElementById('lensoRightCyl').value, null);
+    const rightAxis = parseArValue(document.getElementById('lensoRightAxis').value, null);
+    const leftSph = parseArValue(document.getElementById('lensoLeftSph').value, null);
+    const leftCyl = parseArValue(document.getElementById('lensoLeftCyl').value, null);
+    const leftAxis = parseArValue(document.getElementById('lensoLeftAxis').value, null);
+
+    // Check if all values are provided for both eyes
+    const rightComplete = rightSph !== null && rightCyl !== null && rightAxis !== null;
+    const leftComplete = leftSph !== null && leftCyl !== null && leftAxis !== null;
+
+    if (!rightComplete || !leftComplete) {
+        alert('Please enter complete power values for both eyes (SPH, CYL, AXIS).');
+        return;
+    }
+
+    // Store Lenso power
+    storedPower.lenso = {
+        right: { sph: rightSph, cyl: rightCyl, axis: rightAxis },
+        left: { sph: leftSph, cyl: leftCyl, axis: leftAxis }
+    };
+
+    // Enable Lenso button
+    document.getElementById('applyLensoBtn').disabled = false;
+    document.getElementById('applyLensoBtn').title = 'Apply Lenso Power';
+
+    addToHistory('Lenso power values saved', 'info');
+    closeLensoPowerModal();
+}
+
+async function applyStoredPower(type) {
     if (!sessionState.sessionId) {
         alert('Please start a test session first.');
         return;
     }
 
-    // Get eye selection
-    const eyeSelection = document.querySelector('input[name="arEyeSelection"]:checked').value;
+    // Get stored power
+    const power = type === 'ar' ? storedPower.ar : storedPower.lenso;
     
-    if (eyeSelection === 'none') {
-        alert('Please select which eye(s) to apply power to.');
+    if (!power) {
+        alert(`No ${type.toUpperCase()} power values stored. Please set them first.`);
         return;
-    }
-
-    const rightSph = parseArValue(document.getElementById('arRightSph').value, 0);
-    const rightCyl = parseArValue(document.getElementById('arRightCyl').value, 0);
-    const rightAxis = parseArValue(document.getElementById('arRightAxis').value, 180);
-    const leftSph = parseArValue(document.getElementById('arLeftSph').value, 0);
-    const leftCyl = parseArValue(document.getElementById('arLeftCyl').value, 0);
-    const leftAxis = parseArValue(document.getElementById('arLeftAxis').value, 180);
-
-    // Build power object based on selection
-    const power = {};
-    if (eyeSelection === 'right' || eyeSelection === 'both') {
-        power.right = { sph: rightSph, cyl: rightCyl, axis: rightAxis };
-    }
-    if (eyeSelection === 'left' || eyeSelection === 'both') {
-        power.left = { sph: leftSph, cyl: leftCyl, axis: leftAxis };
     }
 
     try {
         showLoading(true);
         await setPower(power, 'BINO');
         
-        const eyeText = eyeSelection === 'both' ? 'both eyes' : `${eyeSelection} eye`;
-        addToHistory(`AR power applied (${eyeText})`, 'info');
+        currentAppliedPower = type;
+        updatePowerButtonStates(type);
+        
+        const label = type === 'ar' ? 'AR' : 'Lenso';
+        addToHistory(`${label} power applied`, 'info');
 
-        // Update UI display for applied eyes
-        if (power.right) {
-            document.getElementById('rightPower').textContent =
-                `${rightSph.toFixed(2)} / ${rightCyl.toFixed(2)} / ${rightAxis.toFixed(0)}°`;
-        }
-        if (power.left) {
-            document.getElementById('leftPower').textContent =
-                `${leftSph.toFixed(2)} / ${leftCyl.toFixed(2)} / ${leftAxis.toFixed(0)}°`;
-        }
+        // Update UI display
+        document.getElementById('rightPower').textContent =
+            `${power.right.sph.toFixed(2)} / ${power.right.cyl.toFixed(2)} / ${power.right.axis.toFixed(0)}°`;
+        document.getElementById('leftPower').textContent =
+            `${power.left.sph.toFixed(2)} / ${power.left.cyl.toFixed(2)} / ${power.left.axis.toFixed(0)}°`;
         document.getElementById('occluderState').textContent = 'BINO';
-
-        closeArPowerModal();
     } catch (error) {
-        console.error('Error applying AR power:', error);
-        alert('Failed to apply AR power. Please try again.');
+        console.error(`Error applying ${type} power:`, error);
+        alert(`Failed to apply ${type.toUpperCase()} power. Please try again.`);
     } finally {
         showLoading(false);
     }
 }
 
-async function applyLensoPower() {
-    if (!sessionState.sessionId) {
-        alert('Please start a test session first.');
-        return;
-    }
+function updatePowerButtonStates(activeType) {
+    const arBtn = document.getElementById('applyArBtn');
+    const lensoBtn = document.getElementById('applyLensoBtn');
 
-    // Get eye selection
-    const eyeSelection = document.querySelector('input[name="lensoEyeSelection"]:checked').value;
-    
-    if (eyeSelection === 'none') {
-        alert('Please select which eye(s) to apply power to.');
-        return;
-    }
+    // Remove active class from all
+    arBtn.classList.remove('active');
+    lensoBtn.classList.remove('active');
 
-    const rightSph = parseArValue(document.getElementById('lensoRightSph').value, 0);
-    const rightCyl = parseArValue(document.getElementById('lensoRightCyl').value, 0);
-    const rightAxis = parseArValue(document.getElementById('lensoRightAxis').value, 180);
-    const leftSph = parseArValue(document.getElementById('lensoLeftSph').value, 0);
-    const leftCyl = parseArValue(document.getElementById('lensoLeftCyl').value, 0);
-    const leftAxis = parseArValue(document.getElementById('lensoLeftAxis').value, 180);
-
-    // Build power object based on selection
-    const power = {};
-    if (eyeSelection === 'right' || eyeSelection === 'both') {
-        power.right = { sph: rightSph, cyl: rightCyl, axis: rightAxis };
-    }
-    if (eyeSelection === 'left' || eyeSelection === 'both') {
-        power.left = { sph: leftSph, cyl: leftCyl, axis: leftAxis };
-    }
-
-    try {
-        showLoading(true);
-        await setPower(power, 'BINO');
-        
-        const eyeText = eyeSelection === 'both' ? 'both eyes' : `${eyeSelection} eye`;
-        addToHistory(`Lenso power applied (${eyeText})`, 'info');
-
-        // Update UI display for applied eyes
-        if (power.right) {
-            document.getElementById('rightPower').textContent =
-                `${rightSph.toFixed(2)} / ${rightCyl.toFixed(2)} / ${rightAxis.toFixed(0)}°`;
-        }
-        if (power.left) {
-            document.getElementById('leftPower').textContent =
-                `${leftSph.toFixed(2)} / ${leftCyl.toFixed(2)} / ${leftAxis.toFixed(0)}°`;
-        }
-        document.getElementById('occluderState').textContent = 'BINO';
-
-        closeLensoPowerModal();
-    } catch (error) {
-        console.error('Error applying Lenso power:', error);
-        alert('Failed to apply Lenso power. Please try again.');
-    } finally {
-        showLoading(false);
+    // Add active class to selected
+    if (activeType === 'ar') {
+        arBtn.classList.add('active');
+    } else if (activeType === 'lenso') {
+        lensoBtn.classList.add('active');
     }
 }
 
@@ -386,13 +399,14 @@ function updateChartSelector(data) {
     const chartSelector = document.getElementById('chartSelector');
     const chartGrid = document.getElementById('chartGrid');
     
-    // Check if we're in Phase B (right or left eye refraction)
+    // Check if we're in Phase A (distance vision) or Phase B (right or left eye refraction)
+    const isPhaseA = data.phase && data.phase.includes('Distance Vision');
     const isPhaseB = data.phase && (
         data.phase.includes('Right Eye Refraction') || 
         data.phase.includes('Left Eye Refraction')
     );
     
-    if (isPhaseB && data.chart_info) {
+    if ((isPhaseA || isPhaseB) && data.chart_info) {
         // Show chart selector
         chartSelector.classList.add('active');
         

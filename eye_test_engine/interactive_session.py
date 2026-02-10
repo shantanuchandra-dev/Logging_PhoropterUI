@@ -58,6 +58,18 @@ class InteractiveSession:
         self.l_at_cyl_threshold = False
         
         # Refraction state tracking
+        # All available charts for selection
+        self.all_charts = [
+            "echart_400",
+            "snellen_chart_200_150",
+            "snellen_chart_100_80",
+            "snellen_chart_70_60_50",
+            "snellen_chart_40_30_25",
+            "snellen_chart_25_20_15",
+            "snellen_chart_20_20_20",
+            "snellen_chart_20_15_10",
+        ]
+        # Snellen charts only (for automatic progression during refraction)
         self.snellen_charts = [
             "snellen_chart_200_150",
             "snellen_chart_100_80",
@@ -294,6 +306,14 @@ class InteractiveSession:
         subprocess.run(cmd, shell=True, capture_output=True)
         print(f"✓ JCC action: {action}")
     
+    def set_pinhole(self):
+        """Set pinhole on the phoropter."""
+        cmd = f"curl -X POST {self.base_url}/phoropter/phoropter-1/pinhole"
+        print(f"[CMD] {cmd}")
+        result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+        print(f"✓ Pinhole activated")
+        return result
+    
     def get_question(self) -> str:
         """Get current question based on phase and state."""
         phase_config = self.state_machine.protocol["phases"].get(self.current_phase, {})
@@ -344,8 +364,10 @@ class InteractiveSession:
         
         # Note: Frontend already calls resetPhoropter() before starting session
         # self.reset_phoropter()
-        self.set_chart("echart_400")
+        self.current_chart_index = 0
+        self.set_chart(self.all_charts[0])
         self.current_row.occluder_state = "BINO"
+        self.current_row.chart_display = self.all_charts[0]
         
         question = self.get_question()
         intents = self.get_intents()
@@ -354,11 +376,16 @@ class InteractiveSession:
             "phase": self.phase_names[self.current_phase],
             "question": question,
             "intents": intents,
-            "chart": "echart_400",
+            "chart": self.all_charts[0],
             "occluder": "BINO",
             "power": {
                 "right": {"sph": 0.0, "cyl": 0.0, "axis": 180.0},
                 "left": {"sph": 0.0, "cyl": 0.0, "axis": 180.0},
+            },
+            "chart_info": {
+                "available_charts": self.all_charts,
+                "current_index": self.current_chart_index,
+                "current_chart": self.all_charts[self.current_chart_index]
             }
         }
     
@@ -399,20 +426,26 @@ class InteractiveSession:
         }
     
     def switch_chart(self, chart_index: int) -> Dict:
-        """Switch to a different chart during refraction phase.
+        """Switch to a different chart during distance vision or refraction phase.
         
         Args:
-            chart_index: Index of the chart in snellen_charts list
+            chart_index: Index of the chart in the appropriate chart list
             
         Returns:
             Response dict with updated state
         """
-        # Only allow chart switching during refraction phases
-        if self.current_phase not in ["right_eye_refraction", "left_eye_refraction"]:
+        # Determine which chart list to use based on current phase
+        if self.current_phase == "distance_vision":
+            chart_list = self.all_charts
+            phase_name = "distance vision"
+        elif self.current_phase in ["right_eye_refraction", "left_eye_refraction"]:
+            chart_list = self.snellen_charts
+            phase_name = "refraction"
+        else:
             raise ValueError(f"Chart switching not allowed in phase: {self.current_phase}")
         
         # Validate chart index
-        if chart_index < 0 or chart_index >= len(self.snellen_charts):
+        if chart_index < 0 or chart_index >= len(chart_list):
             raise ValueError(f"Invalid chart index: {chart_index}")
         
         # Update chart index
@@ -420,19 +453,48 @@ class InteractiveSession:
         
         # Update current row
         self.current_row = self._copy_row_state()
-        self.current_row.chart_display = self.snellen_charts[chart_index]
+        self.current_row.chart_display = chart_list[chart_index]
         
         # Set the chart on phoropter
-        self.set_chart(self.snellen_charts[chart_index])
+        self.set_chart(chart_list[chart_index])
         
-        print(f"✓ Switched to chart {chart_index}: {self.snellen_charts[chart_index]}")
+        print(f"✓ Switched to chart {chart_index}: {chart_list[chart_index]}")
         
         # Return updated state
         return self._build_response()
     
     def _process_distance_vision(self, intent: str) -> Dict:
         """Process distance vision phase."""
-        # Move to right eye refraction
+        if intent == "Unable to read":
+            # Add pinhole and test again
+            print("\n→ Patient unable to read E-chart, adding pinhole")
+            self.set_pinhole()
+            
+            # Update question to ask with pinhole
+            self.current_row = self._copy_row_state()
+            self.current_row.chart_display = "echart_400"  # Keep E-chart
+            
+            # Return response with pinhole question
+            response = self._build_response()
+            response['question'] = "With pinhole: Can you see the E clearly now?"
+            response['intents'] = ["Able to read with pinhole", "Still unable to read"]
+            return response
+        
+        elif intent == "Able to read with pinhole":
+            # Pinhole helped, move to right eye refraction
+            print("✓ Pinhole improved vision, proceeding to refraction")
+            return self._transition_to_right_eye_refraction()
+        
+        elif intent == "Still unable to read":
+            # Pinhole didn't help, still move to refraction but flag for further evaluation
+            print("⚠️ Pinhole did not improve vision, proceeding to refraction")
+            return self._transition_to_right_eye_refraction()
+        
+        # Default: "Able to read" or "Blurry"
+        return self._transition_to_right_eye_refraction()
+    
+    def _transition_to_right_eye_refraction(self) -> Dict:
+        """Transition to right eye refraction."""
         self.current_phase = "right_eye_refraction"
         print(f"\n→ Transitioning to {self.phase_names[self.current_phase]}")
         
@@ -446,7 +508,7 @@ class InteractiveSession:
         
         # Set phoropter
         self.set_chart(self.snellen_charts[0])
-        self.set_power(occluder="Left_Occluded")
+        self.set_power(occluder="Left_Occluded") #SHANTANUCHANDRA: Commented out to avoid SETTING POWER during transition
         
         return self._build_response()
     
@@ -1217,8 +1279,14 @@ class InteractiveSession:
             }
         }
         
-        # Add chart information if in Phase B (refraction phases)
-        if self.current_phase in ["right_eye_refraction", "left_eye_refraction"]:
+        # Add chart information if in Phase A (distance vision) or Phase B (refraction phases)
+        if self.current_phase == "distance_vision":
+            response["chart_info"] = {
+                "available_charts": self.all_charts,
+                "current_index": self.current_chart_index,
+                "current_chart": self.all_charts[self.current_chart_index]
+            }
+        elif self.current_phase in ["right_eye_refraction", "left_eye_refraction"]:
             response["chart_info"] = {
                 "available_charts": self.snellen_charts,
                 "current_index": self.current_chart_index,
@@ -1373,7 +1441,7 @@ class InteractiveSession:
         self.current_row.occluder_state = "Right_Occluded"
         self.current_row.chart_display = self.snellen_charts[0]
         
-        self.set_chart(self.snellen_charts[0])
+        # self.set_chart(self.snellen_charts[0])
         
         # Use vision correction API with previous state
         # Set both previous and current values as the same to maintain power while switching occluder
