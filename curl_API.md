@@ -142,6 +142,7 @@ Individual commands for specific chart items on **Chart1** and **Chart2**.
 | **snellen_chart_25_20_15** | chart_16 | Snellen 25/20/15 |
 | **Duochrome** | chart_17 | Duochrome Test |
 | **JCC Chart** | chart_19 | JCC Cross Cylinder Chart |
+| **BINO Chart** | chart_20 | Binocular Balance Chart |
 
 #### Individual Commands (Chart 1)
 
@@ -195,6 +196,11 @@ curl -X POST https://rajasthan-royals.preprod.lenskart.com/phoropter/phoropter-1
 curl -X POST https://rajasthan-royals.preprod.lenskart.com/phoropter/phoropter-1/run-tests \
   -H "Content-Type: application/json" \
   -d '{ "test_cases": [{ "chart": { "tab": "Chart1", "chart_items": ["chart_19"] } }] }'
+
+# BINO Chart (Binocular Balance)
+curl -X POST https://rajasthan-royals.preprod.lenskart.com/phoropter/phoropter-1/run-tests \
+  -H "Content-Type: application/json" \
+  -d '{ "test_cases": [{ "chart": { "tab": "Chart1", "chart_items": ["chart_20"] } }] }'
 ```
 
 ### Chart 2: Miscellaneous

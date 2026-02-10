@@ -132,6 +132,32 @@ def _transition_to_binocular_balance(self) -> Dict:
     return self._build_response()
 ```
 
+### Power Adjustment with Previous State
+
+All power adjustments in the BINO phase use the **Vision Correction API with Previous State** for accurate click calculations. This ensures the phoropter knows the exact previous state and can calculate the correct number of clicks needed.
+
+**Example for "Top is blurry":**
+```python
+# Save current state
+prev_r_sph = self.current_row.r_sph
+prev_l_sph = self.current_row.l_sph
+# ... (save all values)
+
+# Calculate new state (add 0.25D to left eye)
+new_l_sph = prev_l_sph + 0.25
+
+# Use vision correction API with previous state
+# Both eyes are open in BINO phase, so aux_lens is "BINO"
+self.set_power_with_prev_state(
+    prev_r_sph=prev_r_sph, prev_r_cyl=prev_r_cyl, prev_r_axis=prev_r_axis,
+    prev_l_sph=prev_l_sph, prev_l_cyl=prev_l_cyl, prev_l_axis=prev_l_axis,
+    r_sph=prev_r_sph, r_cyl=prev_r_cyl, r_axis=prev_r_axis,
+    l_sph=new_l_sph, l_cyl=prev_l_cyl, l_axis=prev_l_axis,
+    prev_aux_lens="BINO",
+    aux_lens="BINO"
+)
+```
+
 ### Process Function
 
 Implemented `_process_binocular_balance()` with full logic for:
@@ -165,13 +191,75 @@ binocular_balance:
 
 ## API Usage
 
-To display the BINO chart (chart_20), use the following curl command:
+### Display BINO Chart
+
+To display the BINO chart (chart_20):
 
 ```bash
 curl -X POST https://rajasthan-royals.preprod.lenskart.com/phoropter/phoropter-1/run-tests \
   -H "Content-Type: application/json" \
   -d '{ "test_cases": [{ "chart": { "tab": "Chart1", "chart_items": ["chart_20"] } }] }'
 ```
+
+### Adjust Power with Previous State
+
+When adjusting power during BINO balance, the system uses the **Vision Correction API with Previous State**:
+
+**Example: Top is blurry (add 0.25D to left eye)**
+
+```bash
+curl -X POST https://rajasthan-royals.preprod.lenskart.com/phoropter/phoropter-1/run-tests \
+  -H "Content-Type: application/json" \
+  -d '{
+    "test_cases": [{
+      "case_id": 1,
+      "prev_right_eye": { "sph": -1.00, "cyl": -0.50, "axis": 90 },
+      "prev_left_eye": { "sph": -1.00, "cyl": -0.50, "axis": 85 },
+      "prev_aux_lens": "BINO",
+      "right_eye": { "sph": -1.00, "cyl": -0.50, "axis": 90 },
+      "left_eye": { "sph": -0.75, "cyl": -0.50, "axis": 85 },
+      "aux_lens": "BINO"
+    }]
+  }'
+```
+
+**Example: Bottom is blurry (add 0.25D to right eye)**
+
+```bash
+curl -X POST https://rajasthan-royals.preprod.lenskart.com/phoropter/phoropter-1/run-tests \
+  -H "Content-Type: application/json" \
+  -d '{
+    "test_cases": [{
+      "case_id": 1,
+      "prev_right_eye": { "sph": -1.00, "cyl": -0.50, "axis": 90 },
+      "prev_left_eye": { "sph": -1.00, "cyl": -0.50, "axis": 85 },
+      "prev_aux_lens": "BINO",
+      "right_eye": { "sph": -0.75, "cyl": -0.50, "axis": 90 },
+      "left_eye": { "sph": -1.00, "cyl": -0.50, "axis": 85 },
+      "aux_lens": "BINO"
+    }]
+  }'
+```
+
+**Example: Restore previous state**
+
+```bash
+curl -X POST https://rajasthan-royals.preprod.lenskart.com/phoropter/phoropter-1/run-tests \
+  -H "Content-Type: application/json" \
+  -d '{
+    "test_cases": [{
+      "case_id": 1,
+      "prev_right_eye": { "sph": -0.75, "cyl": -0.50, "axis": 90 },
+      "prev_left_eye": { "sph": -1.00, "cyl": -0.50, "axis": 85 },
+      "prev_aux_lens": "BINO",
+      "right_eye": { "sph": -1.00, "cyl": -0.50, "axis": 90 },
+      "left_eye": { "sph": -1.00, "cyl": -0.50, "axis": 85 },
+      "aux_lens": "BINO"
+    }]
+  }'
+```
+
+**Note**: The `prev_aux_lens` and `aux_lens` are both set to `"BINO"` because both eyes are open during the binocular balance phase. This ensures accurate click calculations by providing both the previous and new power values along with the aux lens state.
 
 ## Testing
 

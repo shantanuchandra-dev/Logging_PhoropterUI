@@ -113,6 +113,21 @@
             transform: translateY(-2px);
         }
 
+        .compare-state-btn {
+            padding: 8px 16px;
+            background: #ff9800;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: transform 0.2s;
+        }
+
+        .compare-state-btn:hover {
+            transform: translateY(-2px);
+        }
+
         .power-apply-btn {
             padding: 6px 16px;
             background: #f5f5f5;
@@ -727,8 +742,13 @@
                     <p>Interactive Phoropter-Controlled Eye Examination</p>
                 </div>
                 <div style="display: flex; gap: 15px; align-items: center;">
-                    <button class="ar-power-btn" onclick="openArPowerModal()">Set AR</button>
-                    <button class="ar-power-btn" onclick="openLensoPowerModal()">Set Lenso</button>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <button class="ar-power-btn" onclick="openArPowerModal()">Set AR</button>
+                        <button class="ar-power-btn" onclick="openLensoPowerModal()">Set Lenso</button>
+                        <button id="compareStateBtn" class="compare-state-btn" onclick="storeCompareState()" title="No state stored">
+                            Compare
+                        </button>
+                    </div>
                     <div style="border-left: 2px solid #ddd; padding-left: 15px; display: flex; gap: 10px; align-items: center;">
                         <span style="color: #666; font-weight: 600; font-size: 0.9em;">Apply:</span>
                         <button id="applyArBtn" class="power-apply-btn" onclick="applyStoredPower('ar')" disabled title="Set AR Power first">

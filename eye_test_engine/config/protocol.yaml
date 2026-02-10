@@ -78,11 +78,15 @@ phases:
       flip2:
         - "Flip 1 was better (GAP Axis - increase axis by 5°)"
         - "Flip 2 was better (RAM Axis - decrease axis by 5°)"
+        - "Flip 1 was MUCH better (GAP Axis - increase axis by 10°)"
+        - "Flip 2 was MUCH better (RAM Axis - decrease axis by 10°)"
         - "Both Same (no change needed)"
         - "Repeat (show Flip 1 and Flip 2 again)"
     adjustment_rules:
       flip1_chosen: "+5 degrees to R_AXIS"
       flip2_chosen: "-5 degrees to R_AXIS"
+      flip1_much_better: "+10 degrees to R_AXIS"
+      flip2_much_better: "-10 degrees to R_AXIS"
     exit_conditions:
       - type: "axis_stable"
         next_phase: "jcc_power_right"
@@ -101,11 +105,15 @@ phases:
       flip2:
         - "Flip 1 was better (GAP Power - increase cylinder by 0.25D)"
         - "Flip 2 was better (RAM Power - decrease cylinder by 0.25D)"
+        - "Flip 1 was MUCH better (GAP Power - increase cylinder by 0.50D)"
+        - "Flip 2 was MUCH better (RAM Power - decrease cylinder by 0.50D)"
         - "Both Same (no change needed)"
         - "Repeat (show Flip 1 and Flip 2 again)"
     adjustment_rules:
       flip1_chosen: "+0.25D to R_CYL (more positive/less negative)"
       flip2_chosen: "-0.25D to R_CYL (more negative)"
+      flip1_much_better: "+0.50D to R_CYL (more positive/less negative)"
+      flip2_much_better: "-0.50D to R_CYL (more negative)"
     exception:
       condition: "R_CYL == 0.00 and Flip1 chosen"
       action: "Both Same (no cylinder power)"
@@ -175,11 +183,15 @@ phases:
       flip2:
         - "Flip 1 was better (GAP Axis - increase axis by 5°)"
         - "Flip 2 was better (RAM Axis - decrease axis by 5°)"
+        - "Flip 1 was MUCH better (GAP Axis - increase axis by 10°)"
+        - "Flip 2 was MUCH better (RAM Axis - decrease axis by 10°)"
         - "Both Same (no change needed)"
         - "Repeat (show Flip 1 and Flip 2 again)"
     adjustment_rules:
       flip1_chosen: "+5 degrees to L_AXIS"
       flip2_chosen: "-5 degrees to L_AXIS"
+      flip1_much_better: "+10 degrees to L_AXIS"
+      flip2_much_better: "-10 degrees to L_AXIS"
     exit_conditions:
       - type: "axis_stable"
         next_phase: "jcc_power_left"
@@ -198,11 +210,15 @@ phases:
       flip2:
         - "Flip 1 was better (GAP Power - increase cylinder by 0.25D)"
         - "Flip 2 was better (RAM Power - decrease cylinder by 0.25D)"
+        - "Flip 1 was MUCH better (GAP Power - increase cylinder by 0.50D)"
+        - "Flip 2 was MUCH better (RAM Power - decrease cylinder by 0.50D)"
         - "Both Same (no change needed)"
         - "Repeat (show Flip 1 and Flip 2 again)"
     adjustment_rules:
       flip1_chosen: "+0.25D to L_CYL (more positive/less negative)"
       flip2_chosen: "-0.25D to L_CYL (more negative)"
+      flip1_much_better: "+0.50D to L_CYL (more positive/less negative)"
+      flip2_much_better: "-0.50D to L_CYL (more negative)"
     exception:
       condition: "L_CYL == 0.00 and Flip1 chosen"
       action: "Both Same (no cylinder power)"

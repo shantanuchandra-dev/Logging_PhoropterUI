@@ -275,10 +275,10 @@ class InteractiveSession:
         }
         
         # Add aux_lens if provided
-        if prev_aux_lens:
-            payload["test_cases"][0]["prev_aux_lens"] = prev_aux_lens
-        if aux_lens:
-            payload["test_cases"][0]["aux_lens"] = aux_lens
+        # if prev_aux_lens:
+        #     payload["test_cases"][0]["prev_aux_lens"] = prev_aux_lens
+        # if aux_lens:
+        #     payload["test_cases"][0]["aux_lens"] = aux_lens
         
         # Update internal state
         self.current_row.r_sph = r_sph
@@ -718,7 +718,31 @@ class InteractiveSession:
                 response['auto_flip'] = True
                 response['flip_wait_seconds'] = 2
                 return response
-            if "GAP Axis" in intent or "Flip 1" in intent:
+            if "MUCH better" in intent and ("GAP Axis" in intent or "Flip 1" in intent):
+                # Patient chose Flip 1 MUCH better - increase axis by 10°
+                reversal = self._record_jcc_choice("flip1")
+                # Call increase twice for 10° total (5° + 5°)
+                self.jcc_control("increase")
+                self.jcc_control("increase")
+                
+                # Update internal state (phoropter handles actual value)
+                self.current_row = self._copy_row_state()
+                self.current_row.r_axis += 10
+                if self.current_row.r_axis > 180:
+                    self.current_row.r_axis -= 180
+
+                if reversal:
+                    return self._transition_to_jcc_power_right()
+                
+                # Reset to Flip1 for next cycle
+                self.jcc_control("handle")
+                self.jcc_flip_state = "flip1"
+                self._update_state(occluder="Right_Axis_Flip1")
+                response = self._build_response()
+                response['auto_flip'] = True
+                response['flip_wait_seconds'] = 2
+                return response
+            elif "GAP Axis" in intent or "Flip 1" in intent:
                 # Patient chose Flip 1 - Use JCC increase operation
                 reversal = self._record_jcc_choice("flip1")
                 self.jcc_control("increase")  # Phoropter increases axis by 5°
@@ -741,6 +765,30 @@ class InteractiveSession:
                 response['flip_wait_seconds'] = 2
                 return response
             
+            elif "MUCH better" in intent and ("RAM Axis" in intent or "Flip 2" in intent):
+                # Patient chose Flip 2 MUCH better - decrease axis by 10°
+                reversal = self._record_jcc_choice("flip2")
+                # Call decrease twice for 10° total (5° + 5°)
+                self.jcc_control("decrease")
+                self.jcc_control("decrease")
+                
+                # Update internal state (phoropter handles actual value)
+                self.current_row = self._copy_row_state()
+                self.current_row.r_axis -= 10
+                if self.current_row.r_axis < 0:
+                    self.current_row.r_axis += 180
+
+                if reversal:
+                    return self._transition_to_jcc_power_right()
+                
+                # Reset to Flip1 for next cycle
+                self.jcc_control("handle")
+                self.jcc_flip_state = "flip1"
+                self._update_state(occluder="Right_Axis_Flip1")
+                response = self._build_response()
+                response['auto_flip'] = True
+                response['flip_wait_seconds'] = 2
+                return response
             elif "RAM Axis" in intent or "Flip 2" in intent:
                 # Patient chose Flip 2 - Use JCC decrease operation
                 reversal = self._record_jcc_choice("flip2")
@@ -798,7 +846,31 @@ class InteractiveSession:
                 response['auto_flip'] = True
                 response['flip_wait_seconds'] = 2
                 return response
-            if "GAP Axis" in intent or "Flip 1" in intent:
+            if "MUCH better" in intent and ("GAP Axis" in intent or "Flip 1" in intent):
+                # Patient chose Flip 1 MUCH better - increase axis by 10°
+                reversal = self._record_jcc_choice("flip1")
+                # Call increase twice for 10° total (5° + 5°)
+                self.jcc_control("increase")
+                self.jcc_control("increase")
+                
+                # Update internal state (phoropter handles actual value)
+                self.current_row = self._copy_row_state()
+                self.current_row.l_axis += 10
+                if self.current_row.l_axis > 180:
+                    self.current_row.l_axis -= 180
+
+                if reversal:
+                    return self._transition_to_jcc_power_left()
+                
+                # Reset to Flip1 for next cycle
+                self.jcc_control("handle")
+                self.jcc_flip_state = "flip1"
+                self._update_state(occluder="Left_Axis_Flip1")
+                response = self._build_response()
+                response['auto_flip'] = True
+                response['flip_wait_seconds'] = 2
+                return response
+            elif "GAP Axis" in intent or "Flip 1" in intent:
                 # Patient chose Flip 1 - Use JCC increase operation
                 reversal = self._record_jcc_choice("flip1")
                 self.jcc_control("increase")  # Phoropter increases axis by 5°
@@ -821,6 +893,30 @@ class InteractiveSession:
                 response['flip_wait_seconds'] = 2
                 return response
             
+            elif "MUCH better" in intent and ("RAM Axis" in intent or "Flip 2" in intent):
+                # Patient chose Flip 2 MUCH better - decrease axis by 10°
+                reversal = self._record_jcc_choice("flip2")
+                # Call decrease twice for 10° total (5° + 5°)
+                self.jcc_control("decrease")
+                self.jcc_control("decrease")
+                
+                # Update internal state (phoropter handles actual value)
+                self.current_row = self._copy_row_state()
+                self.current_row.l_axis -= 10
+                if self.current_row.l_axis < 0:
+                    self.current_row.l_axis += 180
+
+                if reversal:
+                    return self._transition_to_jcc_power_left()
+                
+                # Reset to Flip1 for next cycle
+                self.jcc_control("handle")
+                self.jcc_flip_state = "flip1"
+                self._update_state(occluder="Left_Axis_Flip1")
+                response = self._build_response()
+                response['auto_flip'] = True
+                response['flip_wait_seconds'] = 2
+                return response
             elif "RAM Axis" in intent or "Flip 2" in intent:
                 # Patient chose Flip 2 - Use JCC decrease operation
                 reversal = self._record_jcc_choice("flip2")
@@ -878,7 +974,66 @@ class InteractiveSession:
                 response['auto_flip'] = True
                 response['flip_wait_seconds'] = 2
                 return response
-            if "GAP Power" in intent or "Flip 1" in intent:
+            if "MUCH better" in intent and ("GAP Power" in intent or "Flip 1" in intent):
+                # Patient chose Flip 1 MUCH better - increase cylinder by 0.50D
+                
+                # Special handling: If cylinder is 0.0, cannot increase (would go positive)
+                if self.current_row.r_cyl == 0.0:
+                    self.jcc_power_zero_flip1_count += 1
+                    
+                    if self.jcc_power_zero_flip1_count == 1:
+                        # First time: Repeat the flip cycle
+                        print("⚠️  Cylinder is 0.0, cannot increase. Repeating flip cycle...")
+                        self.jcc_control("handle")
+                        self.jcc_flip_state = "flip1"
+                        self.current_row = self._copy_row_state()
+                        self._update_state(occluder="Right_Power_Flip1")
+                        response = self._build_response()
+                        response['auto_flip'] = True
+                        response['flip_wait_seconds'] = 2
+                        return response
+                    else:
+                        # Second time: Move to next phase
+                        print("⚠️  Cylinder is 0.0 and patient chose Flip 1 again. Moving to duochrome...")
+                        self.jcc_power_zero_flip1_count = 0  # Reset counter
+                        return self._transition_to_duochrome_right()
+                
+                # Normal case: increase by 0.50D (call increase twice)
+                reversal = self._record_jcc_choice("flip1")
+                
+                # Track spherical equivalent for each 0.25D step
+                self.current_row = self._copy_row_state()
+                
+                # First 0.25D increase
+                was_at_threshold = self._is_at_cyl_threshold(self.current_row.r_cyl)
+                self.jcc_control("increase")
+                self.current_row.r_cyl += 0.25
+                now_at_threshold = self._is_at_cyl_threshold(self.current_row.r_cyl)
+                if was_at_threshold and not now_at_threshold:
+                    self.current_row.r_sph -= 0.25
+                    print(f"✓ Spherical equivalent reversion: SPH decreased by -0.25D (now {self.current_row.r_sph:.2f}D)")
+                
+                # Second 0.25D increase
+                was_at_threshold = self._is_at_cyl_threshold(self.current_row.r_cyl)
+                self.jcc_control("increase")
+                self.current_row.r_cyl += 0.25
+                now_at_threshold = self._is_at_cyl_threshold(self.current_row.r_cyl)
+                if was_at_threshold and not now_at_threshold:
+                    self.current_row.r_sph -= 0.25
+                    print(f"✓ Spherical equivalent reversion: SPH decreased by -0.25D (now {self.current_row.r_sph:.2f}D)")
+
+                if reversal:
+                    return self._transition_to_duochrome_right()
+                
+                # Reset to Flip1 for next cycle
+                self.jcc_control("handle")
+                self.jcc_flip_state = "flip1"
+                self._update_state(occluder="Right_Power_Flip1")
+                response = self._build_response()
+                response['auto_flip'] = True
+                response['flip_wait_seconds'] = 2
+                return response
+            elif "GAP Power" in intent or "Flip 1" in intent:
                 # Patient chose Flip 1 - Use JCC increase operation
                 
                 # Special handling: If cylinder is 0.0, cannot increase (would go positive)
@@ -936,6 +1091,42 @@ class InteractiveSession:
                 response['flip_wait_seconds'] = 2
                 return response
             
+            elif "MUCH better" in intent and ("RAM Power" in intent or "Flip 2" in intent):
+                # Patient chose Flip 2 MUCH better - decrease cylinder by 0.50D
+                reversal = self._record_jcc_choice("flip2")
+                
+                # Track spherical equivalent for each 0.25D step
+                self.current_row = self._copy_row_state()
+                
+                # First 0.25D decrease
+                was_at_threshold = self._is_at_cyl_threshold(self.current_row.r_cyl)
+                self.jcc_control("decrease")
+                self.current_row.r_cyl -= 0.25
+                now_at_threshold = self._is_at_cyl_threshold(self.current_row.r_cyl)
+                if not was_at_threshold and now_at_threshold:
+                    self.current_row.r_sph += 0.25
+                    print(f"✓ Spherical equivalent compensation: SPH increased by +0.25D (now {self.current_row.r_sph:.2f}D)")
+                
+                # Second 0.25D decrease
+                was_at_threshold = self._is_at_cyl_threshold(self.current_row.r_cyl)
+                self.jcc_control("decrease")
+                self.current_row.r_cyl -= 0.25
+                now_at_threshold = self._is_at_cyl_threshold(self.current_row.r_cyl)
+                if not was_at_threshold and now_at_threshold:
+                    self.current_row.r_sph += 0.25
+                    print(f"✓ Spherical equivalent compensation: SPH increased by +0.25D (now {self.current_row.r_sph:.2f}D)")
+
+                if reversal:
+                    return self._transition_to_duochrome_right()
+                
+                # Reset to Flip1 for next cycle
+                self.jcc_control("handle")
+                self.jcc_flip_state = "flip1"
+                self._update_state(occluder="Right_Power_Flip1")
+                response = self._build_response()
+                response['auto_flip'] = True
+                response['flip_wait_seconds'] = 2
+                return response
             elif "RAM Power" in intent or "Flip 2" in intent:
                 # Patient chose Flip 2 - Use JCC decrease operation
                 reversal = self._record_jcc_choice("flip2")
@@ -1004,7 +1195,66 @@ class InteractiveSession:
                 response['auto_flip'] = True
                 response['flip_wait_seconds'] = 2
                 return response
-            if "GAP Power" in intent or "Flip 1" in intent:
+            if "MUCH better" in intent and ("GAP Power" in intent or "Flip 1" in intent):
+                # Patient chose Flip 1 MUCH better - increase cylinder by 0.50D
+                
+                # Special handling: If cylinder is 0.0, cannot increase (would go positive)
+                if self.current_row.l_cyl == 0.0:
+                    self.jcc_power_zero_flip1_count += 1
+                    
+                    if self.jcc_power_zero_flip1_count == 1:
+                        # First time: Repeat the flip cycle
+                        print("⚠️  Cylinder is 0.0, cannot increase. Repeating flip cycle...")
+                        self.jcc_control("handle")
+                        self.jcc_flip_state = "flip1"
+                        self.current_row = self._copy_row_state()
+                        self._update_state(occluder="Left_Power_Flip1")
+                        response = self._build_response()
+                        response['auto_flip'] = True
+                        response['flip_wait_seconds'] = 2
+                        return response
+                    else:
+                        # Second time: Move to next phase
+                        print("⚠️  Cylinder is 0.0 and patient chose Flip 1 again. Moving to duochrome...")
+                        self.jcc_power_zero_flip1_count = 0  # Reset counter
+                        return self._transition_to_duochrome_left()
+                
+                # Normal case: increase by 0.50D (call increase twice)
+                reversal = self._record_jcc_choice("flip1")
+                
+                # Track spherical equivalent for each 0.25D step
+                self.current_row = self._copy_row_state()
+                
+                # First 0.25D increase
+                was_at_threshold = self._is_at_cyl_threshold(self.current_row.l_cyl)
+                self.jcc_control("increase")
+                self.current_row.l_cyl += 0.25
+                now_at_threshold = self._is_at_cyl_threshold(self.current_row.l_cyl)
+                if was_at_threshold and not now_at_threshold:
+                    self.current_row.l_sph -= 0.25
+                    print(f"✓ Spherical equivalent reversion: SPH decreased by -0.25D (now {self.current_row.l_sph:.2f}D)")
+                
+                # Second 0.25D increase
+                was_at_threshold = self._is_at_cyl_threshold(self.current_row.l_cyl)
+                self.jcc_control("increase")
+                self.current_row.l_cyl += 0.25
+                now_at_threshold = self._is_at_cyl_threshold(self.current_row.l_cyl)
+                if was_at_threshold and not now_at_threshold:
+                    self.current_row.l_sph -= 0.25
+                    print(f"✓ Spherical equivalent reversion: SPH decreased by -0.25D (now {self.current_row.l_sph:.2f}D)")
+
+                if reversal:
+                    return self._transition_to_duochrome_left()
+                
+                # Reset to Flip1 for next cycle
+                self.jcc_control("handle")
+                self.jcc_flip_state = "flip1"
+                self._update_state(occluder="Left_Power_Flip1")
+                response = self._build_response()
+                response['auto_flip'] = True
+                response['flip_wait_seconds'] = 2
+                return response
+            elif "GAP Power" in intent or "Flip 1" in intent:
                 # Patient chose Flip 1 - Use JCC increase operation
                 
                 # Special handling: If cylinder is 0.0, cannot increase (would go positive)
@@ -1062,6 +1312,42 @@ class InteractiveSession:
                 response['flip_wait_seconds'] = 2
                 return response
             
+            elif "MUCH better" in intent and ("RAM Power" in intent or "Flip 2" in intent):
+                # Patient chose Flip 2 MUCH better - decrease cylinder by 0.50D
+                reversal = self._record_jcc_choice("flip2")
+                
+                # Track spherical equivalent for each 0.25D step
+                self.current_row = self._copy_row_state()
+                
+                # First 0.25D decrease
+                was_at_threshold = self._is_at_cyl_threshold(self.current_row.l_cyl)
+                self.jcc_control("decrease")
+                self.current_row.l_cyl -= 0.25
+                now_at_threshold = self._is_at_cyl_threshold(self.current_row.l_cyl)
+                if not was_at_threshold and now_at_threshold:
+                    self.current_row.l_sph += 0.25
+                    print(f"✓ Spherical equivalent compensation: SPH increased by +0.25D (now {self.current_row.l_sph:.2f}D)")
+                
+                # Second 0.25D decrease
+                was_at_threshold = self._is_at_cyl_threshold(self.current_row.l_cyl)
+                self.jcc_control("decrease")
+                self.current_row.l_cyl -= 0.25
+                now_at_threshold = self._is_at_cyl_threshold(self.current_row.l_cyl)
+                if not was_at_threshold and now_at_threshold:
+                    self.current_row.l_sph += 0.25
+                    print(f"✓ Spherical equivalent compensation: SPH increased by +0.25D (now {self.current_row.l_sph:.2f}D)")
+
+                if reversal:
+                    return self._transition_to_duochrome_left()
+                
+                # Reset to Flip1 for next cycle
+                self.jcc_control("handle")
+                self.jcc_flip_state = "flip1"
+                self._update_state(occluder="Left_Power_Flip1")
+                response = self._build_response()
+                response['auto_flip'] = True
+                response['flip_wait_seconds'] = 2
+                return response
             elif "RAM Power" in intent or "Flip 2" in intent:
                 # Patient chose Flip 2 - Use JCC decrease operation
                 reversal = self._record_jcc_choice("flip2")
@@ -1208,40 +1494,76 @@ class InteractiveSession:
         """
         if intent == "Top is blurry [Right Eye]":
             # Save current state before making changes
+            prev_r_sph = self.current_row.r_sph
+            prev_r_cyl = self.current_row.r_cyl
+            prev_r_axis = self.current_row.r_axis
+            prev_l_sph = self.current_row.l_sph
+            prev_l_cyl = self.current_row.l_cyl
+            prev_l_axis = self.current_row.l_axis
+            
             self.previous_state = {
-                'r_sph': self.current_row.r_sph,
-                'r_cyl': self.current_row.r_cyl,
-                'r_axis': self.current_row.r_axis,
-                'l_sph': self.current_row.l_sph,
-                'l_cyl': self.current_row.l_cyl,
-                'l_axis': self.current_row.l_axis,
+                'r_sph': prev_r_sph,
+                'r_cyl': prev_r_cyl,
+                'r_axis': prev_r_axis,
+                'l_sph': prev_l_sph,
+                'l_cyl': prev_l_cyl,
+                'l_axis': prev_l_axis,
                 'occluder_state': self.current_row.occluder_state,
                 'chart_display': self.current_row.chart_display,
             }
+            
             # Add 0.25D Sph in Left Eye
-            self.current_row = self._copy_row_state()
-            self.current_row.l_sph += 0.25
-            self.set_power(l_sph=self.current_row.l_sph, occluder="BINO")
+            new_l_sph = prev_l_sph + 0.25
+            
+            # Use vision correction API with previous state for accurate clicks
+            # Both eyes are open in BINO phase, so aux_lens is "BINO"
+            self.set_power_with_prev_state(
+                prev_r_sph=prev_r_sph, prev_r_cyl=prev_r_cyl, prev_r_axis=prev_r_axis,
+                prev_l_sph=prev_l_sph, prev_l_cyl=prev_l_cyl, prev_l_axis=prev_l_axis,
+                r_sph=prev_r_sph, r_cyl=prev_r_cyl, r_axis=prev_r_axis,
+                l_sph=new_l_sph, l_cyl=prev_l_cyl, l_axis=prev_l_axis,
+                # prev_aux_lens="BINO",
+                # aux_lens="BINO"
+            )
+            
             # Enable "Prev State" option for next response
             self.show_prev_state_option = True
             return self._build_response()
         
         elif intent == "Bottom is blurry [Left Eye]":
             # Save current state before making changes
+            prev_r_sph = self.current_row.r_sph
+            prev_r_cyl = self.current_row.r_cyl
+            prev_r_axis = self.current_row.r_axis
+            prev_l_sph = self.current_row.l_sph
+            prev_l_cyl = self.current_row.l_cyl
+            prev_l_axis = self.current_row.l_axis
+            
             self.previous_state = {
-                'r_sph': self.current_row.r_sph,
-                'r_cyl': self.current_row.r_cyl,
-                'r_axis': self.current_row.r_axis,
-                'l_sph': self.current_row.l_sph,
-                'l_cyl': self.current_row.l_cyl,
-                'l_axis': self.current_row.l_axis,
+                'r_sph': prev_r_sph,
+                'r_cyl': prev_r_cyl,
+                'r_axis': prev_r_axis,
+                'l_sph': prev_l_sph,
+                'l_cyl': prev_l_cyl,
+                'l_axis': prev_l_axis,
                 'occluder_state': self.current_row.occluder_state,
                 'chart_display': self.current_row.chart_display,
             }
+            
             # Add 0.25D Sph in Right Eye
-            self.current_row = self._copy_row_state()
-            self.current_row.r_sph += 0.25
-            self.set_power(r_sph=self.current_row.r_sph, occluder="BINO")
+            new_r_sph = prev_r_sph + 0.25
+            
+            # Use vision correction API with previous state for accurate clicks
+            # Both eyes are open in BINO phase, so aux_lens is "BINO"
+            self.set_power_with_prev_state(
+                prev_r_sph=prev_r_sph, prev_r_cyl=prev_r_cyl, prev_r_axis=prev_r_axis,
+                prev_l_sph=prev_l_sph, prev_l_cyl=prev_l_cyl, prev_l_axis=prev_l_axis,
+                r_sph=new_r_sph, r_cyl=prev_r_cyl, r_axis=prev_r_axis,
+                l_sph=prev_l_sph, l_cyl=prev_l_cyl, l_axis=prev_l_axis,
+                # prev_aux_lens="BINO",
+                # aux_lens="BINO"
+            )
+            
             # Enable "Prev State" option for next response
             self.show_prev_state_option = True
             return self._build_response()
@@ -1270,12 +1592,33 @@ class InteractiveSession:
         elif intent == "Prev State":
             # Restore previous state
             if self.previous_state is not None:
-                self.current_row = self._copy_row_from_dict(self.previous_state)
-                self.set_power(
-                    r_sph=self.current_row.r_sph,
-                    l_sph=self.current_row.l_sph,
-                    occluder="BINO"
+                # Get current state before restoring
+                curr_r_sph = self.current_row.r_sph
+                curr_r_cyl = self.current_row.r_cyl
+                curr_r_axis = self.current_row.r_axis
+                curr_l_sph = self.current_row.l_sph
+                curr_l_cyl = self.current_row.l_cyl
+                curr_l_axis = self.current_row.l_axis
+                
+                # Get previous state values
+                prev_r_sph = self.previous_state['r_sph']
+                prev_r_cyl = self.previous_state['r_cyl']
+                prev_r_axis = self.previous_state['r_axis']
+                prev_l_sph = self.previous_state['l_sph']
+                prev_l_cyl = self.previous_state['l_cyl']
+                prev_l_axis = self.previous_state['l_axis']
+                
+                # Use vision correction API with previous state to restore
+                # Both eyes are open in BINO phase, so aux_lens is "BINO"
+                self.set_power_with_prev_state(
+                    prev_r_sph=curr_r_sph, prev_r_cyl=curr_r_cyl, prev_r_axis=curr_r_axis,
+                    prev_l_sph=curr_l_sph, prev_l_cyl=curr_l_cyl, prev_l_axis=curr_l_axis,
+                    r_sph=prev_r_sph, r_cyl=prev_r_cyl, r_axis=prev_r_axis,
+                    l_sph=prev_l_sph, l_cyl=prev_l_cyl, l_axis=prev_l_axis,
+                    # prev_aux_lens="BINO",
+                    # aux_lens="BINO"
                 )
+                
                 self.previous_state = None
                 self.show_prev_state_option = False
                 print("✓ Restored to previous state")
@@ -1528,8 +1871,8 @@ class InteractiveSession:
             prev_l_sph=curr_l_sph, prev_l_cyl=curr_l_cyl, prev_l_axis=curr_l_axis,
             r_sph=curr_r_sph, r_cyl=curr_r_cyl, r_axis=curr_r_axis,
             l_sph=curr_l_sph, l_cyl=curr_l_cyl, l_axis=curr_l_axis,
-            prev_aux_lens="AuxLensL",  # Previous state was testing right eye (left occluded)
-            aux_lens="AuxLensR"  # Now testing left eye (right occluded)
+            # prev_aux_lens="AuxLensL",  # Previous state was testing right eye (left occluded)
+            # aux_lens="AuxLensR"  # Now testing left eye (right occluded)
         )
         
         # Explicitly click L button to activate left eye testing mode
@@ -1538,7 +1881,11 @@ class InteractiveSession:
         return self._build_response()
     
     def _transition_to_binocular_balance(self) -> Dict:
-        """Transition to binocular balance."""
+        """Transition to binocular balance.
+        
+        Uses vision correction API with previous state to ensure accurate click calculations
+        when transitioning from left eye duochrome to binocular balance.
+        """
         self.current_phase = "binocular_balance"
         print(f"\n→ Transitioning to {self.phase_names[self.current_phase]}")
         
@@ -1546,13 +1893,32 @@ class InteractiveSession:
         self.previous_state = None
         self.show_prev_state_option = False
         
+        # Get current power values
+        curr_r_sph = self.current_row.r_sph
+        curr_r_cyl = self.current_row.r_cyl
+        curr_r_axis = self.current_row.r_axis
+        curr_l_sph = self.current_row.l_sph
+        curr_l_cyl = self.current_row.l_cyl
+        curr_l_axis = self.current_row.l_axis
+        
         self.current_row = self._copy_row_state()
         self.current_row.occluder_state = "BINO"
         self.current_row.chart_display = "bino_chart"
         
         # Display BINO chart (chart_20)
         self.set_chart("bino_chart")
-        self.set_power(occluder="BINO")
+        
+        # Use vision correction API with previous state
+        # Previous state was testing left eye (right occluded), now both eyes open
+        self.set_power_with_prev_state(
+            prev_r_sph=curr_r_sph, prev_r_cyl=curr_r_cyl, prev_r_axis=curr_r_axis,
+            prev_l_sph=curr_l_sph, prev_l_cyl=curr_l_cyl, prev_l_axis=curr_l_axis,
+            r_sph=curr_r_sph, r_cyl=curr_r_cyl, r_axis=curr_r_axis,
+            l_sph=curr_l_sph, l_cyl=curr_l_cyl, l_axis=curr_l_axis,
+            # prev_aux_lens="AuxLensR",  # Previous state was testing left eye (right occluded)
+            # aux_lens="BINO"  # Now both eyes open
+        )
+        
         self.jcc_control("BINO")
         
         return self._build_response()

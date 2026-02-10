@@ -273,15 +273,32 @@ Step 3: Patient says "Prev State" (adjustment made it worse)
    │ }                                                  │
    └────────────────────────────────────────────────────┘
 
-4. Adjust power (if needed)
+4. Adjust power with previous state (Vision Correction API)
    ┌────────────────────────────────────────────────────┐
    │ POST /phoropter/phoropter-1/run-tests             │
    │ {                                                  │
    │   "test_cases": [{                                 │
-   │     "right_eye": { "sph": -0.75 },                │
-   │     "left_eye": { "sph": -1.00 }                  │
+   │     "case_id": 1,                                  │
+   │     "prev_right_eye": {                            │
+   │       "sph": -1.00, "cyl": -0.50, "axis": 90      │
+   │     },                                             │
+   │     "prev_left_eye": {                             │
+   │       "sph": -1.00, "cyl": -0.50, "axis": 85      │
+   │     },                                             │
+   │     "prev_aux_lens": "BINO",                       │
+   │     "right_eye": {                                 │
+   │       "sph": -1.00, "cyl": -0.50, "axis": 90      │
+   │     },                                             │
+   │     "left_eye": {                                  │
+   │       "sph": -0.75, "cyl": -0.50, "axis": 85      │
+   │     },                                             │
+   │     "aux_lens": "BINO"                             │
    │   }]                                               │
    │ }                                                  │
+   │                                                    │
+   │ Note: Uses Vision Correction API with Previous    │
+   │       State and aux_lens="BINO" (both eyes open)  │
+   │       for accurate click calculations              │
    └────────────────────────────────────────────────────┘
 ```
 

@@ -26,6 +26,9 @@ let storedPower = {
 
 let currentAppliedPower = 'none';  // 'none', 'ar', or 'lenso'
 
+// Stored phoropter state snapshot for comparison
+let storedPhoropterState = null;
+
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     console.log('Eye Test Engine Frontend Loaded');
@@ -130,6 +133,63 @@ function saveLensoPower() {
     closeLensoPowerModal();
 }
 
+function updateLocalPhoropterState(partial) {
+    const base = sessionState.lastResponse || {};
+    sessionState.lastResponse = {
+        ...base,
+        ...partial,
+        power: partial.power || base.power,
+        occluder: partial.occluder !== undefined ? partial.occluder : base.occluder,
+        chart: partial.chart !== undefined ? partial.chart : base.chart,
+        phase: partial.phase !== undefined ? partial.phase : base.phase
+    };
+}
+
+function formatStateTooltip(state) {
+    if (!state || !state.power) {
+        return 'No state stored';
+    }
+    const right = state.power.right || { sph: 0, cyl: 0, axis: 180 };
+    const left = state.power.left || { sph: 0, cyl: 0, axis: 180 };
+    const phase = state.phase || 'Unknown';
+    const chart = state.chart || 'Unknown';
+    const occluder = state.occluder || 'Unknown';
+    return [
+        `Phase: ${phase}`,
+        `Chart: ${chart}`,
+        `Occluder: ${occluder}`,
+        `Right: ${right.sph.toFixed(2)} / ${right.cyl.toFixed(2)} / ${right.axis.toFixed(0)}°`,
+        `Left: ${left.sph.toFixed(2)} / ${left.cyl.toFixed(2)} / ${left.axis.toFixed(0)}°`
+    ].join('\n');
+}
+
+function storeCompareState() {
+    if (!sessionState.sessionId) {
+        alert('Please start a test session first.');
+        return;
+    }
+
+    const currentState = sessionState.lastResponse;
+    if (!currentState || !currentState.power) {
+        alert('Current phoropter state is not available yet.');
+        return;
+    }
+
+    storedPhoropterState = {
+        phase: currentState.phase,
+        chart: currentState.chart,
+        occluder: currentState.occluder,
+        power: currentState.power
+    };
+
+    const btn = document.getElementById('compareStateBtn');
+    if (btn) {
+        btn.title = formatStateTooltip(storedPhoropterState);
+    }
+
+    addToHistory('Stored compare state', 'info');
+}
+
 async function applyStoredPower(type) {
     if (!sessionState.sessionId) {
         alert('Please start a test session first.');
@@ -160,6 +220,7 @@ async function applyStoredPower(type) {
         document.getElementById('leftPower').textContent =
             `${power.left.sph.toFixed(2)} / ${power.left.cyl.toFixed(2)} / ${power.left.axis.toFixed(0)}°`;
         document.getElementById('occluderState').textContent = 'BINO';
+        updateLocalPhoropterState({ power: power, occluder: 'BINO' });
     } catch (error) {
         console.error(`Error applying ${type} power:`, error);
         alert(`Failed to apply ${type.toUpperCase()} power. Please try again.`);
@@ -532,6 +593,7 @@ function updateSessionInfo(data) {
     document.getElementById('chartDisplay').textContent = data.chart || '-';
     
     sessionState.currentPhase = data.phase;
+    sessionState.lastResponse = data;
 }
 
 // Phoropter Control Functions
