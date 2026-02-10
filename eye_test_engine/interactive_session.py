@@ -520,8 +520,22 @@ class InteractiveSession:
         # Handle "Prev State" intent to restore previous power
         if intent == "Prev State":
             if self.previous_state is not None:
-                self.current_row = self._copy_row_from_dict(self.previous_state)
-                self.set_power(r_sph=self.current_row.r_sph, occluder="Left_Occluded")
+                # Get current state
+                curr_r_sph = self.current_row.r_sph
+                
+                # Get previous state
+                prev_r_sph = self.previous_state['r_sph']
+                
+                # Use vision correction API to restore
+                self.set_power_with_prev_state(
+                    prev_r_sph=curr_r_sph, prev_r_cyl=self.current_row.r_cyl, prev_r_axis=self.current_row.r_axis,
+                    prev_l_sph=self.current_row.l_sph, prev_l_cyl=self.current_row.l_cyl, prev_l_axis=self.current_row.l_axis,
+                    r_sph=prev_r_sph, r_cyl=self.previous_state['r_cyl'], r_axis=self.previous_state['r_axis'],
+                    l_sph=self.previous_state['l_sph'], l_cyl=self.previous_state['l_cyl'], l_axis=self.previous_state['l_axis'],
+                    prev_aux_lens="AuxLensL",
+                    aux_lens="AuxLensL"
+                )
+                
                 self.previous_state = None
                 self.show_prev_state_option = False
                 print("✓ Restored to previous state")
@@ -548,8 +562,10 @@ class InteractiveSession:
         
         elif intent == "Blurry":
             # Save current state before making changes
+            prev_r_sph = self.current_row.r_sph
+            
             self.previous_state = {
-                'r_sph': self.current_row.r_sph,
+                'r_sph': prev_r_sph,
                 'r_cyl': self.current_row.r_cyl,
                 'r_axis': self.current_row.r_axis,
                 'l_sph': self.current_row.l_sph,
@@ -558,18 +574,30 @@ class InteractiveSession:
                 'occluder_state': self.current_row.occluder_state,
                 'chart_display': self.current_row.chart_display,
             }
+            
             # Add -0.25D SPH, stay on same chart
-            self.current_row = self._copy_row_state()
-            self.current_row.r_sph -= 0.25
-            self.set_power(r_sph=self.current_row.r_sph, occluder="Left_Occluded")
+            new_r_sph = prev_r_sph - 0.25
+            
+            # Use vision correction API with previous state
+            self.set_power_with_prev_state(
+                prev_r_sph=prev_r_sph, prev_r_cyl=self.current_row.r_cyl, prev_r_axis=self.current_row.r_axis,
+                prev_l_sph=self.current_row.l_sph, prev_l_cyl=self.current_row.l_cyl, prev_l_axis=self.current_row.l_axis,
+                r_sph=new_r_sph, r_cyl=self.current_row.r_cyl, r_axis=self.current_row.r_axis,
+                l_sph=self.current_row.l_sph, l_cyl=self.current_row.l_cyl, l_axis=self.current_row.l_axis,
+                prev_aux_lens="AuxLensL",
+                aux_lens="AuxLensL"
+            )
+            
             self.unable_read_count = 0
             # Enable "Prev State" option for next response
             self.show_prev_state_option = True
         
         elif intent == "Unable to read":
             # Save current state before making changes
+            prev_r_sph = self.current_row.r_sph
+            
             self.previous_state = {
-                'r_sph': self.current_row.r_sph,
+                'r_sph': prev_r_sph,
                 'r_cyl': self.current_row.r_cyl,
                 'r_axis': self.current_row.r_axis,
                 'l_sph': self.current_row.l_sph,
@@ -578,10 +606,20 @@ class InteractiveSession:
                 'occluder_state': self.current_row.occluder_state,
                 'chart_display': self.current_row.chart_display,
             }
+            
             # Add -0.25D SPH, stay on same chart
-            self.current_row = self._copy_row_state()
-            self.current_row.r_sph -= 0.25
-            self.set_power(r_sph=self.current_row.r_sph, occluder="Left_Occluded")
+            new_r_sph = prev_r_sph - 0.25
+            
+            # Use vision correction API with previous state
+            self.set_power_with_prev_state(
+                prev_r_sph=prev_r_sph, prev_r_cyl=self.current_row.r_cyl, prev_r_axis=self.current_row.r_axis,
+                prev_l_sph=self.current_row.l_sph, prev_l_cyl=self.current_row.l_cyl, prev_l_axis=self.current_row.l_axis,
+                r_sph=new_r_sph, r_cyl=self.current_row.r_cyl, r_axis=self.current_row.r_axis,
+                l_sph=self.current_row.l_sph, l_cyl=self.current_row.l_cyl, l_axis=self.current_row.l_axis,
+                prev_aux_lens="AuxLensL",
+                aux_lens="AuxLensL"
+            )
+            
             self.unable_read_count += 1
             # Enable "Prev State" option for next response
             self.show_prev_state_option = True
@@ -610,8 +648,22 @@ class InteractiveSession:
         # Handle "Prev State" intent to restore previous power
         if intent == "Prev State":
             if self.previous_state is not None:
-                self.current_row = self._copy_row_from_dict(self.previous_state)
-                self.set_power(l_sph=self.current_row.l_sph, occluder="Right_Occluded")
+                # Get current state
+                curr_l_sph = self.current_row.l_sph
+                
+                # Get previous state
+                prev_l_sph = self.previous_state['l_sph']
+                
+                # Use vision correction API to restore
+                self.set_power_with_prev_state(
+                    prev_r_sph=self.current_row.r_sph, prev_r_cyl=self.current_row.r_cyl, prev_r_axis=self.current_row.r_axis,
+                    prev_l_sph=curr_l_sph, prev_l_cyl=self.current_row.l_cyl, prev_l_axis=self.current_row.l_axis,
+                    r_sph=self.previous_state['r_sph'], r_cyl=self.previous_state['r_cyl'], r_axis=self.previous_state['r_axis'],
+                    l_sph=prev_l_sph, l_cyl=self.previous_state['l_cyl'], l_axis=self.previous_state['l_axis'],
+                    prev_aux_lens="AuxLensR",
+                    aux_lens="AuxLensR"
+                )
+                
                 self.previous_state = None
                 self.show_prev_state_option = False
                 print("✓ Restored to previous state")
@@ -635,38 +687,64 @@ class InteractiveSession:
         
         elif intent == "Blurry":
             # Save current state before making changes
+            prev_l_sph = self.current_row.l_sph
+            
             self.previous_state = {
                 'r_sph': self.current_row.r_sph,
                 'r_cyl': self.current_row.r_cyl,
                 'r_axis': self.current_row.r_axis,
-                'l_sph': self.current_row.l_sph,
+                'l_sph': prev_l_sph,
                 'l_cyl': self.current_row.l_cyl,
                 'l_axis': self.current_row.l_axis,
                 'occluder_state': self.current_row.occluder_state,
                 'chart_display': self.current_row.chart_display,
             }
-            self.current_row = self._copy_row_state()
-            self.current_row.l_sph -= 0.25
-            self.set_power(l_sph=self.current_row.l_sph, occluder="Right_Occluded")
+            
+            # Add -0.25D SPH, stay on same chart
+            new_l_sph = prev_l_sph - 0.25
+            
+            # Use vision correction API with previous state
+            self.set_power_with_prev_state(
+                prev_r_sph=self.current_row.r_sph, prev_r_cyl=self.current_row.r_cyl, prev_r_axis=self.current_row.r_axis,
+                prev_l_sph=prev_l_sph, prev_l_cyl=self.current_row.l_cyl, prev_l_axis=self.current_row.l_axis,
+                r_sph=self.current_row.r_sph, r_cyl=self.current_row.r_cyl, r_axis=self.current_row.r_axis,
+                l_sph=new_l_sph, l_cyl=self.current_row.l_cyl, l_axis=self.current_row.l_axis,
+                prev_aux_lens="AuxLensR",
+                aux_lens="AuxLensR"
+            )
+            
             self.unable_read_count = 0
             # Enable "Prev State" option for next response
             self.show_prev_state_option = True
         
         elif intent == "Unable to read":
             # Save current state before making changes
+            prev_l_sph = self.current_row.l_sph
+            
             self.previous_state = {
                 'r_sph': self.current_row.r_sph,
                 'r_cyl': self.current_row.r_cyl,
                 'r_axis': self.current_row.r_axis,
-                'l_sph': self.current_row.l_sph,
+                'l_sph': prev_l_sph,
                 'l_cyl': self.current_row.l_cyl,
                 'l_axis': self.current_row.l_axis,
                 'occluder_state': self.current_row.occluder_state,
                 'chart_display': self.current_row.chart_display,
             }
-            self.current_row = self._copy_row_state()
-            self.current_row.l_sph -= 0.25
-            self.set_power(l_sph=self.current_row.l_sph, occluder="Right_Occluded")
+            
+            # Add -0.25D SPH, stay on same chart
+            new_l_sph = prev_l_sph - 0.25
+            
+            # Use vision correction API with previous state
+            self.set_power_with_prev_state(
+                prev_r_sph=self.current_row.r_sph, prev_r_cyl=self.current_row.r_cyl, prev_r_axis=self.current_row.r_axis,
+                prev_l_sph=prev_l_sph, prev_l_cyl=self.current_row.l_cyl, prev_l_axis=self.current_row.l_axis,
+                r_sph=self.current_row.r_sph, r_cyl=self.current_row.r_cyl, r_axis=self.current_row.r_axis,
+                l_sph=new_l_sph, l_cyl=self.current_row.l_cyl, l_axis=self.current_row.l_axis,
+                prev_aux_lens="AuxLensR",
+                aux_lens="AuxLensR"
+            )
+            
             self.unable_read_count += 1
             # Enable "Prev State" option for next response
             self.show_prev_state_option = True
