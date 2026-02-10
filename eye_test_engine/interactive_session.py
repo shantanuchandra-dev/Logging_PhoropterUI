@@ -100,6 +100,7 @@ class InteractiveSession:
             "snellen_chart_25_20_15": "chart_16",
             "duochrome": "chart_17",
             "jcc_chart": "chart_19",
+            "bino_chart": "chart_20",
         }
     
     def _init_row(self) -> RowContext:
@@ -467,16 +468,16 @@ class InteractiveSession:
         """Process distance vision phase."""
         if intent == "Unable to read":
             # Add pinhole and test again
-            print("\n→ Patient unable to read E-chart, adding pinhole")
+            print(f"\n→ Patient unable to read, adding pinhole (keeping current chart: {self.current_row.chart_display})")
             self.set_pinhole()
             
-            # Update question to ask with pinhole
+            # Update question to ask with pinhole (keep current chart)
             self.current_row = self._copy_row_state()
-            self.current_row.chart_display = "echart_400"  # Keep E-chart
+            # Don't change chart_display - keep whatever chart is currently displayed
             
             # Return response with pinhole question
             response = self._build_response()
-            response['question'] = "With pinhole: Can you see the E clearly now?"
+            response['question'] = "With pinhole: Can you see clearly now?"
             response['intents'] = ["Able to read with pinhole", "Still unable to read"]
             return response
         
@@ -1197,14 +1198,91 @@ class InteractiveSession:
         return self._build_response()
     
     def _process_binocular_balance(self, intent: str) -> Dict:
-        """Process binocular balance phase."""
-        # Test complete
-        return {
-            "phase": "complete",
-            "status": "complete",
-            "question": "Test complete!",
-            "intents": [],
-        }
+        """Process binocular balance phase.
+        
+        BINO balancing logic:
+        - Top is blurry [Right Eye] → Add 0.25D Sph in Left Eye
+        - Bottom is blurry [Left Eye] → Add 0.25D Sph in Right Eye
+        - Both are same → Test complete
+        - Worse: Go to previous state → Restore previous power
+        """
+        if intent == "Top is blurry [Right Eye]":
+            # Save current state before making changes
+            self.previous_state = {
+                'r_sph': self.current_row.r_sph,
+                'r_cyl': self.current_row.r_cyl,
+                'r_axis': self.current_row.r_axis,
+                'l_sph': self.current_row.l_sph,
+                'l_cyl': self.current_row.l_cyl,
+                'l_axis': self.current_row.l_axis,
+                'occluder_state': self.current_row.occluder_state,
+                'chart_display': self.current_row.chart_display,
+            }
+            # Add 0.25D Sph in Left Eye
+            self.current_row = self._copy_row_state()
+            self.current_row.l_sph += 0.25
+            self.set_power(l_sph=self.current_row.l_sph, occluder="BINO")
+            # Enable "Prev State" option for next response
+            self.show_prev_state_option = True
+            return self._build_response()
+        
+        elif intent == "Bottom is blurry [Left Eye]":
+            # Save current state before making changes
+            self.previous_state = {
+                'r_sph': self.current_row.r_sph,
+                'r_cyl': self.current_row.r_cyl,
+                'r_axis': self.current_row.r_axis,
+                'l_sph': self.current_row.l_sph,
+                'l_cyl': self.current_row.l_cyl,
+                'l_axis': self.current_row.l_axis,
+                'occluder_state': self.current_row.occluder_state,
+                'chart_display': self.current_row.chart_display,
+            }
+            # Add 0.25D Sph in Right Eye
+            self.current_row = self._copy_row_state()
+            self.current_row.r_sph += 0.25
+            self.set_power(r_sph=self.current_row.r_sph, occluder="BINO")
+            # Enable "Prev State" option for next response
+            self.show_prev_state_option = True
+            return self._build_response()
+        
+        elif intent == "Both are same":
+            # Test complete
+            return {
+                "phase": "complete",
+                "status": "complete",
+                "question": "Test complete!",
+                "intents": [],
+                "power": {
+                    "right": {
+                        "sph": self.current_row.r_sph,
+                        "cyl": self.current_row.r_cyl,
+                        "axis": self.current_row.r_axis,
+                    },
+                    "left": {
+                        "sph": self.current_row.l_sph,
+                        "cyl": self.current_row.l_cyl,
+                        "axis": self.current_row.l_axis,
+                    }
+                }
+            }
+        
+        elif intent == "Prev State":
+            # Restore previous state
+            if self.previous_state is not None:
+                self.current_row = self._copy_row_from_dict(self.previous_state)
+                self.set_power(
+                    r_sph=self.current_row.r_sph,
+                    l_sph=self.current_row.l_sph,
+                    occluder="BINO"
+                )
+                self.previous_state = None
+                self.show_prev_state_option = False
+                print("✓ Restored to previous state")
+            return self._build_response()
+        
+        # Default fallback
+        return self._build_response()
     
     def _copy_row_state(self) -> RowContext:
         """Copy current row state to new row."""
@@ -1454,6 +1532,9 @@ class InteractiveSession:
             aux_lens="AuxLensR"  # Now testing left eye (right occluded)
         )
         
+        # Explicitly click L button to activate left eye testing mode
+        self.jcc_control("L")
+        
         return self._build_response()
     
     def _transition_to_binocular_balance(self) -> Dict:
@@ -1461,11 +1542,16 @@ class InteractiveSession:
         self.current_phase = "binocular_balance"
         print(f"\n→ Transitioning to {self.phase_names[self.current_phase]}")
         
+        # Reset previous state tracking
+        self.previous_state = None
+        self.show_prev_state_option = False
+        
         self.current_row = self._copy_row_state()
         self.current_row.occluder_state = "BINO"
-        self.current_row.chart_display = "snellen_chart_20_20_20"
+        self.current_row.chart_display = "bino_chart"
         
-        self.set_chart("snellen_chart_20_20_20")
+        # Display BINO chart (chart_20)
+        self.set_chart("bino_chart")
         self.set_power(occluder="BINO")
         self.jcc_control("BINO")
         
@@ -1617,10 +1703,13 @@ class InteractiveSession:
             self._update_state(occluder="Right_Occluded", chart="duochrome")
             
         elif phase == "binocular_balance":
-            self.set_chart("snellen_chart_20_20_20")
+            # Reset previous state tracking
+            self.previous_state = None
+            self.show_prev_state_option = False
+            self.set_chart("bino_chart")
             self.set_power(occluder="BINO")
             self.jcc_control("BINO")
-            self._update_state(occluder="BINO", chart="snellen_chart_20_20_20")
+            self._update_state(occluder="BINO", chart="bino_chart")
         
         # Return standard response for non-JCC phases
         return self._build_response()

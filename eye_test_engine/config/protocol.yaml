@@ -232,14 +232,17 @@ phases:
     name: "Binocular Balance (Step 6.5)"
     trigger:
       occluder: "BINO"
-      charts: ["snellen_chart_*", "echart_*"]
+      charts: ["bino_chart"]
       condition: "after_first_duochrome"
     questions:
-      - "Please read the line you can see clearly."
+      - "You should see 2 lines at top and bottom. Focus on last letter. Which one is less blurry than the others (if there is one)?"
     intents:
-      - "Able to read"
-      - "Blurry"
-      - "Unable to read"
+      - "Top is blurry [Right Eye]"
+      - "Bottom is blurry [Left Eye]"
+      - "Both are same"
+    adjustment_rules:
+      top_blurry: "+0.25D to L_SPH"
+      bottom_blurry: "+0.25D to R_SPH"
     exit_conditions:
       - type: "balance_verified"
         next_phase: "test_complete"
