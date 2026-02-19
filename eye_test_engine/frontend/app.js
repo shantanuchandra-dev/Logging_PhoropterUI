@@ -29,10 +29,25 @@ let currentAppliedPower = 'none';  // 'none', 'ar', or 'lenso'
 // Stored phoropter state snapshot for comparison
 let storedPhoropterState = null;
 
+// Optotype mapping for VA charts (Chart 1)
+const OPTOTYPE_MAP = {
+    "snellen_chart_200_150": ["200", "150"],
+    "snellen_chart_100_80": ["100", "80"],
+    "snellen_chart_70_60_50": ["70", "60", "50"],
+    "snellen_chart_40_30_25": ["40", "30", "25"],
+    "snellen_chart_20_15_10": ["20", "15", "10"],
+    "snellen_chart_20_20_20": ["20_1", "20_2", "20_3"],
+    "snellen_chart_25_20_15": ["25", "20", "15"],
+    "bino_chart": ["R", "L"]
+};
+
+let currentOptotype = null;
+
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     console.log('Eye Test Engine Frontend Loaded');
     updateStatusIndicator(false);
+    populateDirectCommands();
 });
 
 function openArPowerModal() {
@@ -198,7 +213,7 @@ async function applyStoredPower(type) {
 
     // Get stored power
     const power = type === 'ar' ? storedPower.ar : storedPower.lenso;
-    
+
     if (!power) {
         alert(`No ${type.toUpperCase()} power values stored. Please set them first.`);
         return;
@@ -207,10 +222,10 @@ async function applyStoredPower(type) {
     try {
         showLoading(true);
         await setPower(power, 'BINO');
-        
+
         currentAppliedPower = type;
         updatePowerButtonStates(type);
-        
+
         const label = type === 'ar' ? 'AR' : 'Lenso';
         addToHistory(`${label} power applied`, 'info');
 
@@ -249,49 +264,49 @@ function updatePowerButtonStates(activeType) {
 async function startTest() {
     const btn = document.getElementById('startTestBtn');
     if (btn) btn.disabled = true;
-    
+
     try {
         showLoading(true);
-        
+
         // Generate session ID
         const sessionId = 'session_' + Date.now();
         sessionState.sessionId = sessionId;
         sessionState.currentChart = null;  // Reset chart tracking for new session
-        
+
         // Reset phoropter
         await resetPhoropter();
-        
+
         // Start session with backend
         const response = await fetch(`${CONFIG.backendUrl}/api/session/start`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ session_id: sessionId })
         });
-        
+
         if (!response.ok) {
             throw new Error('Failed to start session');
         }
-        
+
         const data = await response.json();
-        
+
         // Update UI
         document.getElementById('welcomeScreen').style.display = 'none';
         document.getElementById('testScreen').style.display = 'block';
-        
+
         updateSessionInfo(data);
         displayQuestion(data);
-        
+
         // Set phoropter for first phase
         await setPhoropter(data);
-        
+
         addToHistory('Test started', 'success');
         updateStatusIndicator(true);
-        
+
         // Check if auto-flip is needed (JCC Flip1 → Flip2)
         if (data.auto_flip) {
             await handleAutoFlip(data.flip_wait_seconds || 2);
         }
-        
+
     } catch (error) {
         console.error('Error starting test:', error);
         alert('Failed to start test. Make sure the backend server is running on port 5000.');
@@ -309,48 +324,48 @@ async function submitIntent(intent) {
     try {
         showLoading(true);
         sessionState.intentsLocked = true;
-        
+
         // Hide all intent buttons during processing
         const intentButtonsContainer = document.getElementById('intentButtons');
         intentButtonsContainer.innerHTML = '<div class="alert alert-info">Processing...</div>';
-        
+
         // Record response
         sessionState.responseCount++;
         addToHistory(`Response: ${intent}`, 'info');
-        
+
         // Send to backend
         const response = await fetch(`${CONFIG.backendUrl}/api/session/${sessionState.sessionId}/respond`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ intent: intent })
         });
-        
+
         if (!response.ok) {
             throw new Error('Failed to submit response');
         }
-        
+
         const data = await response.json();
-        
+
         // Check if test is complete
         if (data.phase === 'complete' || data.status === 'complete') {
             await completeTest();
             return;
         }
-        
+
         // Update UI for next question
         updateSessionInfo(data);
-        
+
         // Update phoropter first
         await setPhoropter(data);
-        
+
         // Display question and intents AFTER processing is complete
         displayQuestion(data);
-        
+
         // Check if auto-flip is needed (JCC Flip1 → Flip2)
         if (data.auto_flip) {
             await handleAutoFlip(data.flip_wait_seconds || 2);
         }
-        
+
     } catch (error) {
         console.error('Error submitting intent:', error);
         alert('Failed to submit response. Please try again.');
@@ -370,48 +385,48 @@ async function handleAutoFlip(waitSeconds) {
         const intentButtonsContainer = document.getElementById('intentButtons');
         const originalContent = intentButtonsContainer.innerHTML;
         intentButtonsContainer.innerHTML = '';
-        
+
         // Show countdown in question box
         const questionBox = document.querySelector('.question-box');
         const countdownDiv = document.createElement('div');
         countdownDiv.id = 'flipCountdown';
         countdownDiv.style.cssText = 'background: #fff3e0; padding: 15px; margin-top: 15px; border-radius: 5px; text-align: center; font-size: 1.2em; color: #f57c00; font-weight: bold;';
         questionBox.appendChild(countdownDiv);
-        
+
         // Countdown timer
         for (let i = waitSeconds; i > 0; i--) {
             countdownDiv.textContent = `⏱️ Showing Flip 2 in ${i} second${i > 1 ? 's' : ''}...`;
             await new Promise(resolve => setTimeout(resolve, 1000));
         }
-        
+
         countdownDiv.textContent = '⏱️ Now showing Flip 2...';
-        
+
         // Call backend with AUTO_FLIP to show Flip2
         const response = await fetch(`${CONFIG.backendUrl}/api/session/${sessionState.sessionId}/respond`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ intent: 'AUTO_FLIP' })
         });
-        
+
         if (!response.ok) {
             throw new Error('Failed to auto-flip');
         }
-        
+
         const data = await response.json();
-        
+
         // Remove countdown
         if (countdownDiv.parentNode) {
             countdownDiv.parentNode.removeChild(countdownDiv);
         }
-        
+
         // Update UI with Flip2 state
         updateSessionInfo(data);
         displayQuestion(data);
-        
+
         // Note: displayQuestion() creates fresh enabled buttons
-        
+
         addToHistory('Flip 2 displayed', 'info');
-        
+
     } catch (error) {
         console.error('Error during auto-flip:', error);
         alert('Failed to show Flip 2. Please try again.');
@@ -423,20 +438,23 @@ function displayQuestion(data) {
     // Update phase badge
     const phaseName = data.phase || 'Unknown Phase';
     document.getElementById('phaseBadge').textContent = phaseName;
-    
+
     // Update question
     const question = data.question || 'Please describe what you see.';
     document.getElementById('questionText').textContent = question;
-    
+
     // Update chart selector visibility and content
     updateChartSelector(data);
-    
+
+    // Update optotype selector
+    updateOptotypeSelector(data);
+
     // Update intents
     const intents = data.intents || [];
     const intentButtons = document.getElementById('intentButtons');
     intentButtons.innerHTML = '';
     sessionState.intentsLocked = false;
-    
+
     // If no intents (Flip1 state), show waiting message
     if (intents.length === 0 && data.auto_flip) {
         const waitingMsg = document.createElement('div');
@@ -445,7 +463,7 @@ function displayQuestion(data) {
         intentButtons.appendChild(waitingMsg);
         return;
     }
-    
+
     intents.forEach((intent, index) => {
         const button = document.createElement('button');
         button.className = 'intent-button';
@@ -459,22 +477,22 @@ function displayQuestion(data) {
 function updateChartSelector(data) {
     const chartSelector = document.getElementById('chartSelector');
     const chartGrid = document.getElementById('chartGrid');
-    
+
     // Check if we're in Phase A (distance vision) or Phase B (right or left eye refraction)
     const isPhaseA = data.phase && data.phase.includes('Distance Vision');
     const isPhaseB = data.phase && (
-        data.phase.includes('Right Eye Refraction') || 
+        data.phase.includes('Right Eye Refraction') ||
         data.phase.includes('Left Eye Refraction')
     );
-    
+
     if ((isPhaseA || isPhaseB) && data.chart_info) {
         // Show chart selector
         chartSelector.classList.add('active');
-        
+
         // Update session state
         sessionState.availableCharts = data.chart_info.available_charts || [];
         sessionState.currentChartIndex = data.chart_info.current_index || 0;
-        
+
         // Build chart grid
         chartGrid.innerHTML = '';
         sessionState.availableCharts.forEach((chart, index) => {
@@ -483,24 +501,230 @@ function updateChartSelector(data) {
             if (index === sessionState.currentChartIndex) {
                 button.classList.add('active');
             }
-            
+
             const chartName = document.createElement('div');
             chartName.className = 'chart-name';
             chartName.textContent = formatChartName(chart);
-            
+
             const chartSize = document.createElement('div');
             chartSize.className = 'chart-size';
             chartSize.textContent = extractChartSize(chart);
-            
+
             button.appendChild(chartName);
             button.appendChild(chartSize);
             button.onclick = () => switchChart(index);
-            
+
             chartGrid.appendChild(button);
         });
     } else {
         // Hide chart selector for other phases
         chartSelector.classList.remove('active');
+    }
+}
+
+// Update Optotype Selector
+function updateOptotypeSelector(data, forceShow = false) {
+    const optotypeSelector = document.getElementById('optotypeSelector');
+    const optotypeGrid = document.getElementById('optotypeGrid');
+
+    // Get chart from data or current session state
+    const currentChartName = data.chart || sessionState.availableCharts[sessionState.currentChartIndex];
+
+    // Check if we're in Phase A or B where optotypes are supported
+    const isPhaseA = data.phase && data.phase.includes('Distance Vision');
+    const isPhaseB = data.phase && (
+        data.phase.includes('Right Eye Refraction') ||
+        data.phase.includes('Left Eye Refraction')
+    );
+
+    const availableOptotypes = OPTOTYPE_MAP[currentChartName];
+
+    if (forceShow || ((isPhaseA || isPhaseB) && availableOptotypes)) {
+        optotypeSelector.classList.add('active');
+        optotypeGrid.innerHTML = '';
+
+        if (availableOptotypes) {
+            availableOptotypes.forEach(optotype => {
+                const button = document.createElement('button');
+                button.className = 'optotype-button';
+                if (optotype === currentOptotype) {
+                    button.classList.add('active');
+                }
+                button.textContent = optotype;
+                button.onclick = () => switchOptotype(optotype);
+                optotypeGrid.appendChild(button);
+            });
+        } else {
+            optotypeGrid.innerHTML = '<div style="font-size: 0.9em; color: #666; padding: 10px;">No specific optotypes for this chart</div>';
+        }
+    } else {
+        optotypeSelector.classList.remove('active');
+    }
+}
+
+// Populate Direct Chart Commands
+function populateDirectCommands() {
+    const container = document.getElementById('directCommands');
+    if (!container) return;
+
+    container.innerHTML = `
+        <div class="command-group">
+            <select id="directChartSelect" class="phase-jump select" style="width: 100%; min-width: 0; border-color: #667eea; margin-bottom: 12px; height: 38px; padding: 4px 10px; font-size: 0.95em;">
+                <option value="">-- Choose Chart --</option>
+            </select>
+            <div id="directOptotypeGrid" class="optotype-grid" style="grid-template-columns: repeat(auto-fit, minmax(60px, 1fr)); gap: 8px;">
+                <!-- Buttons populated based on selection -->
+            </div>
+        </div>
+    `;
+
+    const select = document.getElementById('directChartSelect');
+    const grid = document.getElementById('directOptotypeGrid');
+
+    const chartGroups = [
+        { id: "snellen_chart_200_150", label: "Chart 200/150", optotypes: ["200", "150"] },
+        { id: "snellen_chart_100_80", label: "Chart 100/80", optotypes: ["100", "80"] },
+        { id: "snellen_chart_70_60_50", label: "Chart 70/60/50", optotypes: ["70", "60", "50"] },
+        { id: "snellen_chart_40_30_25", label: "Chart 40/30/25", optotypes: ["40", "30", "25"] },
+        { id: "snellen_chart_20_15_10", label: "Chart 20/15/10", optotypes: ["20", "15", "10"] },
+        { id: "snellen_chart_20_20_20", label: "Chart 20/20 (Cols)", optotypes: ["20_1", "20_2", "20_3"] },
+        { id: "snellen_chart_25_20_15", label: "Chart 25/20/15", optotypes: ["25", "20", "15"] },
+        { id: "bino_chart", label: "Chart 20 (R/L)", optotypes: ["R", "L"] }
+    ];
+
+    chartGroups.forEach(group => {
+        const option = document.createElement('option');
+        option.value = group.id;
+        option.textContent = group.label;
+        select.appendChild(option);
+    });
+
+    select.onchange = () => {
+        const groupId = select.value;
+        const group = chartGroups.find(g => g.id === groupId);
+        grid.innerHTML = '';
+        if (group) {
+            group.optotypes.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = 'optotype-button';
+                btn.style.padding = '8px 4px';
+                btn.style.fontSize = '0.9em';
+                btn.textContent = opt;
+                btn.onclick = () => executeDirectCommand(groupId, opt);
+                grid.appendChild(btn);
+            });
+        }
+    };
+}
+
+async function executeDirectCommand(chartName, optotype) {
+    if (!sessionState.sessionId) {
+        // Start a temporary session if none exists
+        if (confirm('No active session. Start a quick test session?')) {
+            await startTest();
+        } else {
+            return;
+        }
+    }
+
+    try {
+        showLoading(true);
+        currentOptotype = optotype;
+
+        // Find if this chart is in available charts to keep internal state in sync
+        const chartIdx = sessionState.availableCharts.indexOf(chartName);
+        if (chartIdx !== -1) {
+            sessionState.currentChartIndex = chartIdx;
+            // Update the main chart selector UI if active
+            const chartButtons = document.querySelectorAll('.chart-button');
+            chartButtons.forEach((btn, idx) => {
+                if (idx === chartIdx) btn.classList.add('active');
+                else btn.classList.remove('active');
+            });
+        }
+
+        await setChart(chartName, optotype);
+
+        // Update current optotype UI and FORCE it to show (opens UI completely)
+        updateOptotypeSelector({ chart: chartName, phase: sessionState.currentPhase }, true);
+
+        addToHistory(`Direct command: ${chartName} [${optotype}]`, 'info');
+    } catch (error) {
+        console.error('Error executing direct command:', error);
+        alert('Failed to execute command. Please check console.');
+    } finally {
+        showLoading(false);
+    }
+}
+
+// Update Optotype Selector
+function updateOptotypeSelector(data) {
+    const optotypeSelector = document.getElementById('optotypeSelector');
+    const optotypeGrid = document.getElementById('optotypeGrid');
+    const currentChartName = sessionState.availableCharts[sessionState.currentChartIndex];
+
+    // Check if we're in Phase A or B where optotypes are supported
+    const isPhaseA = data.phase && data.phase.includes('Distance Vision');
+    const isPhaseB = data.phase && (
+        data.phase.includes('Right Eye Refraction') ||
+        data.phase.includes('Left Eye Refraction')
+    );
+
+    const availableOptotypes = OPTOTYPE_MAP[currentChartName];
+
+    if ((isPhaseA || isPhaseB) && availableOptotypes) {
+        optotypeSelector.classList.add('active');
+        optotypeGrid.innerHTML = '';
+
+        availableOptotypes.forEach(optotype => {
+            const button = document.createElement('button');
+            button.className = 'optotype-button';
+            if (optotype === currentOptotype) {
+                button.classList.add('active');
+            }
+            button.textContent = optotype;
+            button.onclick = () => switchOptotype(optotype);
+            optotypeGrid.appendChild(button);
+        });
+    } else {
+        optotypeSelector.classList.remove('active');
+    }
+}
+
+// Switch to a specific optotype
+async function switchOptotype(optotype) {
+    if (!sessionState.sessionId) {
+        alert('No active session');
+        return;
+    }
+
+    if (optotype === currentOptotype) {
+        // Already selected, but allow re-clicking to trigger phoropter if needed
+    }
+
+    try {
+        showLoading(true);
+        currentOptotype = optotype;
+
+        const chartName = sessionState.availableCharts[sessionState.currentChartIndex];
+        await setChart(chartName, optotype);
+
+        // Update UI state
+        const buttons = document.querySelectorAll('.optotype-button');
+        buttons.forEach(btn => {
+            if (btn.textContent === optotype) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        });
+
+        addToHistory(`Select optotype: ${optotype}`, 'info');
+    } catch (error) {
+        console.error('Error switching optotype:', error);
+        alert('Failed to switch optotype. Please try again.');
+    } finally {
+        showLoading(false);
     }
 }
 
@@ -533,35 +757,38 @@ async function switchChart(chartIndex) {
         alert('No active session');
         return;
     }
-    
+
     if (chartIndex === sessionState.currentChartIndex) {
         return; // Already on this chart
     }
-    
+
     try {
         showLoading(true);
-        
+
         const response = await fetch(`${CONFIG.backendUrl}/api/session/${sessionState.sessionId}/switch-chart`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ chart_index: chartIndex })
         });
-        
+
         if (!response.ok) {
             throw new Error('Failed to switch chart');
         }
-        
+
         const data = await response.json();
-        
+
+        // Reset optotype when switching chart
+        currentOptotype = null;
+
         // Update phoropter
         await setPhoropter(data);
-        
+
         // Update UI
         updateSessionInfo(data);
         displayQuestion(data);
-        
+
         addToHistory(`Switched to chart ${chartIndex + 1}`, 'info');
-        
+
     } catch (error) {
         console.error('Error switching chart:', error);
         alert('Failed to switch chart. Please try again.');
@@ -576,22 +803,22 @@ function updateSessionInfo(data) {
     document.getElementById('sessionStatus').textContent = 'Active';
     document.getElementById('currentPhase').textContent = data.phase || '-';
     document.getElementById('responseCount').textContent = sessionState.responseCount;
-    
+
     // Update power info
     if (data.power) {
         const right = data.power.right || { sph: 0, cyl: 0, axis: 180 };
         const left = data.power.left || { sph: 0, cyl: 0, axis: 180 };
-        
-        document.getElementById('rightPower').textContent = 
+
+        document.getElementById('rightPower').textContent =
             `${right.sph.toFixed(2)} / ${right.cyl.toFixed(2)} / ${right.axis.toFixed(0)}°`;
-        document.getElementById('leftPower').textContent = 
+        document.getElementById('leftPower').textContent =
             `${left.sph.toFixed(2)} / ${left.cyl.toFixed(2)} / ${left.axis.toFixed(0)}°`;
     }
-    
+
     // Update occluder and chart
     document.getElementById('occluderState').textContent = data.occluder || 'BINO';
     document.getElementById('chartDisplay').textContent = data.chart || '-';
-    
+
     sessionState.currentPhase = data.phase;
     sessionState.lastResponse = data;
 }
@@ -602,7 +829,7 @@ async function resetPhoropter() {
         const response = await fetch(`${CONFIG.phoropterUrl}/phoropter/${CONFIG.phoropterId}/reset`, {
             method: 'POST'
         });
-        
+
         if (response.ok) {
             addToHistory('Phoropter reset to 0/0/180', 'success');
         }
@@ -615,11 +842,11 @@ async function resetPhoropter() {
 async function setPhoropter(data) {
     try {
         // Set chart only if it has changed (avoids duplicate JCC chart calls during flip cycles)
-        if (data.chart && data.chart !== sessionState.currentChart) {
-            await setChart(data.chart);
+        if (data.chart && (data.chart !== sessionState.currentChart || currentOptotype !== null)) {
+            await setChart(data.chart, currentOptotype);
             sessionState.currentChart = data.chart;
         }
-        
+
         // Set power and occluder (skip for JCC and duochrome phases - phoropter handles internally)
         const phaseText = (data.phase || '').toLowerCase();
         const isJccPhase = phaseText.includes('jcc') || data.chart === 'jcc_chart';
@@ -627,14 +854,14 @@ async function setPhoropter(data) {
         if (data.power && !isJccPhase && !isDuochromePhase) {
             await setPower(data.power, data.occluder);
         }
-        
+
     } catch (error) {
         console.error('Error setting phoropter:', error);
         addToHistory('Warning: Could not update phoropter', 'warning');
     }
 }
 
-async function setChart(chartName) {
+async function setChart(chartName, optotype = null) {
     const chartMap = {
         "echart_400": "chart_9",
         "snellen_chart_200_150": "chart_10",
@@ -646,33 +873,39 @@ async function setChart(chartName) {
         "snellen_chart_25_20_15": "chart_16",
         "duochrome": "chart_17",
         "jcc_chart": "chart_19",
+        "bino_chart": "chart_20",
     };
-    
+
     const chartId = chartMap[chartName];
     if (!chartId) return;
-    
+
+    const chartItems = [chartId];
+    if (optotype) {
+        chartItems.push(optotype);
+    }
+
     const payload = {
         test_cases: [{
             chart: {
                 tab: "Chart1",
-                chart_items: [chartId]
+                chart_items: chartItems
             }
         }]
     };
-    
+
     await fetch(`${CONFIG.phoropterUrl}/phoropter/${CONFIG.phoropterId}/run-tests`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
     });
-    
+
     addToHistory(`Chart: ${chartName}`, 'info');
 }
 
 async function setPower(power, occluder) {
     const right = power.right || { sph: 0, cyl: 0, axis: 180 };
     const left = power.left || { sph: 0, cyl: 0, axis: 180 };
-    
+
     // Map occluder
     let auxLens = "OFF";
     if (occluder === "Left_Occluded") {
@@ -680,7 +913,7 @@ async function setPower(power, occluder) {
     } else if (occluder === "Right_Occluded") {
         auxLens = "AuxLensR";
     }
-    
+
     const payload = {
         test_cases: [{
             aux_lens: auxLens,
@@ -696,13 +929,13 @@ async function setPower(power, occluder) {
             }
         }]
     };
-    
+
     await fetch(`${CONFIG.phoropterUrl}/phoropter/${CONFIG.phoropterId}/run-tests`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
     });
-    
+
     addToHistory(`Power updated - Occluder: ${occluder}`, 'info');
 }
 
@@ -712,17 +945,17 @@ async function completeTest() {
         const response = await fetch(`${CONFIG.backendUrl}/api/session/${sessionState.sessionId}/end`, {
             method: 'POST'
         });
-        
+
         if (!response.ok) {
             throw new Error('Failed to end session');
         }
-        
+
         const data = await response.json();
-        
+
         // Hide test screen
         document.getElementById('testScreen').style.display = 'none';
         document.getElementById('completeScreen').style.display = 'block';
-        
+
         // Display final prescription
         if (data.final_prescription) {
             const rx = data.final_prescription;
@@ -753,11 +986,11 @@ async function completeTest() {
             `;
             document.getElementById('finalPrescription').innerHTML = prescriptionHtml;
         }
-        
+
         updateStatusIndicator(false);
         document.getElementById('sessionStatus').textContent = 'Completed';
         addToHistory('Test completed successfully', 'success');
-        
+
     } catch (error) {
         console.error('Error completing test:', error);
         alert('Failed to complete test properly.');
@@ -795,19 +1028,19 @@ function updateStatusIndicator(active) {
 function addToHistory(message, type = 'info') {
     const timestamp = new Date().toLocaleTimeString();
     const historyLog = document.getElementById('historyLog');
-    
+
     // Clear "no history" message
     if (sessionState.history.length === 0) {
         historyLog.innerHTML = '';
     }
-    
+
     const item = document.createElement('div');
     item.className = 'history-item';
     item.innerHTML = `<strong>${timestamp}</strong> - ${message}`;
-    
+
     historyLog.insertBefore(item, historyLog.firstChild);
     sessionState.history.push({ timestamp, message, type });
-    
+
     // Keep only last 20 items
     while (historyLog.children.length > 20) {
         historyLog.removeChild(historyLog.lastChild);
@@ -819,51 +1052,51 @@ async function jumpToPhase() {
     const select = document.getElementById('phaseSelect');
     const jumpBtn = document.getElementById('jumpBtn');
     const targetPhase = select.value;
-    
+
     if (!targetPhase) {
         alert('Please select a phase');
         return;
     }
-    
+
     if (!sessionState.sessionId) {
         alert('Please start a test session first');
         return;
     }
-    
+
     jumpBtn.disabled = true;
-    
+
     try {
         showLoading(true);
-        
+
         const response = await fetch(`${CONFIG.backendUrl}/api/session/${sessionState.sessionId}/jump`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ phase: targetPhase })
         });
-        
+
         if (!response.ok) {
             throw new Error('Failed to jump to phase');
         }
-        
+
         const data = await response.json();
-        
+
         // Update UI
         updateSessionInfo(data);
         displayQuestion(data);
-        
+
         // Show test screen if not visible
         document.getElementById('welcomeScreen').style.display = 'none';
         document.getElementById('testScreen').style.display = 'block';
-        
+
         addToHistory(`Jumped to ${data.phase}`, 'info');
-        
+
         // If auto_flip is requested, start countdown
         if (data.auto_flip) {
             await handleAutoFlip(data.flip_wait_seconds || 2);
         }
-        
+
         showLoading(false);
-        
+
     } catch (error) {
         console.error('Error jumping to phase:', error);
         alert('Failed to jump to phase. Please try again.');

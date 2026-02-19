@@ -27,7 +27,7 @@ echo ""
 
 # Start backend server in background
 echo "Starting backend API server on port 5000..."
-python3 -m eye_test_engine.api_server &
+PYTHONPATH=.. python3 -m eye_test_engine.api_server &
 BACKEND_PID=$!
 echo "✓ Backend started (PID: $BACKEND_PID)"
 echo ""

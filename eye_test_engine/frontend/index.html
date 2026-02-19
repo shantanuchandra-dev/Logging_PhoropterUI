@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -447,6 +448,64 @@
             content: "ℹ️";
         }
 
+        .optotype-selector {
+            background: #fff;
+            border: 2px solid #4CAF50;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            display: none;
+        }
+
+        .optotype-selector.active {
+            display: block;
+        }
+
+        .optotype-selector h4 {
+            color: #4CAF50;
+            margin-bottom: 15px;
+            font-size: 1.1em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .optotype-selector h4::before {
+            content: "👁️‍🗨️";
+            font-size: 1.3em;
+        }
+
+        .optotype-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+            gap: 10px;
+        }
+
+        .optotype-button {
+            padding: 10px 15px;
+            background: #f5f5f5;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 1em;
+            text-align: center;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .optotype-button:hover {
+            background: #e8f5e9;
+            border-color: #4CAF50;
+            transform: translateY(-2px);
+        }
+
+        .optotype-button.active {
+            background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%);
+            color: white;
+            border-color: #2E7D32;
+        }
+
         .intents-container {
             margin: 30px 0;
         }
@@ -539,6 +598,56 @@
             background: #d0d0d0;
         }
 
+        .command-section {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 2px solid #f0f0f0;
+        }
+
+        .command-section h4 {
+            color: #667eea;
+            margin-bottom: 12px;
+            font-size: 1.1em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .command-group {
+            margin-bottom: 15px;
+        }
+
+        .command-group-label {
+            font-size: 0.85em;
+            color: #666;
+            margin-bottom: 6px;
+            font-weight: 600;
+        }
+
+        .command-buttons {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+        }
+
+        .cmd-btn {
+            padding: 8px 4px;
+            font-size: 0.8em;
+            background: #fff;
+            border: 1.5px solid #667eea;
+            color: #667eea;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .cmd-btn:hover {
+            background: #667eea;
+            color: white;
+        }
+
         .info-section {
             margin-bottom: 25px;
             padding-bottom: 20px;
@@ -610,8 +719,13 @@
         }
 
         @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
         }
 
         .history-log {
@@ -717,22 +831,23 @@
             .main-content {
                 grid-template-columns: 1fr;
             }
-            
+
             .footer {
                 padding: 15px;
             }
-            
+
             .footer .phase-jump {
                 flex-direction: column;
                 width: 100%;
             }
-            
+
             .footer .phase-jump select {
                 width: 100%;
             }
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <div class="header">
@@ -745,16 +860,20 @@
                     <div style="display: flex; gap: 8px; align-items: center;">
                         <button class="ar-power-btn" onclick="openArPowerModal()">Set AR</button>
                         <button class="ar-power-btn" onclick="openLensoPowerModal()">Set Lenso</button>
-                        <button id="compareStateBtn" class="compare-state-btn" onclick="storeCompareState()" title="No state stored">
+                        <button id="compareStateBtn" class="compare-state-btn" onclick="storeCompareState()"
+                            title="No state stored">
                             Compare
                         </button>
                     </div>
-                    <div style="border-left: 2px solid #ddd; padding-left: 15px; display: flex; gap: 10px; align-items: center;">
+                    <div
+                        style="border-left: 2px solid #ddd; padding-left: 15px; display: flex; gap: 10px; align-items: center;">
                         <span style="color: #666; font-weight: 600; font-size: 0.9em;">Apply:</span>
-                        <button id="applyArBtn" class="power-apply-btn" onclick="applyStoredPower('ar')" disabled title="Set AR Power first">
+                        <button id="applyArBtn" class="power-apply-btn" onclick="applyStoredPower('ar')" disabled
+                            title="Set AR Power first">
                             AR
                         </button>
-                        <button id="applyLensoBtn" class="power-apply-btn" onclick="applyStoredPower('lenso')" disabled title="Set Lenso Power first">
+                        <button id="applyLensoBtn" class="power-apply-btn" onclick="applyStoredPower('lenso')" disabled
+                            title="Set Lenso Power first">
                             Lenso
                         </button>
                     </div>
@@ -779,7 +898,7 @@
 
                 <div id="testScreen" style="display: none;">
                     <span class="phase-badge" id="phaseBadge">Loading...</span>
-                    
+
                     <div class="question-box">
                         <h3>Question</h3>
                         <p class="question-text" id="questionText">Loading question...</p>
@@ -797,6 +916,12 @@
                             Click any chart below to switch to it. Current progress will be maintained.
                         </div>
                         <div id="chartGrid" class="chart-grid"></div>
+                    </div>
+
+                    <!-- Optotype Selector (shown for specific charts) -->
+                    <div id="optotypeSelector" class="optotype-selector">
+                        <h4>Specific Optotype</h4>
+                        <div id="optotypeGrid" class="optotype-grid"></div>
                     </div>
 
                     <div class="loading" id="loadingIndicator">
@@ -865,8 +990,15 @@
 
                 <div class="info-section">
                     <h4>Test History</h4>
-                    <div class="history-log" id="historyLog">
-                        <p style="color: #999;">No history yet</p>
+                    <div id="historyLog" class="history-log">
+                        <div style="color: #999; text-align: center; padding: 20px;">No events yet</div>
+                    </div>
+                </div>
+
+                <div class="info-section command-section">
+                    <h4>Chart Commands</h4>
+                    <div id="directCommands">
+                        <!-- Populated by JS -->
                     </div>
                 </div>
             </div>
@@ -1008,4 +1140,5 @@
 
     <script src="app.js"></script>
 </body>
+
 </html>
