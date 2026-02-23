@@ -150,6 +150,35 @@ def switch_chart(session_id):
         return jsonify({"error": f"Failed to switch chart: {str(e)}"}), 500
 
 
+@app.route('/api/session/<session_id>/sync-power', methods=['POST'])
+def sync_power(session_id):
+    """Sync manual power changes from frontend to backend session state."""
+    if session_id not in sessions:
+        return jsonify({"error": "Session not found"}), 404
+        
+    session = sessions[session_id]
+    payload = request.json or {}
+    _log_api_command(f"/api/session/{session_id}/sync-power", payload)
+    
+    right = payload.get('right', {})
+    left = payload.get('left', {})
+    
+    # Update internal state (current_row)
+    if 'sph' in right: session.current_row.r_sph = float(right['sph'])
+    if 'cyl' in right: session.current_row.r_cyl = float(right['cyl'])
+    if 'axis' in right: session.current_row.r_axis = float(right['axis'])
+    
+    if 'sph' in left: session.current_row.l_sph = float(left['sph'])
+    if 'cyl' in left: session.current_row.l_cyl = float(left['cyl'])
+    if 'axis' in left: session.current_row.l_axis = float(left['axis'])
+    
+    return jsonify({
+        "session_id": session_id,
+        "status": "success"
+    })
+
+
+
 @app.route('/api/session/<session_id>/end', methods=['POST'])
 def end_session(session_id):
     """End session and get final prescription."""
@@ -198,6 +227,7 @@ if __name__ == '__main__':
     print("  POST /api/session/<id>/respond")
     print("  POST /api/session/<id>/jump")
     print("  POST /api/session/<id>/switch-chart")
+    print("  POST /api/session/<id>/sync-power")
     print("  GET  /api/session/<id>/status")
     print("  POST /api/session/<id>/end")
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=5050, debug=True)

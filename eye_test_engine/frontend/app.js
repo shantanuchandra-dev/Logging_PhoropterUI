@@ -2,7 +2,7 @@
 // Integrates with Flask API backend and Phoropter API
 
 const CONFIG = {
-    backendUrl: 'http://localhost:5000',
+    backendUrl: 'http://localhost:5050',
     phoropterUrl: 'https://rajasthan-royals.preprod.lenskart.com',
     phoropterId: 'phoropter-1'
 };
@@ -48,7 +48,123 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('Eye Test Engine Frontend Loaded');
     updateStatusIndicator(false);
     populateDirectCommands();
+    bindTableInteractions();
 });
+
+// ── Manual Refraction Adjustments ─────────────────────
+
+function bindTableInteractions() {
+    const table = document.getElementById('refractionTable');
+    if (table) {
+        // Disable context menu on the refraction area to allow right-click subtraction/addition
+        table.oncontextmenu = function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            return false;
+        };
+        // Add mousedown listeners to all editable cells
+        table.querySelectorAll('.rt-val').forEach(el => {
+            el.addEventListener('mousedown', (event) => handleTableMousedown(event, el));
+        });
+    }
+}
+
+async function handleTableMousedown(event, el) {
+    if (!sessionState.sessionId) {
+        alert('Please start a test session first.');
+        return;
+    }
+
+    // button 0 = left, button 2 = right
+    const action = (event.button === 0) ? 'subtract' : (event.button === 2 ? 'add' : null);
+    if (!action) return;
+
+    // Block default behavior
+    event.preventDefault();
+    event.stopPropagation();
+
+    const param = el.dataset.param; // sph, cyl, axis
+    const eye = el.dataset.eye; // R or L
+
+    let delta = 0.25;
+    if (param === 'axis') delta = 5;
+
+    // Left click subtracts, Right click adds
+    if (action === 'subtract') delta = -delta;
+
+    await applyManualPowerChange(eye, param, delta);
+}
+
+async function applyManualPowerChange(eye, param, delta) {
+    if (!sessionState.lastResponse || !sessionState.lastResponse.power) return;
+
+    // Ensure we have a working power object
+    const p = sessionState.lastResponse.power;
+    const eyeKey = eye === 'R' ? 'right' : 'left';
+
+    if (!p[eyeKey]) {
+        p[eyeKey] = { sph: 0, cyl: 0, axis: 180 };
+    }
+
+    let current = parseFloat(p[eyeKey][param]) || 0;
+    let newVal = current + delta;
+
+    if (param === 'axis') {
+        newVal = (Math.round(newVal) % 180);
+        if (newVal <= 0) newVal += 180;
+    }
+
+    p[eyeKey][param] = newVal;
+
+    // Update UI optimistically
+    updateSessionInfo(sessionState.lastResponse);
+
+    // Call backend to update phoropter
+    try {
+        showLoading(true);
+        // Note: The /api/session/.../set-power endpoint might not exist securely mapped for a partial update.
+        // We will call setPower directly from app.js to the phoropter using the existing wrapper
+        const reqPower = {
+            right: {
+                sph: p.right.sph || 0,
+                cyl: p.right.cyl || 0,
+                axis: p.right.axis || 180
+            },
+            left: {
+                sph: p.left.sph || 0,
+                cyl: p.left.cyl || 0,
+                axis: p.left.axis || 180
+            }
+        };
+
+        const currentOccluder = document.getElementById('occluderState').textContent || 'BINO';
+
+        // Sync the manually adjusted power with the backend session state
+        // so that the next test question calculates based on this new power.
+        if (sessionState.sessionId) {
+            try {
+                await fetch(`${CONFIG.backendUrl}/api/session/${sessionState.sessionId}/sync-power`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(reqPower)
+                });
+            } catch (syncErr) {
+                console.warn('Failed to sync manual power to backend:', syncErr);
+            }
+        }
+
+        await setPower(reqPower, currentOccluder);
+
+        addToHistory(`Manual Adjust: ${param.toUpperCase()} ${delta > 0 ? '+' : ''}${delta} [${eye}]`, 'adjust');
+    } catch (error) {
+        console.error('Error applying manual power:', error);
+        alert('Failed to push manual power to phoropter. Try again.');
+    } finally {
+        showLoading(false);
+    }
+}
+
+// ── Modals & Flow ─────────────────────────────────────
 
 function openArPowerModal() {
     const modal = document.getElementById('arPowerModal');
@@ -809,10 +925,24 @@ function updateSessionInfo(data) {
         const right = data.power.right || { sph: 0, cyl: 0, axis: 180 };
         const left = data.power.left || { sph: 0, cyl: 0, axis: 180 };
 
-        document.getElementById('rightPower').textContent =
-            `${right.sph.toFixed(2)} / ${right.cyl.toFixed(2)} / ${right.axis.toFixed(0)}°`;
-        document.getElementById('leftPower').textContent =
-            `${left.sph.toFixed(2)} / ${left.cyl.toFixed(2)} / ${left.axis.toFixed(0)}°`;
+        // Update refraction table cells directly
+        const rSphDoc = document.getElementById('rt-r-sph');
+        if (rSphDoc) rSphDoc.textContent = (right.sph >= 0 ? '+' : '') + right.sph.toFixed(2);
+
+        const rCylDoc = document.getElementById('rt-r-cyl');
+        if (rCylDoc) rCylDoc.textContent = (right.cyl >= 0 ? '+' : '') + right.cyl.toFixed(2);
+
+        const rAxisDoc = document.getElementById('rt-r-axis');
+        if (rAxisDoc) rAxisDoc.textContent = right.axis.toFixed(0);
+
+        const lSphDoc = document.getElementById('rt-l-sph');
+        if (lSphDoc) lSphDoc.textContent = (left.sph >= 0 ? '+' : '') + left.sph.toFixed(2);
+
+        const lCylDoc = document.getElementById('rt-l-cyl');
+        if (lCylDoc) lCylDoc.textContent = (left.cyl >= 0 ? '+' : '') + left.cyl.toFixed(2);
+
+        const lAxisDoc = document.getElementById('rt-l-axis');
+        if (lAxisDoc) lAxisDoc.textContent = left.axis.toFixed(0);
     }
 
     // Update occluder and chart
