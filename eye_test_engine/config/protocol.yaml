@@ -139,10 +139,33 @@ phases:
       green_chosen: "+0.25D to R_SPH (GAP - Green Add Plus)"
     exit_conditions:
       - type: "response_received"
+        next_phase: "validation_right"
+
+  validation_right:
+    id: "H"
+    name: "20/20 Validation (Right Eye)"
+    trigger:
+      occluder: "Left_Occluded"
+      charts: ["snellen_20_20"]
+    questions:
+      - "Can you read line 20/20 clearly?"
+    intents:
+      - "Yes"
+      - "No"
+      - "Blurry"
+      - "Too stressful"
+    adjustment_rules:
+      no_response: "Switch to 20/40 chart for refinement"
+      blurry_response: "Switch to 20/40 chart for refinement"
+      stressful_response: "Switch to 20/40 chart for refinement"
+    exit_conditions:
+      - type: "validation_complete"
+        next_phase: "left_eye_refraction"
+      - type: "fallback_accepted"
         next_phase: "left_eye_refraction"
 
   left_eye_refraction:
-    id: "D"
+    id: "I"
     name: "Left Eye Refraction (LE6.3)"
     trigger:
       occluder: "Right_Occluded"
@@ -173,7 +196,7 @@ phases:
         next_phase: "jcc_axis_left"
 
   jcc_axis_left:
-    id: "H"
+    id: "J"
     name: "JCC Axis Refinement (Left Eye)"
     trigger:
       occluder: ["Left_Axis_Flip1", "Left_Axis_Flip2"]
@@ -200,7 +223,7 @@ phases:
         next_phase: "jcc_power_left"
 
   jcc_power_left:
-    id: "I"
+    id: "K"
     name: "JCC Power Refinement (Left Eye)"
     trigger:
       occluder: ["Left_Power_Flip1", "Left_Power_Flip2"]
@@ -231,7 +254,7 @@ phases:
         next_phase: "duochrome_left"
 
   duochrome_left:
-    id: "J"
+    id: "L"
     name: "Duochrome (Left Eye)"
     trigger:
       occluder: "Right_Occluded"
@@ -247,10 +270,52 @@ phases:
       green_chosen: "+0.25D to L_SPH (GAP - Green Add Plus)"
     exit_conditions:
       - type: "response_received"
+        next_phase: "validation_left"
+
+  validation_left:
+    id: "M"
+    name: "20/20 Validation (Left Eye)"
+    trigger:
+      occluder: "Right_Occluded"
+      charts: ["snellen_20_20"]
+    questions:
+      - "Can you read line 20/20 clearly?"
+    intents:
+      - "Yes"
+      - "No"
+      - "Blurry"
+      - "Too stressful"
+    adjustment_rules:
+      no_response: "Switch to 20/40 chart for refinement"
+      blurry_response: "Switch to 20/40 chart for refinement"
+      stressful_response: "Switch to 20/40 chart for refinement"
+    exit_conditions:
+      - type: "validation_complete"
+        next_phase: "validation_distance"
+      - type: "fallback_accepted"
+        next_phase: "validation_distance"
+
+  validation_distance:
+    id: "N"
+    name: "6/6 Validation (Binocular Distance)"
+    trigger:
+      occluder: "BINO"
+      charts: ["snellen_20_20"]
+    questions:
+      - "Can you read line 20/20 comfortably with both eyes?"
+    intents:
+      - "Yes"
+      - "No"
+      - "Blurry"
+    adjustment_rules:
+      no_response: "Allow minor binocular refinement"
+      blurry_response: "Allow minor binocular refinement"
+    exit_conditions:
+      - type: "validation_complete"
         next_phase: "binocular_balance"
 
   binocular_balance:
-    id: "K"
+    id: "O"
     name: "Binocular Balance (Step 6.5)"
     trigger:
       occluder: "BINO"
@@ -267,12 +332,74 @@ phases:
       bottom_blurry: "+0.25D to R_SPH"
     exit_conditions:
       - type: "balance_verified"
-        next_phase: "test_complete"
+        next_phase: "near_add_right"
       - type: "both_occluded_check"
         next_phase: "both_occluded"
 
+  near_add_right:
+    id: "P"
+    name: "Near Vision - Right Eye ADD"
+    trigger:
+      occluder: "Left_Occluded"
+      charts: ["snellen_near_vision"]
+    questions:
+      - "Covering your left eye. Can you read the near chart clearly with your right eye?"
+    intents:
+      - "Blurry"
+      - "Clear"
+      - "Comfortable"
+    adjustment_rules:
+      blurry: "+0.25D to R_ADD"
+      clear: "Offer -0.25D R_ADD adjustment"
+      comfortable: "Accept current R_ADD, proceed to Left eye"
+    exit_conditions:
+      - type: "near_right_confirmed"
+        next_phase: "near_add_left"
+
+  near_add_left:
+    id: "Q"
+    name: "Near Vision - Left Eye ADD"
+    trigger:
+      occluder: "Right_Occluded"
+      charts: ["snellen_near_vision"]
+    questions:
+      - "Covering your right eye. Can you read the near chart clearly with your left eye?"
+    intents:
+      - "Blurry"
+      - "Clear"
+      - "Comfortable"
+    adjustment_rules:
+      blurry: "+0.25D to L_ADD"
+      clear: "Offer -0.25D L_ADD adjustment"
+      comfortable: "Accept current L_ADD, proceed to Binocular"
+    exit_conditions:
+      - type: "near_left_confirmed"
+        next_phase: "near_add_bino"
+
+  near_add_bino:
+    id: "R"
+    name: "Near Vision - Binocular ADD"
+    trigger:
+      occluder: "BINO"
+      charts: ["snellen_near_vision"]
+    questions:
+      - "Both eyes open. Can you read the near chart comfortably with both eyes?"
+    intents:
+      - "Blurry"
+      - "Clear"
+      - "Comfortable"
+      - "Confirmed"
+    adjustment_rules:
+      blurry: "+0.25D to both ADD"
+      clear: "Offer -0.25D ADD adjustment"
+      comfortable: "Accept current ADD power"
+      confirmed: "Finalize near prescription"
+    exit_conditions:
+      - type: "near_bino_confirmed"
+        next_phase: "test_complete"
+
   both_occluded:
-    id: "L"
+    id: "BOTH_OCC"
     name: "Both Occluded Check"
     trigger:
       occluder: "Both_Occluded"
@@ -284,7 +411,7 @@ phases:
         next_phase: "test_complete"
 
   detection_failed:
-    id: "M"
+    id: "DETECT_FAIL"
     name: "Detection Failed (QA Marker)"
     trigger:
       occluder: "Detection_Failed"
@@ -352,3 +479,9 @@ state_variables:
   - unable_read_count_left
   - last_question
   - last_occluder
+  - add_right
+  - add_left
+  - validation_right_fallback_power
+  - validation_left_fallback_power
+  - validation_right_status
+  - validation_left_status

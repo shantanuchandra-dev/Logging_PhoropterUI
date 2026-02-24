@@ -83,11 +83,13 @@ def get_status(session_id):
                 "sph": session.current_row.r_sph,
                 "cyl": session.current_row.r_cyl,
                 "axis": session.current_row.r_axis,
+                "add": getattr(session, "add_right", 0.0),
             },
             "left": {
                 "sph": session.current_row.l_sph,
                 "cyl": session.current_row.l_cyl,
                 "axis": session.current_row.l_axis,
+                "add": getattr(session, "add_left", 0.0),
             }
         }
     })

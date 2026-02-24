@@ -1,70 +1,54 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -e
 
-# Eye Test Engine - Frontend Launcher
-# This script starts both the backend API and opens the frontend
+# Simple frontend + backend launcher for development
+# Usage: run from the eye_test_engine directory: ./start_frontend.sh
 
-echo "=========================================="
-echo "Eye Test Engine - Interactive Frontend"
-echo "=========================================="
-echo ""
+cd "$(dirname "$0")" || exit 1
 
-# Check if we're in the right directory
-if [ ! -f "api_server.py" ]; then
-    echo "Error: Please run this script from the eye_test_engine directory"
-    exit 1
+# Prefer a local venv in this folder, otherwise try parent .venv
+VENV_DIR=""
+if [ -d "./venv" ]; then
+    VENV_DIR="./venv"
+elif [ -d "../.venv" ]; then
+    VENV_DIR="../.venv"
+elif [ -d ".venv" ]; then
+    VENV_DIR=".venv"
 fi
 
-# Check Python dependencies
-echo "Checking dependencies..."
-python3 -c "import flask, flask_cors, yaml" 2>/dev/null
-if [ $? -ne 0 ]; then
-    echo "Installing required packages..."
-    pip3 install flask flask-cors pyyaml
+if [ -n "$VENV_DIR" ]; then
+    echo "Activating virtualenv: $VENV_DIR"
+    # shellcheck disable=SC1091
+    source "$VENV_DIR/bin/activate"
+else
+    echo "No virtualenv found; using system Python. Create one with: python3 -m venv venv"
 fi
 
-echo "✓ Dependencies OK"
-echo ""
+PYTHON=$(which python3 || which python)
+echo "Using python: $PYTHON"
 
-# Start backend server in background
-echo "Starting backend API server on port 5000..."
-PYTHONPATH=.. python3 -m eye_test_engine.api_server &
+echo "Starting backend API server (port 5050)..."
+PYTHONPATH=.. "$PYTHON" -m eye_test_engine.api_server &
 BACKEND_PID=$!
-echo "✓ Backend started (PID: $BACKEND_PID)"
-echo ""
+echo "Backend PID: $BACKEND_PID"
 
-# Wait for backend to start
 sleep 2
 
-# Start frontend server
-echo "Starting frontend server on port 8080..."
+echo "Starting frontend static server (port 8080)..."
 cd frontend
-python3 -m http.server 8080 &
+"$PYTHON" -m http.server 8080 &
 FRONTEND_PID=$!
-echo "✓ Frontend started (PID: $FRONTEND_PID)"
-echo ""
+cd - >/dev/null
+echo "Frontend PID: $FRONTEND_PID"
 
-# Open browser
-echo "Opening browser..."
-sleep 1
+echo "Frontend: http://localhost:8080"
+echo "Backend:  http://localhost:5050"
+
 if [[ "$OSTYPE" == "darwin"* ]]; then
-    # macOS
-    open http://localhost:8080
+    open http://localhost:8080 || true
 elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
-    # Linux
-    xdg-open http://localhost:8080
+    xdg-open http://localhost:8080 || true
 fi
 
-echo ""
-echo "=========================================="
-echo "Eye Test Engine is now running!"
-echo "=========================================="
-echo ""
-echo "Backend API:  http://localhost:5000"
-echo "Frontend UI:  http://localhost:8080"
-echo ""
-echo "Press Ctrl+C to stop all servers"
-echo ""
-
-# Wait for Ctrl+C
-trap "echo ''; echo 'Stopping servers...'; kill $BACKEND_PID $FRONTEND_PID; exit" INT
+trap 'echo "Stopping servers..."; kill "$BACKEND_PID" "$FRONTEND_PID" 2>/dev/null || true; exit' INT
 wait

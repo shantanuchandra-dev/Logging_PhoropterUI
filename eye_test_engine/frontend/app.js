@@ -943,6 +943,24 @@ function updateSessionInfo(data) {
 
         const lAxisDoc = document.getElementById('rt-l-axis');
         if (lAxisDoc) lAxisDoc.textContent = left.axis.toFixed(0);
+
+        // Show ADD column only during near vision phases
+        const phaseText = (data.phase || '').toLowerCase();
+        const isNearPhase = phaseText.includes('near vision');
+        const addColHeader = document.getElementById('addColHeader');
+        const rAddCell = document.getElementById('rt-r-add');
+        const lAddCell = document.getElementById('rt-l-add');
+        const addDisplay = isNearPhase ? '' : 'none';
+        if (addColHeader) addColHeader.style.display = addDisplay;
+        if (rAddCell) rAddCell.style.display = addDisplay;
+        if (lAddCell) lAddCell.style.display = addDisplay;
+
+        if (isNearPhase) {
+            const rAdd = (right.add || 0);
+            const lAdd = (left.add || 0);
+            if (rAddCell) rAddCell.textContent = '+' + rAdd.toFixed(2);
+            if (lAddCell) lAddCell.textContent = '+' + lAdd.toFixed(2);
+        }
     }
 
     // Update occluder and chart
@@ -1089,6 +1107,9 @@ async function completeTest() {
         // Display final prescription
         if (data.final_prescription) {
             const rx = data.final_prescription;
+            const rAdd = rx.right_eye.add || 0;
+            const lAdd = rx.left_eye.add || 0;
+            const hasAdd = rAdd !== 0 || lAdd !== 0;
             const prescriptionHtml = `
                 <div class="info-section">
                     <h4>Final Prescription</h4>
@@ -1097,7 +1118,8 @@ async function completeTest() {
                         <span class="info-value">
                             SPH: ${rx.right_eye.sph.toFixed(2)} | 
                             CYL: ${rx.right_eye.cyl.toFixed(2)} | 
-                            AXIS: ${rx.right_eye.axis.toFixed(0)}°
+                            AXIS: ${rx.right_eye.axis.toFixed(0)}°${hasAdd ? ` | 
+                            ADD: +${rAdd.toFixed(2)}` : ''}
                         </span>
                     </div>
                     <div class="info-item">
@@ -1105,7 +1127,8 @@ async function completeTest() {
                         <span class="info-value">
                             SPH: ${rx.left_eye.sph.toFixed(2)} | 
                             CYL: ${rx.left_eye.cyl.toFixed(2)} | 
-                            AXIS: ${rx.left_eye.axis.toFixed(0)}°
+                            AXIS: ${rx.left_eye.axis.toFixed(0)}°${hasAdd ? ` | 
+                            ADD: +${lAdd.toFixed(2)}` : ''}
                         </span>
                     </div>
                     <div class="info-item">

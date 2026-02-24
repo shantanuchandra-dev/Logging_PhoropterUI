@@ -7,6 +7,40 @@ This document provides complete `curl` commands for controlling the TOPCON phoro
 
 ---
 
+## 0. Preload AR / Lenso Values (Initial Reading)
+
+Use this command to set the initial prescription values on the TOPCON from Auto-Refractor (AR) or Lensometer (Lenso) readings. This physically moves the phoropter to the specified values.
+
+> [!IMPORTANT]
+> **Always call `/reset` first** before preloading values to ensure the phoropter starts from a known 0/0/180 state.
+
+```bash
+# Step 1: Reset to zero
+curl -X POST https://rajasthan-royals.preprod.lenskart.com/phoropter/phoropter-1/reset
+
+# Step 2: Preload AR / Lenso values
+curl -X POST https://rajasthan-royals.preprod.lenskart.com/phoropter/phoropter-1/run-tests \
+  -H "Content-Type: application/json" \
+  -d '{
+    "test_cases": [
+      {
+        "case_id": 1,
+        "aux_lens": "BINO",
+        "right_eye": {"sph": -2.00, "cyl": -1.00, "axis": 90},
+        "left_eye": {"sph": -1.75, "cyl": -1.00, "axis": 180}
+      }
+    ]
+  }'
+```
+
+| Parameter | Description |
+| :--- | :--- |
+| **aux_lens** | Set to `"BINO"` for initial loading (both eyes visible) |
+| **right_eye** | AR/Lenso values for right eye: `sph`, `cyl`, `axis` |
+| **left_eye** | AR/Lenso values for left eye: `sph`, `cyl`, `axis` |
+
+---
+
 ## 1. Vision Correction (Power Adjustments)
 
 ### Set Eyes & Occluder (Combined)
@@ -142,7 +176,6 @@ Individual commands for specific chart items on **Chart1** and **Chart2**.
 | **snellen_chart_25_20_15** | chart_16 | Snellen 25/20/15 |
 | **Duochrome** | chart_17 | Duochrome Test |
 | **JCC Chart** | chart_19 | JCC Cross Cylinder Chart |
-| **BINO Chart** | chart_20 | Binocular Balance Chart |
 
 #### Individual Commands (Chart 1)
 
@@ -197,7 +230,7 @@ curl -X POST https://rajasthan-royals.preprod.lenskart.com/phoropter/phoropter-1
   -H "Content-Type: application/json" \
   -d '{ "test_cases": [{ "chart": { "tab": "Chart1", "chart_items": ["chart_19"] } }] }'
 
-# BINO Chart (Binocular Balance)
+# BINO Chart (chart_20)
 curl -X POST https://rajasthan-royals.preprod.lenskart.com/phoropter/phoropter-1/run-tests \
   -H "Content-Type: application/json" \
   -d '{ "test_cases": [{ "chart": { "tab": "Chart1", "chart_items": ["chart_20"] } }] }'
@@ -209,6 +242,81 @@ curl -X POST https://rajasthan-royals.preprod.lenskart.com/phoropter/phoropter-1
 curl -X POST https://rajasthan-royals.preprod.lenskart.com/phoropter/phoropter-1/run-tests \
   -H "Content-Type: application/json" \
   -d '{ "test_cases": [{ "chart": { "tab": "Chart2", "chart_items": ["chart_1", "chart_2", "chart_3"] } }] }'
+```
+
+### 3.1 Charts with VA (Size Selection)
+You can now select specific optotypes/sizes for Snellen and E-Charts by providing the size value after the chart ID.
+
+| Chart | Size Options |
+| :--- | :--- |
+| **chart_10** | 200, 150 |
+| **chart_11** | 100, 80 |
+| **chart_12** | 70, 60, 50 |
+| **chart_13** | 40, 30, 25 |
+| **chart_14** | 20, 15, 10 |
+| **chart_15** | 20_1, 20_2, 20_3 |
+| **chart_16** | 25, 20, 15 |
+| **chart_20 (BINO)** | R, L |
+
+#### Example: Show Snellen Chart 100/80 and select Size 100
+```bash
+curl -X POST https://rajasthan-royals.preprod.lenskart.com/phoropter/phoropter-1/run-tests \
+  -H "Content-Type: application/json" \
+  -d '{
+    "test_cases": [
+      { "chart": { "tab": "Chart1", "chart_items": ["chart_11", "100"] } }
+    ]
+  }'
+```
+
+#### Individual Commands for all VA Charts (Chart 1)
+
+```bash
+# chart_10 (200, 150)
+curl -X POST https://rajasthan-royals.preprod.lenskart.com/phoropter/phoropter-1/run-tests -H "Content-Type: application/json" -d '{ "test_cases": [{ "chart": { "tab": "Chart1", "chart_items": ["chart_10", "200"] } }] }'
+curl -X POST https://rajasthan-royals.preprod.lenskart.com/phoropter/phoropter-1/run-tests -H "Content-Type: application/json" -d '{ "test_cases": [{ "chart": { "tab": "Chart1", "chart_items": ["chart_10", "150"] } }] }'
+
+# chart_11 (100, 80)
+curl -X POST https://rajasthan-royals.preprod.lenskart.com/phoropter/phoropter-1/run-tests -H "Content-Type: application/json" -d '{ "test_cases": [{ "chart": { "tab": "Chart1", "chart_items": ["chart_11", "100"] } }] }'
+curl -X POST https://rajasthan-royals.preprod.lenskart.com/phoropter/phoropter-1/run-tests -H "Content-Type: application/json" -d '{ "test_cases": [{ "chart": { "tab": "Chart1", "chart_items": ["chart_11", "80"] } }] }'
+
+# chart_12 (70, 60, 50)
+curl -X POST https://rajasthan-royals.preprod.lenskart.com/phoropter/phoropter-1/run-tests -H "Content-Type: application/json" -d '{ "test_cases": [{ "chart": { "tab": "Chart1", "chart_items": ["chart_12", "70"] } }] }'
+curl -X POST https://rajasthan-royals.preprod.lenskart.com/phoropter/phoropter-1/run-tests -H "Content-Type: application/json" -d '{ "test_cases": [{ "chart": { "tab": "Chart1", "chart_items": ["chart_12", "60"] } }] }'
+curl -X POST https://rajasthan-royals.preprod.lenskart.com/phoropter/phoropter-1/run-tests -H "Content-Type: application/json" -d '{ "test_cases": [{ "chart": { "tab": "Chart1", "chart_items": ["chart_12", "50"] } }] }'
+
+# chart_13 (40, 30, 25)
+curl -X POST https://rajasthan-royals.preprod.lenskart.com/phoropter/phoropter-1/run-tests -H "Content-Type: application/json" -d '{ "test_cases": [{ "chart": { "tab": "Chart1", "chart_items": ["chart_13", "40"] } }] }'
+curl -X POST https://rajasthan-royals.preprod.lenskart.com/phoropter/phoropter-1/run-tests -H "Content-Type: application/json" -d '{ "test_cases": [{ "chart": { "tab": "Chart1", "chart_items": ["chart_13", "30"] } }] }'
+curl -X POST https://rajasthan-royals.preprod.lenskart.com/phoropter/phoropter-1/run-tests -H "Content-Type: application/json" -d '{ "test_cases": [{ "chart": { "tab": "Chart1", "chart_items": ["chart_13", "25"] } }] }'
+
+# chart_14 (20, 15, 10)
+curl -X POST https://rajasthan-royals.preprod.lenskart.com/phoropter/phoropter-1/run-tests -H "Content-Type: application/json" -d '{ "test_cases": [{ "chart": { "tab": "Chart1", "chart_items": ["chart_14", "20"] } }] }'
+curl -X POST https://rajasthan-royals.preprod.lenskart.com/phoropter/phoropter-1/run-tests -H "Content-Type: application/json" -d '{ "test_cases": [{ "chart": { "tab": "Chart1", "chart_items": ["chart_14", "15"] } }] }'
+curl -X POST https://rajasthan-royals.preprod.lenskart.com/phoropter/phoropter-1/run-tests -H "Content-Type: application/json" -d '{ "test_cases": [{ "chart": { "tab": "Chart1", "chart_items": ["chart_14", "10"] } }] }'
+
+# chart_15 (20_1, 20_2, 20_3) - Different columns for 20 VA
+curl -X POST https://rajasthan-royals.preprod.lenskart.com/phoropter/phoropter-1/run-tests -H "Content-Type: application/json" -d '{ "test_cases": [{ "chart": { "tab": "Chart1", "chart_items": ["chart_15", "20_1"] } }] }'
+curl -X POST https://rajasthan-royals.preprod.lenskart.com/phoropter/phoropter-1/run-tests -H "Content-Type: application/json" -d '{ "test_cases": [{ "chart": { "tab": "Chart1", "chart_items": ["chart_15", "20_2"] } }] }'
+curl -X POST https://rajasthan-royals.preprod.lenskart.com/phoropter/phoropter-1/run-tests -H "Content-Type: application/json" -d '{ "test_cases": [{ "chart": { "tab": "Chart1", "chart_items": ["chart_15", "20_3"] } }] }'
+
+# chart_16 (25, 20, 15)
+curl -X POST https://rajasthan-royals.preprod.lenskart.com/phoropter/phoropter-1/run-tests -H "Content-Type: application/json" -d '{ "test_cases": [{ "chart": { "tab": "Chart1", "chart_items": ["chart_16", "25"] } }] }'
+curl -X POST https://rajasthan-royals.preprod.lenskart.com/phoropter/phoropter-1/run-tests -H "Content-Type: application/json" -d '{ "test_cases": [{ "chart": { "tab": "Chart1", "chart_items": ["chart_16", "20"] } }] }'
+curl -X POST https://rajasthan-royals.preprod.lenskart.com/phoropter/phoropter-1/run-tests -H "Content-Type: application/json" -d '{ "test_cases": [{ "chart": { "tab": "Chart1", "chart_items": ["chart_16", "15"] } }] }'
+
+# chart_20 (R, L selection)
+curl -X POST https://rajasthan-royals.preprod.lenskart.com/phoropter/phoropter-1/run-tests -H "Content-Type: application/json" -d '{ "test_cases": [{ "chart": { "tab": "Chart1", "chart_items": ["chart_20", "R"] } }] }'
+curl -X POST https://rajasthan-royals.preprod.lenskart.com/phoropter/phoropter-1/run-tests -H "Content-Type: application/json" -d '{ "test_cases": [{ "chart": { "tab": "Chart1", "chart_items": ["chart_20", "L"] } }] }'
+```
+
+---
+
+### 3.2 Near Chart (Chart 5)
+Switch to the Near Vision tab (Chart 5). This is required before adjusting **ADD** power.
+
+```bash
+curl -X POST "https://rajasthan-royals.preprod.lenskart.com/phoropter/phoropter-1/run-tests" -H "Content-Type: application/json" -d '{"sessionId":"near_vision_test","phoropter_id":"CV-5000PC","test_cases":[{"case_id":1,"chart":{"tab":"Chart5","chart_items":["chart_5"]}}]}'
 ```
 
 ---
@@ -239,7 +347,39 @@ curl -X POST https://rajasthan-royals.preprod.lenskart.com/phoropter/phoropter-1
 
 ---
 
-## 6. Test Suite for State Management
+## 6. Internal State Synchronization
+
+### Sync State (No Clicks)
+Updates the agent's internal tracking of the phoropter state **without** triggering any physical interactions on the machine. This is useful for "telling" the agent the current starting point if it has drifted or if the brain knows the state better.
+
+```bash
+curl -X POST https://rajasthan-royals.preprod.lenskart.com/phoropter/phoropter-1/sync-state \
+  -H "Content-Type: application/json" \
+  -d '{
+    "right_eye": {"sph": -3.00, "cyl": -1.50, "axis": 45},
+    "left_eye": {"sph": -2.50, "cyl": -1.25, "axis": 135},
+    "aux_lens": "AuxLensR",
+    "pd": 64.5
+  }'
+```
+
+### Final Rx State Sync (Near Vision)
+Sync the final state after Near Vision adjustments (including ADD) to the internal tracker.
+
+```bash
+curl -X POST https://rajasthan-royals.preprod.lenskart.com/phoropter/phoropter-1/sync-state \
+  -H "Content-Type: application/json" \
+  -d '{
+    "right_eye": { "sph": -2.00, "cyl": -1.00, "axis": 90, "add": 1.25 },
+    "left_eye":  { "sph": -1.75, "cyl": -1.00, "axis": 180, "add": 1.25 },
+    "aux_lens": "BINO",
+    "pd": 64
+  }'
+```
+
+---
+
+## 7. Test Suite for State Management
 
 These test cases demonstrate the dual-mode state management behavior.
 

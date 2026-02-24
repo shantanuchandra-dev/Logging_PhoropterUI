@@ -1048,6 +1048,7 @@
                                 <th>SPH</th>
                                 <th>CYL</th>
                                 <th>AXIS</th>
+                                <th id="addColHeader" style="display:none;">ADD</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -1057,6 +1058,7 @@
                                 <td class="rt-val" id="rt-r-sph" data-param="sph" data-eye="R">0.00</td>
                                 <td class="rt-val" id="rt-r-cyl" data-param="cyl" data-eye="R">0.00</td>
                                 <td class="rt-val" id="rt-r-axis" data-param="axis" data-eye="R">180</td>
+                                <td class="rt-val rt-add-val" id="rt-r-add" style="display:none;">0.00</td>
                             </tr>
                             <!-- Left Eye -->
                             <tr class="rt-row" data-eye="L">
@@ -1064,6 +1066,7 @@
                                 <td class="rt-val" id="rt-l-sph" data-param="sph" data-eye="L">0.00</td>
                                 <td class="rt-val" id="rt-l-cyl" data-param="cyl" data-eye="L">0.00</td>
                                 <td class="rt-val" id="rt-l-axis" data-param="axis" data-eye="L">180</td>
+                                <td class="rt-add-val" id="rt-l-add" style="display:none;">0.00</td>
                             </tr>
                         </tbody>
                     </table>
@@ -1110,6 +1113,9 @@
                     <option value="jcc_power_left">Phase I: JCC Power Left (Step 6.4)</option>
                     <option value="duochrome_left">Phase J: Duochrome Left (Step 6.4)</option>
                     <option value="binocular_balance">Phase K: Binocular Balance (Step 6.5)</option>
+                    <option value="near_add_right">Phase P: Near Vision - Right Eye ADD</option>
+                    <option value="near_add_left">Phase Q: Near Vision - Left Eye ADD</option>
+                    <option value="near_add_bino">Phase R: Near Vision - Binocular ADD</option>
                 </select>
                 <button onclick="jumpToPhase()" id="jumpBtn">Go</button>
             </div>

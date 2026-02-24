@@ -31,11 +31,17 @@ class InteractiveSession:
             "jcc_axis_right": "Phase E: JCC Axis Right (Step 6.2)",
             "jcc_power_right": "Phase F: JCC Power Right (Step 6.2)",
             "duochrome_right": "Phase G: Duochrome Right (Step 6.2)",
-            "left_eye_refraction": "Phase D: Left Eye Refraction (Step 6.3)",
-            "jcc_axis_left": "Phase H: JCC Axis Left (Step 6.4)",
-            "jcc_power_left": "Phase I: JCC Power Left (Step 6.4)",
-            "duochrome_left": "Phase J: Duochrome Left (Step 6.4)",
-            "binocular_balance": "Phase K: Binocular Balance (Step 6.5)",
+            "validation_right": "Phase H: 20/20 Validation Right",
+            "left_eye_refraction": "Phase I: Left Eye Refraction (Step 6.3)",
+            "jcc_axis_left": "Phase J: JCC Axis Left (Step 6.4)",
+            "jcc_power_left": "Phase K: JCC Power Left (Step 6.4)",
+            "duochrome_left": "Phase L: Duochrome Left (Step 6.4)",
+            "validation_left": "Phase M: 20/20 Validation Left",
+            "validation_distance": "Phase N: 6/6 Validation (Distance)",
+            "binocular_balance": "Phase O: Binocular Balance (Step 6.5)",
+            "near_add_right": "Phase P: Near Vision - Right Eye ADD",
+            "near_add_left": "Phase Q: Near Vision - Left Eye ADD",
+            "near_add_bino": "Phase R: Near Vision - Binocular ADD",
         }
         
         # Current test state
@@ -56,6 +62,16 @@ class InteractiveSession:
         # When crossing out of threshold: SPH -0.25D
         self.r_at_cyl_threshold = False
         self.l_at_cyl_threshold = False
+
+        # ADD power tracking for near vision phases
+        self.add_right = 0.0
+        self.add_left = 0.0
+
+        # 20/20 validation fallback tracking
+        self.validation_right_fallback_power = None
+        self.validation_left_fallback_power = None
+        self.validation_right_status = None
+        self.validation_left_status = None
         
         # Refraction state tracking
         # All available charts for selection
@@ -88,7 +104,7 @@ class InteractiveSession:
         self.duochrome_last_choice: Optional[str] = None
         self.duochrome_same_choice_count = 0
         
-        # Chart mappings
+        # Chart mappings (snellen_20_20 used by protocol for validation phases)
         self.chart_map = {
             "echart_400": "chart_9",
             "snellen_chart_200_150": "chart_10",
@@ -97,11 +113,17 @@ class InteractiveSession:
             "snellen_chart_40_30_25": "chart_13",
             "snellen_chart_20_15_10": "chart_14",
             "snellen_chart_20_20_20": "chart_15",
+            "snellen_20_20": "chart_15",
             "snellen_chart_25_20_15": "chart_16",
             "duochrome": "chart_17",
             "jcc_chart": "chart_19",
             "bino_chart": "chart_20",
+            "near_chart": "chart_5",
         }
+        # 20/20 validation fallback: when in 20/40 we track sub-state for Better/Same/Worse
+        self._validation_fallback_active = None  # "right", "left", or None
+        self._validation_fallback_refine_count = 0
+        self._validation_fallback_max_refines = 4
     
     def _init_row(self) -> RowContext:
         """Initialize a row with restart state."""
@@ -166,34 +188,48 @@ class InteractiveSession:
         subprocess.run(cmd, shell=True, capture_output=True)
         print("✓ Phoropter reset to 0/0/180")
     
-    def set_chart(self, chart_name: str):
-        """Display a chart on the phoropter."""
+    def set_chart(self, chart_name: str, size: Optional[str] = None, tab: str = "Chart1"):
+        """Display a chart on the phoropter. Optional size for VA charts (e.g. '40' for 20/40, '20_1' for 20/20)."""
         chart_id = self.chart_map.get(chart_name)
         if not chart_id:
             print(f"Warning: Unknown chart {chart_name}")
             return
-        
+        chart_items = [chart_id] if size is None else [chart_id, size]
         payload = {
             "test_cases": [{
                 "chart": {
-                    "tab": "Chart1",
-                    "chart_items": [chart_id]
+                    "tab": tab,
+                    "chart_items": chart_items
                 }
             }]
         }
-        
         cmd = f"""curl -X POST {self.api_endpoint} \\
   -H "Content-Type: application/json" \\
   -d '{json.dumps(payload)}'"""
         print(f"[CMD] {cmd}")
         subprocess.run(cmd, shell=True, capture_output=True)
         self.current_row.chart_display = chart_name
-        print(f"✓ Displaying: {chart_name}")
+        print(f"✓ Displaying: {chart_name}" + (f" size={size}" if size else ""))
+
+    def set_chart_near(self):
+        """Switch to Near Vision tab (Chart 5). Required before ADD adjustment."""
+        payload = {
+            "test_cases": [{
+                "chart": {"tab": "Chart5", "chart_items": ["chart_5"]}
+            }]
+        }
+        cmd = f"""curl -X POST {self.api_endpoint} \\
+  -H "Content-Type: application/json" \\
+  -d '{json.dumps(payload)}'"""
+        print(f"[CMD] {cmd}")
+        subprocess.run(cmd, shell=True, capture_output=True)
+        self.current_row.chart_display = "near_chart"
+        print("✓ Displaying: Near chart (Chart 5)")
     
     def set_power(self, r_sph: float = None, r_cyl: float = None, r_axis: float = None,
                   l_sph: float = None, l_cyl: float = None, l_axis: float = None,
-                  occluder: str = None):
-        """Set power and occluder on phoropter."""
+                  r_add: float = None, l_add: float = None, occluder: str = None):
+        """Set power and occluder on phoropter. Optional r_add/l_add for near vision."""
         # Build payload
         right_eye = {}
         if r_sph is not None:
@@ -205,7 +241,11 @@ class InteractiveSession:
         if r_axis is not None:
             right_eye["axis"] = r_axis
             self.current_row.r_axis = r_axis
-        
+        if r_add is not None:
+            right_eye["add"] = r_add
+            self.add_right = r_add
+            self.current_row.r_add = r_add
+
         left_eye = {}
         if l_sph is not None:
             left_eye["sph"] = l_sph
@@ -216,7 +256,11 @@ class InteractiveSession:
         if l_axis is not None:
             left_eye["axis"] = l_axis
             self.current_row.l_axis = l_axis
-        
+        if l_add is not None:
+            left_eye["add"] = l_add
+            self.add_left = l_add
+            self.current_row.l_add = l_add
+
         payload = {"test_cases": [{}]}
         
         if right_eye:
@@ -257,29 +301,38 @@ class InteractiveSession:
                                    prev_l_sph: float, prev_l_cyl: float, prev_l_axis: float,
                                    r_sph: float, r_cyl: float, r_axis: float,
                                    l_sph: float, l_cyl: float, l_axis: float,
-                                   prev_aux_lens: str = None, aux_lens: str = None):
+                                   prev_aux_lens: str = None, aux_lens: str = None,
+                                   r_add: float = None, l_add: float = None):
         """Set power with previous state for accurate click calculations.
-        
-        This uses the vision correction API with previous state to ensure
-        accurate click calculations when the agent's internal state might be out of sync.
+        Optional r_add/l_add for near vision (if backend supports add in run-tests).
         """
-        # Build payload with previous and current state
+        prev_right = {"sph": prev_r_sph, "cyl": prev_r_cyl, "axis": prev_r_axis}
+        prev_left = {"sph": prev_l_sph, "cyl": prev_l_cyl, "axis": prev_l_axis}
+        right_eye = {"sph": r_sph, "cyl": r_cyl, "axis": r_axis}
+        left_eye = {"sph": l_sph, "cyl": l_cyl, "axis": l_axis}
+        if r_add is not None:
+            right_eye["add"] = r_add
+            self.add_right = r_add
+            self.current_row.r_add = r_add
+        if l_add is not None:
+            left_eye["add"] = l_add
+            self.add_left = l_add
+            self.current_row.l_add = l_add
+
         payload = {
             "test_cases": [{
                 "case_id": 1,
-                "prev_right_eye": {"sph": prev_r_sph, "cyl": prev_r_cyl, "axis": prev_r_axis},
-                "prev_left_eye": {"sph": prev_l_sph, "cyl": prev_l_cyl, "axis": prev_l_axis},
-                "right_eye": {"sph": r_sph, "cyl": r_cyl, "axis": r_axis},
-                "left_eye": {"sph": l_sph, "cyl": l_cyl, "axis": l_axis}
+                "prev_right_eye": prev_right,
+                "prev_left_eye": prev_left,
+                "right_eye": right_eye,
+                "left_eye": left_eye
             }]
         }
-        
-        # Add aux_lens if provided
-        # if prev_aux_lens:
-        #     payload["test_cases"][0]["prev_aux_lens"] = prev_aux_lens
-        # if aux_lens:
-        #     payload["test_cases"][0]["aux_lens"] = aux_lens
-        
+        if prev_aux_lens:
+            payload["test_cases"][0]["prev_aux_lens"] = prev_aux_lens
+        if aux_lens:
+            payload["test_cases"][0]["aux_lens"] = aux_lens
+
         # Update internal state
         self.current_row.r_sph = r_sph
         self.current_row.r_cyl = r_cyl
@@ -407,6 +460,8 @@ class InteractiveSession:
             return self._process_jcc_power_right(intent)
         elif self.current_phase == "duochrome_right":
             return self._process_duochrome_right(intent)
+        elif self.current_phase == "validation_right":
+            return self._process_validation_right(intent)
         elif self.current_phase == "left_eye_refraction":
             return self._process_left_eye_refraction(intent)
         elif self.current_phase == "jcc_axis_left":
@@ -415,8 +470,18 @@ class InteractiveSession:
             return self._process_jcc_power_left(intent)
         elif self.current_phase == "duochrome_left":
             return self._process_duochrome_left(intent)
+        elif self.current_phase == "validation_left":
+            return self._process_validation_left(intent)
+        elif self.current_phase == "validation_distance":
+            return self._process_validation_distance(intent)
         elif self.current_phase == "binocular_balance":
             return self._process_binocular_balance(intent)
+        elif self.current_phase == "near_add_right":
+            return self._process_near_add_right(intent)
+        elif self.current_phase == "near_add_left":
+            return self._process_near_add_left(intent)
+        elif self.current_phase == "near_add_bino":
+            return self._process_near_add_bino(intent)
         
         # Default: complete
         return {
@@ -1488,36 +1553,26 @@ class InteractiveSession:
             self.current_row = self._copy_row_state()
             self.current_row.r_sph -= 0.25
             if reversal:
-                # On reversal, transition but include updated power in response
-                response = self._transition_to_left_eye_refraction()
-                # Re-add power to response so frontend displays updated value
+                response = self._transition_to_validation_right()
                 response['power'] = self._build_response()['power']
                 return response
-            # Stay in duochrome for another round
             return self._build_response()
-            
+
         elif intent == "Green":
-            # Save current state before making changes
             self.previous_state = self._copy_row_state()
             self.show_prev_state_option = True
-            
-            # GAP: Green Add Plus - increase SPH
             reversal = self._record_duochrome_choice("green")
-            self.jcc_control("increase")  # Phoropter increases SPH by 0.25D
+            self.jcc_control("increase")
             self.current_row = self._copy_row_state()
             self.current_row.r_sph += 0.25
             if reversal:
-                # On reversal, transition but include updated power in response
-                response = self._transition_to_left_eye_refraction()
-                # Re-add power to response so frontend displays updated value
+                response = self._transition_to_validation_right()
                 response['power'] = self._build_response()['power']
                 return response
-            # Stay in duochrome for another round
             return self._build_response()
-            
+
         elif intent == "Both Same":
-            # Both Same - complete duochrome, move to next phase
-            return self._transition_to_left_eye_refraction()
+            return self._transition_to_validation_right()
         
         elif intent == "Prev State" and self.previous_state:
             # Restore previous state
@@ -1585,38 +1640,28 @@ class InteractiveSession:
             self.current_row = self._copy_row_state()
             self.current_row.l_sph -= 0.25
             if reversal:
-                # On reversal, transition but include updated power in response
-                response = self._transition_to_binocular_balance()
-                # Ensure power is in response so frontend displays updated value
+                response = self._transition_to_validation_left()
                 if 'power' not in response:
                     response['power'] = self._build_response()['power']
                 return response
-            # Stay in duochrome for another round
             return self._build_response()
-            
+
         elif intent == "Green":
-            # Save current state before making changes
             self.previous_state = self._copy_row_state()
             self.show_prev_state_option = True
-            
-            # GAP: Green Add Plus - increase SPH
             reversal = self._record_duochrome_choice("green")
-            self.jcc_control("increase")  # Phoropter increases SPH by 0.25D
+            self.jcc_control("increase")
             self.current_row = self._copy_row_state()
             self.current_row.l_sph += 0.25
             if reversal:
-                # On reversal, transition but include updated power in response
-                response = self._transition_to_binocular_balance()
-                # Ensure power is in response so frontend displays updated value
+                response = self._transition_to_validation_left()
                 if 'power' not in response:
                     response['power'] = self._build_response()['power']
                 return response
-            # Stay in duochrome for another round
             return self._build_response()
-            
+
         elif intent == "Both Same":
-            # Both Same - complete duochrome, move to next phase
-            return self._transition_to_binocular_balance()
+            return self._transition_to_validation_left()
         
         elif intent == "Prev State" and self.previous_state:
             # Restore previous state
@@ -1749,25 +1794,8 @@ class InteractiveSession:
             return self._build_response()
         
         elif intent == "Both are same":
-            # Test complete
-            return {
-                "phase": "complete",
-                "status": "complete",
-                "question": "Test complete!",
-                "intents": [],
-                "power": {
-                    "right": {
-                        "sph": self.current_row.r_sph,
-                        "cyl": self.current_row.r_cyl,
-                        "axis": self.current_row.r_axis,
-                    },
-                    "left": {
-                        "sph": self.current_row.l_sph,
-                        "cyl": self.current_row.l_cyl,
-                        "axis": self.current_row.l_axis,
-                    }
-                }
-            }
+            # Binocular balance complete → Near Vision Right Eye (Phase P)
+            return self._transition_to_near_add_right()
         
         elif intent == "Prev State":
             # Restore previous state
@@ -1806,7 +1834,373 @@ class InteractiveSession:
         
         # Default fallback
         return self._build_response()
-    
+
+    def _process_validation_right(self, intent: str) -> Dict:
+        """Process 20/20 validation for right eye (Phase H).
+        Yes → next phase. No/Blurry/Stressful → 20/40 fallback. Better/Same/Worse → refine or revert.
+        """
+        # Already in fallback: handle Better / Same / Worse
+        if self._validation_fallback_active == "right":
+            if intent == "Same":
+                self._validation_fallback_active = None
+                self.validation_right_status = "passed"
+                return self._transition_to_left_eye_refraction()
+            if intent == "Worse":
+                # Revert right eye to fallback power
+                fb = self.validation_right_fallback_power
+                curr_l = (self.current_row.l_sph, self.current_row.l_cyl, self.current_row.l_axis)
+                self.current_row.r_sph = fb["r_sph"]
+                self.current_row.r_cyl = fb["r_cyl"]
+                self.current_row.r_axis = fb["r_axis"]
+                self.set_power_with_prev_state(
+                    prev_r_sph=self.current_row.r_sph, prev_r_cyl=self.current_row.r_cyl, prev_r_axis=self.current_row.r_axis,
+                    prev_l_sph=curr_l[0], prev_l_cyl=curr_l[1], prev_l_axis=curr_l[2],
+                    r_sph=fb["r_sph"], r_cyl=fb["r_cyl"], r_axis=fb["r_axis"],
+                    l_sph=curr_l[0], l_cyl=curr_l[1], l_axis=curr_l[2],
+                )
+                self._validation_fallback_active = None
+                self.validation_right_status = "reverted"
+                return self._transition_to_left_eye_refraction()
+            if intent == "Better":
+                # Refine: -0.25 SPH right eye
+                self._validation_fallback_refine_count += 1
+                self.jcc_control("decrease")
+                self.current_row = self._copy_row_state()
+                self.current_row.r_sph -= 0.25
+                curr_l = (self.current_row.l_sph, self.current_row.l_cyl, self.current_row.l_axis)
+                self.set_power_with_prev_state(
+                    prev_r_sph=self.current_row.r_sph + 0.25, prev_r_cyl=self.current_row.r_cyl, prev_r_axis=self.current_row.r_axis,
+                    prev_l_sph=curr_l[0], prev_l_cyl=curr_l[1], prev_l_axis=curr_l[2],
+                    r_sph=self.current_row.r_sph, r_cyl=self.current_row.r_cyl, r_axis=self.current_row.r_axis,
+                    l_sph=curr_l[0], l_cyl=curr_l[1], l_axis=curr_l[2],
+                )
+                if self._validation_fallback_refine_count >= self._validation_fallback_max_refines:
+                    self._validation_fallback_active = None
+                    self._validation_fallback_refine_count = 0
+                    self.validation_right_status = "passed"
+                    return self._transition_to_left_eye_refraction()
+                resp = self._build_response()
+                resp["status"] = "fallback_active"
+                resp["question"] = "Is this better, same, or worse?"
+                resp["intents"] = ["Better", "Same", "Worse"]
+                resp["message"] = "Refined -0.25D SPH. Is this better, same, or worse?"
+                return resp
+            return self._build_response()
+
+        # Save current right eye power as fallback before any branch
+        self.validation_right_fallback_power = {
+            'r_sph': self.current_row.r_sph,
+            'r_cyl': self.current_row.r_cyl,
+            'r_axis': self.current_row.r_axis,
+        }
+
+        if intent == "Yes":
+            self.validation_right_status = "passed"
+            return self._transition_to_left_eye_refraction()
+
+        if intent in ["No", "Blurry", "Too stressful"]:
+            self.validation_right_status = "fallback_to_20_40"
+            self._validation_fallback_active = "right"
+            self._validation_fallback_refine_count = 0
+            self.set_chart("snellen_chart_40_30_25", size="40")  # 20/40
+            self.current_row.chart_display = "snellen_20_40"
+            return {
+                "phase": self.phase_names.get(self.current_phase, self.current_phase),
+                "status": "fallback_active",
+                "question": "Trying 20/40 chart. Can you read this? Is it better, same, or worse?",
+                "intents": ["Better", "Same", "Worse"],
+                "message": "20/20 not clear. Switched to 20/40 for refinement.",
+                "chart": "snellen_20_40",
+                "occluder": self.current_row.occluder_state,
+                "power": self._build_response()["power"],
+            }
+
+        return self._build_response()
+
+    def _process_validation_left(self, intent: str) -> Dict:
+        """Process 20/20 validation for left eye (Phase M). Mirror of _process_validation_right."""
+        if self._validation_fallback_active == "left":
+            if intent == "Same":
+                self._validation_fallback_active = None
+                self.validation_left_status = "passed"
+                return self._transition_to_validation_distance()
+            if intent == "Worse":
+                fb = self.validation_left_fallback_power
+                curr_r = (self.current_row.r_sph, self.current_row.r_cyl, self.current_row.r_axis)
+                self.current_row.l_sph = fb["l_sph"]
+                self.current_row.l_cyl = fb["l_cyl"]
+                self.current_row.l_axis = fb["l_axis"]
+                self.set_power_with_prev_state(
+                    prev_r_sph=curr_r[0], prev_r_cyl=curr_r[1], prev_r_axis=curr_r[2],
+                    prev_l_sph=self.current_row.l_sph, prev_l_cyl=self.current_row.l_cyl, prev_l_axis=self.current_row.l_axis,
+                    r_sph=curr_r[0], r_cyl=curr_r[1], r_axis=curr_r[2],
+                    l_sph=fb["l_sph"], l_cyl=fb["l_cyl"], l_axis=fb["l_axis"],
+                )
+                self._validation_fallback_active = None
+                self.validation_left_status = "reverted"
+                return self._transition_to_validation_distance()
+            if intent == "Better":
+                self._validation_fallback_refine_count += 1
+                self.jcc_control("decrease")
+                self.current_row = self._copy_row_state()
+                self.current_row.l_sph -= 0.25
+                curr_r = (self.current_row.r_sph, self.current_row.r_cyl, self.current_row.r_axis)
+                self.set_power_with_prev_state(
+                    prev_r_sph=curr_r[0], prev_r_cyl=curr_r[1], prev_r_axis=curr_r[2],
+                    prev_l_sph=self.current_row.l_sph + 0.25, prev_l_cyl=self.current_row.l_cyl, prev_l_axis=self.current_row.l_axis,
+                    r_sph=curr_r[0], r_cyl=curr_r[1], r_axis=curr_r[2],
+                    l_sph=self.current_row.l_sph, l_cyl=self.current_row.l_cyl, l_axis=self.current_row.l_axis,
+                )
+                if self._validation_fallback_refine_count >= self._validation_fallback_max_refines:
+                    self._validation_fallback_active = None
+                    self._validation_fallback_refine_count = 0
+                    self.validation_left_status = "passed"
+                    return self._transition_to_validation_distance()
+                resp = self._build_response()
+                resp["status"] = "fallback_active"
+                resp["question"] = "Is this better, same, or worse?"
+                resp["intents"] = ["Better", "Same", "Worse"]
+                resp["message"] = "Refined -0.25D SPH. Is this better, same, or worse?"
+                return resp
+            return self._build_response()
+
+        self.validation_left_fallback_power = {
+            'l_sph': self.current_row.l_sph,
+            'l_cyl': self.current_row.l_cyl,
+            'l_axis': self.current_row.l_axis,
+        }
+
+        if intent == "Yes":
+            self.validation_left_status = "passed"
+            return self._transition_to_validation_distance()
+
+        if intent in ["No", "Blurry", "Too stressful"]:
+            self.validation_left_status = "fallback_to_20_40"
+            self._validation_fallback_active = "left"
+            self._validation_fallback_refine_count = 0
+            self.set_chart("snellen_chart_40_30_25", size="40")
+            self.current_row.chart_display = "snellen_20_40"
+            return {
+                "phase": self.phase_names.get(self.current_phase, self.current_phase),
+                "status": "fallback_active",
+                "question": "Trying 20/40 chart. Can you read this? Is it better, same, or worse?",
+                "intents": ["Better", "Same", "Worse"],
+                "message": "20/20 not clear. Switched to 20/40 for refinement.",
+                "chart": "snellen_20_40",
+                "occluder": self.current_row.occluder_state,
+                "power": self._build_response()["power"],
+            }
+
+        return self._build_response()
+
+    def _process_validation_distance(self, intent: str) -> Dict:
+        """Process 6/6 binocular validation (Phase N). Yes → binocular balance."""
+        if intent == "Yes":
+            return self._transition_to_binocular_balance()
+
+        elif intent in ["No", "Blurry"]:
+            # Allow minor refinement or proceed with caution
+            return {
+                "phase": self.current_phase,
+                "status": "refinement_offered",
+                "question": "Would you like minor binocular refinement (±0.25D) or shall we proceed?",
+                "intents": ["Refine", "Proceed"],
+            }
+
+        return self._build_response()
+
+    def _process_near_add_right(self, intent: str) -> Dict:
+        """Process near vision ADD adjustment for Right eye only (Phase P).
+
+        Right eye is tested while left is occluded. Adjusts add_right independently.
+        - Blurry → +0.25D to R_ADD
+        - Clear → Offer -0.25D reduction
+        - Comfortable → Accept and transition to Left Eye near test
+        """
+        if intent == "Blurry":
+            self.add_right += 0.25
+            self.current_row.r_add = self.add_right
+            self.set_power_with_prev_state(
+                prev_r_sph=self.current_row.r_sph, prev_r_cyl=self.current_row.r_cyl, prev_r_axis=self.current_row.r_axis,
+                prev_l_sph=self.current_row.l_sph, prev_l_cyl=self.current_row.l_cyl, prev_l_axis=self.current_row.l_axis,
+                r_sph=self.current_row.r_sph, r_cyl=self.current_row.r_cyl, r_axis=self.current_row.r_axis,
+                l_sph=self.current_row.l_sph, l_cyl=self.current_row.l_cyl, l_axis=self.current_row.l_axis,
+                r_add=self.add_right, l_add=self.add_left,
+            )
+            response = self._build_response()
+            response["question"] = f"Right eye near at ADD +{self.add_right:.2f}D. Can you read clearly now?"
+            response["intents"] = ["Blurry", "Clear", "Comfortable"]
+            return response
+
+        elif intent == "Clear":
+            return {
+                "phase": self.phase_names.get(self.current_phase, self.current_phase),
+                "status": "add_refinement_offered",
+                "question": "Would you like to try reducing Right eye ADD by 0.25D for more comfort?",
+                "intents": ["Try reduction", "Stay current", "Comfortable"],
+                "occluder": self.current_row.occluder_state,
+                "chart": self.current_row.chart_display,
+                "power": self._build_response()["power"],
+            }
+
+        elif intent == "Try reduction":
+            self.add_right = max(0.0, self.add_right - 0.25)
+            self.current_row.r_add = self.add_right
+            self.set_power_with_prev_state(
+                prev_r_sph=self.current_row.r_sph, prev_r_cyl=self.current_row.r_cyl, prev_r_axis=self.current_row.r_axis,
+                prev_l_sph=self.current_row.l_sph, prev_l_cyl=self.current_row.l_cyl, prev_l_axis=self.current_row.l_axis,
+                r_sph=self.current_row.r_sph, r_cyl=self.current_row.r_cyl, r_axis=self.current_row.r_axis,
+                l_sph=self.current_row.l_sph, l_cyl=self.current_row.l_cyl, l_axis=self.current_row.l_axis,
+                r_add=self.add_right, l_add=self.add_left,
+            )
+            response = self._build_response()
+            response["question"] = f"Right eye near at ADD +{self.add_right:.2f}D. How is this?"
+            response["intents"] = ["Blurry", "Clear", "Comfortable"]
+            return response
+
+        elif intent in ("Comfortable", "Stay current"):
+            return self._transition_to_near_add_left()
+
+        return self._build_response()
+
+    def _process_near_add_left(self, intent: str) -> Dict:
+        """Process near vision ADD adjustment for Left eye only (Phase Q).
+
+        Left eye is tested while right is occluded. Adjusts add_left independently.
+        - Blurry → +0.25D to L_ADD
+        - Clear → Offer -0.25D reduction
+        - Comfortable → Accept and transition to Binocular near test
+        """
+        if intent == "Blurry":
+            self.add_left += 0.25
+            self.current_row.l_add = self.add_left
+            self.set_power_with_prev_state(
+                prev_r_sph=self.current_row.r_sph, prev_r_cyl=self.current_row.r_cyl, prev_r_axis=self.current_row.r_axis,
+                prev_l_sph=self.current_row.l_sph, prev_l_cyl=self.current_row.l_cyl, prev_l_axis=self.current_row.l_axis,
+                r_sph=self.current_row.r_sph, r_cyl=self.current_row.r_cyl, r_axis=self.current_row.r_axis,
+                l_sph=self.current_row.l_sph, l_cyl=self.current_row.l_cyl, l_axis=self.current_row.l_axis,
+                r_add=self.add_right, l_add=self.add_left,
+            )
+            response = self._build_response()
+            response["question"] = f"Left eye near at ADD +{self.add_left:.2f}D. Can you read clearly now?"
+            response["intents"] = ["Blurry", "Clear", "Comfortable"]
+            return response
+
+        elif intent == "Clear":
+            return {
+                "phase": self.phase_names.get(self.current_phase, self.current_phase),
+                "status": "add_refinement_offered",
+                "question": "Would you like to try reducing Left eye ADD by 0.25D for more comfort?",
+                "intents": ["Try reduction", "Stay current", "Comfortable"],
+                "occluder": self.current_row.occluder_state,
+                "chart": self.current_row.chart_display,
+                "power": self._build_response()["power"],
+            }
+
+        elif intent == "Try reduction":
+            self.add_left = max(0.0, self.add_left - 0.25)
+            self.current_row.l_add = self.add_left
+            self.set_power_with_prev_state(
+                prev_r_sph=self.current_row.r_sph, prev_r_cyl=self.current_row.r_cyl, prev_r_axis=self.current_row.r_axis,
+                prev_l_sph=self.current_row.l_sph, prev_l_cyl=self.current_row.l_cyl, prev_l_axis=self.current_row.l_axis,
+                r_sph=self.current_row.r_sph, r_cyl=self.current_row.r_cyl, r_axis=self.current_row.r_axis,
+                l_sph=self.current_row.l_sph, l_cyl=self.current_row.l_cyl, l_axis=self.current_row.l_axis,
+                r_add=self.add_right, l_add=self.add_left,
+            )
+            response = self._build_response()
+            response["question"] = f"Left eye near at ADD +{self.add_left:.2f}D. How is this?"
+            response["intents"] = ["Blurry", "Clear", "Comfortable"]
+            return response
+
+        elif intent in ("Comfortable", "Stay current"):
+            return self._transition_to_near_add_bino()
+
+        return self._build_response()
+
+    def _process_near_add_bino(self, intent: str) -> Dict:
+        """Process near vision binocular ADD verification (Phase R).
+
+        Both eyes open. Final binocular near vision check.
+        - Blurry → +0.25D to both ADD values
+        - Clear → Offer -0.25D reduction
+        - Comfortable / Confirmed → Complete test
+        """
+        if intent == "Blurry":
+            self.add_right += 0.25
+            self.add_left += 0.25
+            self.current_row.r_add = self.add_right
+            self.current_row.l_add = self.add_left
+            self.set_power_with_prev_state(
+                prev_r_sph=self.current_row.r_sph, prev_r_cyl=self.current_row.r_cyl, prev_r_axis=self.current_row.r_axis,
+                prev_l_sph=self.current_row.l_sph, prev_l_cyl=self.current_row.l_cyl, prev_l_axis=self.current_row.l_axis,
+                r_sph=self.current_row.r_sph, r_cyl=self.current_row.r_cyl, r_axis=self.current_row.r_axis,
+                l_sph=self.current_row.l_sph, l_cyl=self.current_row.l_cyl, l_axis=self.current_row.l_axis,
+                r_add=self.add_right, l_add=self.add_left,
+            )
+            response = self._build_response()
+            response["question"] = f"Binocular near at ADD R+{self.add_right:.2f}D / L+{self.add_left:.2f}D. Comfortable now?"
+            response["intents"] = ["Blurry", "Clear", "Comfortable", "Confirmed"]
+            return response
+
+        elif intent == "Clear":
+            return {
+                "phase": self.phase_names.get(self.current_phase, self.current_phase),
+                "status": "add_refinement_offered",
+                "question": "Would you like to try reducing binocular ADD by 0.25D for more comfort?",
+                "intents": ["Try reduction", "Stay current", "Comfortable", "Confirmed"],
+                "occluder": self.current_row.occluder_state,
+                "chart": self.current_row.chart_display,
+                "power": self._build_response()["power"],
+            }
+
+        elif intent == "Try reduction":
+            self.add_right = max(0.0, self.add_right - 0.25)
+            self.add_left = max(0.0, self.add_left - 0.25)
+            self.current_row.r_add = self.add_right
+            self.current_row.l_add = self.add_left
+            self.set_power_with_prev_state(
+                prev_r_sph=self.current_row.r_sph, prev_r_cyl=self.current_row.r_cyl, prev_r_axis=self.current_row.r_axis,
+                prev_l_sph=self.current_row.l_sph, prev_l_cyl=self.current_row.l_cyl, prev_l_axis=self.current_row.l_axis,
+                r_sph=self.current_row.r_sph, r_cyl=self.current_row.r_cyl, r_axis=self.current_row.r_axis,
+                l_sph=self.current_row.l_sph, l_cyl=self.current_row.l_cyl, l_axis=self.current_row.l_axis,
+                r_add=self.add_right, l_add=self.add_left,
+            )
+            response = self._build_response()
+            response["question"] = f"Binocular near at ADD R+{self.add_right:.2f}D / L+{self.add_left:.2f}D. How is this?"
+            response["intents"] = ["Blurry", "Clear", "Comfortable", "Confirmed"]
+            return response
+
+        elif intent in ("Comfortable", "Stay current"):
+            response = self._build_response()
+            response["question"] = "Excellent! Near vision comfortable with both eyes. Ready to finalize?"
+            response["intents"] = ["Confirmed"]
+            return response
+
+        elif intent == "Confirmed":
+            return {
+                "phase": "complete",
+                "status": "complete",
+                "question": "Eye test complete! Near vision prescription finalized.",
+                "intents": [],
+                "power": {
+                    "right": {
+                        "sph": self.current_row.r_sph,
+                        "cyl": self.current_row.r_cyl,
+                        "axis": self.current_row.r_axis,
+                        "add": self.add_right,
+                    },
+                    "left": {
+                        "sph": self.current_row.l_sph,
+                        "cyl": self.current_row.l_cyl,
+                        "axis": self.current_row.l_axis,
+                        "add": self.add_left,
+                    }
+                }
+            }
+
+        return self._build_response()
+
+
     def _copy_row_state(self) -> RowContext:
         """Copy current row state to new row."""
         new_row = self._init_row()
@@ -1871,11 +2265,13 @@ class InteractiveSession:
                     "sph": self.current_row.r_sph,
                     "cyl": self.current_row.r_cyl,
                     "axis": self.current_row.r_axis,
+                    "add": getattr(self, "add_right", 0.0),
                 },
                 "left": {
                     "sph": self.current_row.l_sph,
                     "cyl": self.current_row.l_cyl,
                     "axis": self.current_row.l_axis,
+                    "add": getattr(self, "add_left", 0.0),
                 }
             }
         }
@@ -2102,6 +2498,125 @@ class InteractiveSession:
         self.jcc_control("BINO")
         
         return self._build_response()
+
+    def _transition_to_validation_right(self) -> Dict:
+        """Transition to 20/20 validation for right eye (Phase H)."""
+        self.current_phase = "validation_right"
+        self._validation_fallback_active = None
+        print(f"\n→ Transitioning to {self.phase_names[self.current_phase]}")
+        self.current_row = self._copy_row_state()
+        self.current_row.occluder_state = "Left_Occluded"
+        self.current_row.chart_display = "snellen_20_20"
+        self.set_chart("snellen_20_20", size="20_1")
+        curr_r = (self.current_row.r_sph, self.current_row.r_cyl, self.current_row.r_axis)
+        curr_l = (self.current_row.l_sph, self.current_row.l_cyl, self.current_row.l_axis)
+        self.set_power_with_prev_state(
+            prev_r_sph=curr_r[0], prev_r_cyl=curr_r[1], prev_r_axis=curr_r[2],
+            prev_l_sph=curr_l[0], prev_l_cyl=curr_l[1], prev_l_axis=curr_l[2],
+            r_sph=curr_r[0], r_cyl=curr_r[1], r_axis=curr_r[2],
+            l_sph=curr_l[0], l_cyl=curr_l[1], l_axis=curr_l[2],
+        )
+        self.jcc_control("R")
+        return self._build_response()
+
+    def _transition_to_validation_left(self) -> Dict:
+        """Transition to 20/20 validation for left eye (Phase M)."""
+        self.current_phase = "validation_left"
+        self._validation_fallback_active = None
+        print(f"\n→ Transitioning to {self.phase_names[self.current_phase]}")
+        self.current_row = self._copy_row_state()
+        self.current_row.occluder_state = "Right_Occluded"
+        self.current_row.chart_display = "snellen_20_20"
+        self.set_chart("snellen_20_20", size="20_1")
+        curr_r = (self.current_row.r_sph, self.current_row.r_cyl, self.current_row.r_axis)
+        curr_l = (self.current_row.l_sph, self.current_row.l_cyl, self.current_row.l_axis)
+        self.set_power_with_prev_state(
+            prev_r_sph=curr_r[0], prev_r_cyl=curr_r[1], prev_r_axis=curr_r[2],
+            prev_l_sph=curr_l[0], prev_l_cyl=curr_l[1], prev_l_axis=curr_l[2],
+            r_sph=curr_r[0], r_cyl=curr_r[1], r_axis=curr_r[2],
+            l_sph=curr_l[0], l_cyl=curr_l[1], l_axis=curr_l[2],
+        )
+        self.jcc_control("L")
+        return self._build_response()
+
+    def _transition_to_validation_distance(self) -> Dict:
+        """Transition to 6/6 binocular validation (Phase N)."""
+        self.current_phase = "validation_distance"
+        print(f"\n→ Transitioning to {self.phase_names[self.current_phase]}")
+        self.current_row = self._copy_row_state()
+        self.current_row.occluder_state = "BINO"
+        self.current_row.chart_display = "snellen_20_20"
+        self.set_chart("snellen_20_20", size="20_1")
+        curr_r = (self.current_row.r_sph, self.current_row.r_cyl, self.current_row.r_axis)
+        curr_l = (self.current_row.l_sph, self.current_row.l_cyl, self.current_row.l_axis)
+        self.set_power_with_prev_state(
+            prev_r_sph=curr_r[0], prev_r_cyl=curr_r[1], prev_r_axis=curr_r[2],
+            prev_l_sph=curr_l[0], prev_l_cyl=curr_l[1], prev_l_axis=curr_l[2],
+            r_sph=curr_r[0], r_cyl=curr_r[1], r_axis=curr_r[2],
+            l_sph=curr_l[0], l_cyl=curr_l[1], l_axis=curr_l[2],
+        )
+        self.jcc_control("BINO")
+        return self._build_response()
+
+    def _transition_to_near_add_right(self) -> Dict:
+        """Transition to Near Vision ADD adjustment for Right eye (Phase P)."""
+        self.current_phase = "near_add_right"
+        print(f"\n→ Transitioning to {self.phase_names[self.current_phase]}")
+        self.current_row = self._copy_row_state()
+        self.current_row.occluder_state = "Left_Occluded"
+        self.current_row.chart_display = "near_chart"
+        self.set_chart_near()
+        curr_r = (self.current_row.r_sph, self.current_row.r_cyl, self.current_row.r_axis)
+        curr_l = (self.current_row.l_sph, self.current_row.l_cyl, self.current_row.l_axis)
+        self.set_power_with_prev_state(
+            prev_r_sph=curr_r[0], prev_r_cyl=curr_r[1], prev_r_axis=curr_r[2],
+            prev_l_sph=curr_l[0], prev_l_cyl=curr_l[1], prev_l_axis=curr_l[2],
+            r_sph=curr_r[0], r_cyl=curr_r[1], r_axis=curr_r[2],
+            l_sph=curr_l[0], l_cyl=curr_l[1], l_axis=curr_l[2],
+            r_add=self.add_right, l_add=self.add_left,
+        )
+        self.jcc_control("R")
+        return self._build_response()
+
+    def _transition_to_near_add_left(self) -> Dict:
+        """Transition to Near Vision ADD adjustment for Left eye (Phase Q)."""
+        self.current_phase = "near_add_left"
+        print(f"\n→ Transitioning to {self.phase_names[self.current_phase]}")
+        self.current_row = self._copy_row_state()
+        self.current_row.occluder_state = "Right_Occluded"
+        self.current_row.chart_display = "near_chart"
+        self.set_chart_near()
+        curr_r = (self.current_row.r_sph, self.current_row.r_cyl, self.current_row.r_axis)
+        curr_l = (self.current_row.l_sph, self.current_row.l_cyl, self.current_row.l_axis)
+        self.set_power_with_prev_state(
+            prev_r_sph=curr_r[0], prev_r_cyl=curr_r[1], prev_r_axis=curr_r[2],
+            prev_l_sph=curr_l[0], prev_l_cyl=curr_l[1], prev_l_axis=curr_l[2],
+            r_sph=curr_r[0], r_cyl=curr_r[1], r_axis=curr_r[2],
+            l_sph=curr_l[0], l_cyl=curr_l[1], l_axis=curr_l[2],
+            r_add=self.add_right, l_add=self.add_left,
+        )
+        self.jcc_control("L")
+        return self._build_response()
+
+    def _transition_to_near_add_bino(self) -> Dict:
+        """Transition to Near Vision binocular ADD verification (Phase R)."""
+        self.current_phase = "near_add_bino"
+        print(f"\n→ Transitioning to {self.phase_names[self.current_phase]}")
+        self.current_row = self._copy_row_state()
+        self.current_row.occluder_state = "BINO"
+        self.current_row.chart_display = "near_chart"
+        self.set_chart_near()
+        curr_r = (self.current_row.r_sph, self.current_row.r_cyl, self.current_row.r_axis)
+        curr_l = (self.current_row.l_sph, self.current_row.l_cyl, self.current_row.l_axis)
+        self.set_power_with_prev_state(
+            prev_r_sph=curr_r[0], prev_r_cyl=curr_r[1], prev_r_axis=curr_r[2],
+            prev_l_sph=curr_l[0], prev_l_cyl=curr_l[1], prev_l_axis=curr_l[2],
+            r_sph=curr_r[0], r_cyl=curr_r[1], r_axis=curr_r[2],
+            l_sph=curr_l[0], l_cyl=curr_l[1], l_axis=curr_l[2],
+            r_add=self.add_right, l_add=self.add_left,
+        )
+        self.jcc_control("BINO")
+        return self._build_response()
     
     def _determine_next_phase(self, intent: str) -> str:
         """Determine next phase based on current phase and intent."""
@@ -2110,14 +2625,19 @@ class InteractiveSession:
             "right_eye_refraction": "jcc_axis_right",
             "jcc_axis_right": "jcc_power_right",
             "jcc_power_right": "duochrome_right",
-            "duochrome_right": "left_eye_refraction",
+            "duochrome_right": "validation_right",
+            "validation_right": "left_eye_refraction",
             "left_eye_refraction": "jcc_axis_left",
             "jcc_axis_left": "jcc_power_left",
             "jcc_power_left": "duochrome_left",
-            "duochrome_left": "binocular_balance",
-            "binocular_balance": "complete",
+            "duochrome_left": "validation_left",
+            "validation_left": "validation_distance",
+            "validation_distance": "binocular_balance",
+            "binocular_balance": "near_add_right",
+            "near_add_right": "near_add_left",
+            "near_add_left": "near_add_bino",
+            "near_add_bino": "complete",
         }
-        
         return phase_flow.get(self.current_phase, "complete")
     
     def _setup_phase(self, phase: str) -> Dict:
@@ -2242,11 +2762,98 @@ class InteractiveSession:
             return response
             
         elif phase == "duochrome_left":
-            # Reset duochrome choice tracking
             self._reset_duochrome_choice_tracking()
             self.set_chart("duochrome")
             self.set_power(occluder="Right_Occluded")
             self._update_state(occluder="Right_Occluded", chart="duochrome")
+
+        elif phase == "validation_right":
+            self._validation_fallback_active = None
+            self.current_row.occluder_state = "Left_Occluded"
+            self.current_row.chart_display = "snellen_20_20"
+            self.set_chart("snellen_20_20", size="20_1")
+            self.set_power(occluder="Left_Occluded")
+            self.jcc_control("R")
+            self._update_state(occluder="Left_Occluded", chart="snellen_20_20")
+
+        elif phase == "validation_left":
+            self._validation_fallback_active = None
+            self.current_row.occluder_state = "Right_Occluded"
+            self.current_row.chart_display = "snellen_20_20"
+            self.set_chart("snellen_20_20", size="20_1")
+            curr_r = (self.current_row.r_sph, self.current_row.r_cyl, self.current_row.r_axis)
+            curr_l = (self.current_row.l_sph, self.current_row.l_cyl, self.current_row.l_axis)
+            self.set_power_with_prev_state(
+                prev_r_sph=curr_r[0], prev_r_cyl=curr_r[1], prev_r_axis=curr_r[2],
+                prev_l_sph=curr_l[0], prev_l_cyl=curr_l[1], prev_l_axis=curr_l[2],
+                r_sph=curr_r[0], r_cyl=curr_r[1], r_axis=curr_r[2],
+                l_sph=curr_l[0], l_cyl=curr_l[1], l_axis=curr_l[2],
+            )
+            self.jcc_control("L")
+            self._update_state(occluder="Right_Occluded", chart="snellen_20_20")
+
+        elif phase == "validation_distance":
+            self.current_row.occluder_state = "BINO"
+            self.current_row.chart_display = "snellen_20_20"
+            self.set_chart("snellen_20_20", size="20_1")
+            curr_r = (self.current_row.r_sph, self.current_row.r_cyl, self.current_row.r_axis)
+            curr_l = (self.current_row.l_sph, self.current_row.l_cyl, self.current_row.l_axis)
+            self.set_power_with_prev_state(
+                prev_r_sph=curr_r[0], prev_r_cyl=curr_r[1], prev_r_axis=curr_r[2],
+                prev_l_sph=curr_l[0], prev_l_cyl=curr_l[1], prev_l_axis=curr_l[2],
+                r_sph=curr_r[0], r_cyl=curr_r[1], r_axis=curr_r[2],
+                l_sph=curr_l[0], l_cyl=curr_l[1], l_axis=curr_l[2],
+            )
+            self.jcc_control("BINO")
+            self._update_state(occluder="BINO", chart="snellen_20_20")
+
+        elif phase == "near_add_right":
+            self.current_row.occluder_state = "Left_Occluded"
+            self.current_row.chart_display = "near_chart"
+            self.set_chart_near()
+            curr_r = (self.current_row.r_sph, self.current_row.r_cyl, self.current_row.r_axis)
+            curr_l = (self.current_row.l_sph, self.current_row.l_cyl, self.current_row.l_axis)
+            self.set_power_with_prev_state(
+                prev_r_sph=curr_r[0], prev_r_cyl=curr_r[1], prev_r_axis=curr_r[2],
+                prev_l_sph=curr_l[0], prev_l_cyl=curr_l[1], prev_l_axis=curr_l[2],
+                r_sph=curr_r[0], r_cyl=curr_r[1], r_axis=curr_r[2],
+                l_sph=curr_l[0], l_cyl=curr_l[1], l_axis=curr_l[2],
+                r_add=self.add_right, l_add=self.add_left,
+            )
+            self.jcc_control("R")
+            self._update_state(occluder="Left_Occluded", chart="near_chart")
+
+        elif phase == "near_add_left":
+            self.current_row.occluder_state = "Right_Occluded"
+            self.current_row.chart_display = "near_chart"
+            self.set_chart_near()
+            curr_r = (self.current_row.r_sph, self.current_row.r_cyl, self.current_row.r_axis)
+            curr_l = (self.current_row.l_sph, self.current_row.l_cyl, self.current_row.l_axis)
+            self.set_power_with_prev_state(
+                prev_r_sph=curr_r[0], prev_r_cyl=curr_r[1], prev_r_axis=curr_r[2],
+                prev_l_sph=curr_l[0], prev_l_cyl=curr_l[1], prev_l_axis=curr_l[2],
+                r_sph=curr_r[0], r_cyl=curr_r[1], r_axis=curr_r[2],
+                l_sph=curr_l[0], l_cyl=curr_l[1], l_axis=curr_l[2],
+                r_add=self.add_right, l_add=self.add_left,
+            )
+            self.jcc_control("L")
+            self._update_state(occluder="Right_Occluded", chart="near_chart")
+
+        elif phase == "near_add_bino":
+            self.current_row.occluder_state = "BINO"
+            self.current_row.chart_display = "near_chart"
+            self.set_chart_near()
+            curr_r = (self.current_row.r_sph, self.current_row.r_cyl, self.current_row.r_axis)
+            curr_l = (self.current_row.l_sph, self.current_row.l_cyl, self.current_row.l_axis)
+            self.set_power_with_prev_state(
+                prev_r_sph=curr_r[0], prev_r_cyl=curr_r[1], prev_r_axis=curr_r[2],
+                prev_l_sph=curr_l[0], prev_l_cyl=curr_l[1], prev_l_axis=curr_l[2],
+                r_sph=curr_r[0], r_cyl=curr_r[1], r_axis=curr_r[2],
+                l_sph=curr_l[0], l_cyl=curr_l[1], l_axis=curr_l[2],
+                r_add=self.add_right, l_add=self.add_left,
+            )
+            self.jcc_control("BINO")
+            self._update_state(occluder="BINO", chart="near_chart")
             
         elif phase == "binocular_balance":
             # Reset previous state tracking

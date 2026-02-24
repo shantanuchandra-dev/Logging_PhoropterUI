@@ -48,42 +48,44 @@ pip install pyyaml flask flask-cors
 
 ## Usage
 
-### Start the Backend API Server
+You can run the backend API and the frontend static server from a development virtualenv.
 
-In the first terminal, activate venv and start the backend:
+If you created a venv inside `eye_test_engine`:
 
 ```bash
 cd eye_test_engine
 source venv/bin/activate
-python api_server.py
+# start backend (port 5050)
+PYTHONPATH=.. python -m eye_test_engine.api_server
 ```
 
-The backend will start on `http://localhost:5001`
+Or, if your project uses a workspace venv at the repository root (e.g. `.venv`):
 
-### Start the Frontend
+```bash
+# in one terminal
+source .venv/bin/activate
+cd eye_test_engine
+PYTHONPATH=.. python -m eye_test_engine.api_server
 
-In a second terminal, run the frontend launcher:
+# in another terminal
+source .venv/bin/activate
+cd eye_test_engine/frontend
+python3 -m http.server 8080
+```
+
+Simpler: from the `eye_test_engine` folder you can run the launcher script which will try to activate a local venv or a parent `.venv` and start both servers:
 
 ```bash
 cd eye_test_engine
 ./start_frontend.sh
 ```
 
-Or manually:
+The servers will be available at:
 
-```bash
-cd eye_test_engine/frontend
-python3 -m http.server 8000
-```
+- Frontend: http://localhost:8080
+- Backend API: http://localhost:5050
 
-The frontend will be available at `http://localhost:8000`
-
-### Access the Application
-
-Open your browser and navigate to:
-```
-http://localhost:8000
-```
+Open your browser to the frontend URL above.
 
 ## Phase Flow
 
@@ -156,13 +158,13 @@ Configurable parameters:
 
 ## API Endpoints
 
-### Backend API (Port 5001)
+### Backend API (Port 5050)
 
-- `POST /start` - Start new test session
-- `POST /respond` - Process patient response
-- `POST /switch_chart` - Switch to different chart
-- `POST /jump_to_phase` - Jump to specific phase
-- `GET /state` - Get current session state
+- `POST /api/session/start` - Start new test session
+- `POST /api/session/<id>/respond` - Process patient response
+- `POST /api/session/<id>/switch-chart` - Switch to different chart
+- `POST /api/session/<id>/jump` - Jump to specific phase
+- `GET /api/session/<id>/status` - Get current session state
 
 ### Phoropter API
 
