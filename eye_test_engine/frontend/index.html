@@ -926,7 +926,7 @@
                     <h1>👁️ Eye Test Engine</h1>
                     <p>Interactive Phoropter-Controlled Eye Examination</p>
                 </div>
-                <div style="display: flex; gap: 12px; align-items: center;">
+                <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
                     <div style="display: flex; gap: 6px; align-items: center;">
                         <button class="ar-power-btn" onclick="openArPowerModal()">Set AR</button>
                         <button class="ar-power-btn" onclick="openLensoPowerModal()">Set Lenso</button>
@@ -946,6 +946,19 @@
                             title="Set Lenso Power first" style="padding: 4px 12px;">
                             Lenso
                         </button>
+                    </div>
+                    <div style="border-left: 2px solid #ddd; padding-left: 12px; display: flex; gap: 6px; align-items: center;">
+                        <label for="phoropterIdInput" style="color: #666; font-weight: 600; font-size: 0.85em; white-space: nowrap;">Device ID:</label>
+                        <input
+                            id="phoropterIdInput"
+                            type="text"
+                            value="phoropter-1"
+                            placeholder="phoropter-1"
+                            title="Phoropter device ID used in all API calls"
+                            style="width: 130px; padding: 4px 8px; border: 1.5px solid #c5cae9; border-radius: 6px; font-size: 0.85em; font-family: monospace; color: #333; background: #f8f9ff; outline: none; transition: border-color 0.2s;"
+                            onfocus="this.style.borderColor='#667eea'"
+                            onblur="this.style.borderColor='#c5cae9'; savePhoropterId()"
+                        />
                     </div>
                 </div>
             </div>

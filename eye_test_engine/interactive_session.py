@@ -362,7 +362,7 @@ class InteractiveSession:
     
     def set_pinhole(self):
         """Set pinhole on the phoropter."""
-        cmd = f"curl -X POST {self.base_url}/phoropter/phoropter-1/pinhole"
+        cmd = f"curl -X POST {self.base_url}/phoropter/{self.phoropter_id}/pinhole"
         print(f"[CMD] {cmd}")
         result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
         print(f"✓ Pinhole activated")

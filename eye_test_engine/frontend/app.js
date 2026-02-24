@@ -4,7 +4,10 @@
 const CONFIG = {
     backendUrl: 'http://localhost:5050',
     phoropterUrl: 'https://rajasthan-royals.preprod.lenskart.com',
-    phoropterId: 'phoropter-1'
+    get phoropterId() {
+        const el = document.getElementById('phoropterIdInput');
+        return (el && el.value.trim()) ? el.value.trim() : 'phoropter-1';
+    }
 };
 
 let sessionState = {
@@ -43,9 +46,26 @@ const OPTOTYPE_MAP = {
 
 let currentOptotype = null;
 
+function savePhoropterId() {
+    const el = document.getElementById('phoropterIdInput');
+    if (!el) return;
+    const id = el.value.trim() || 'phoropter-1';
+    el.value = id;
+    localStorage.setItem('phoropterId', id);
+    console.log(`Phoropter ID set to: ${id}`);
+}
+
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     console.log('Eye Test Engine Frontend Loaded');
+
+    // Restore saved phoropter ID from localStorage
+    const savedId = localStorage.getItem('phoropterId');
+    const idInput = document.getElementById('phoropterIdInput');
+    if (idInput && savedId) {
+        idInput.value = savedId;
+    }
+
     updateStatusIndicator(false);
     populateDirectCommands();
     bindTableInteractions();
@@ -425,7 +445,7 @@ async function startTest() {
 
     } catch (error) {
         console.error('Error starting test:', error);
-        alert('Failed to start test. Make sure the backend server is running on port 5000.');
+        alert(`Failed to start test. Make sure the backend server is running at ${CONFIG.backendUrl}.\n\nRun: cd eye_test_engine && python api_server.py`);
         if (btn) btn.disabled = false;
     } finally {
         showLoading(false);
