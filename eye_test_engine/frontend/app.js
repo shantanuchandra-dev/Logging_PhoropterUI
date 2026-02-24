@@ -416,7 +416,7 @@ async function startTest() {
         const response = await fetch(`${CONFIG.backendUrl}/api/session/start`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ session_id: sessionId })
+            body: JSON.stringify({ session_id: sessionId, phoropter_id: CONFIG.phoropterId })
         });
 
         if (!response.ok) {
