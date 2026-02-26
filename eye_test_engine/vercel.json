@@ -1,5 +1,14 @@
 {
-  "buildCommand": null,
-  "framework": null,
-  "installCommand": "pip install -r requirements.txt"
+  "builds": [
+    {
+      "src": "app.py",
+      "use": "@vercel/python"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "app.py"
+    }
+  ]
 }
