@@ -31,8 +31,10 @@ let currentAppliedPower = 'none';  // 'none', 'ar', or 'lenso'
 
 let operatorName = '';  // cached optometrist name
 
-// Stored phoropter state snapshot for comparison
-let storedPhoropterState = null;
+// Memory state for store/restore/swap
+let memoryState = null;       // {power: {right: {...}, left: {...}}}
+let memoryMode = 'mem';       // 'mem' | 'memS' | 'memR'
+let _realtimeBeforeRestore = null;
 
 // Optotype mapping for VA charts (Chart 1)
 const OPTOTYPE_MAP = {
@@ -63,8 +65,23 @@ async function fetchDevices() {
     const select = document.getElementById('phoropterIdInput');
     if (!select) return;
 
+    // If device is already acquired, just show that device and skip the fetch
+    if (_deviceAcquired) {
+        const acquiredId = localStorage.getItem('phoropterId') || '';
+        if (acquiredId) {
+            select.innerHTML = '';
+            const opt = document.createElement('option');
+            opt.value = acquiredId;
+            opt.textContent = `${acquiredId} (connected)`;
+            opt.selected = true;
+            select.appendChild(opt);
+            select.disabled = true;
+        }
+        return;
+    }
+
     try {
-        const resp = await fetch(`${CONFIG.backendUrl}/api/devices?all=true`);
+        const resp = await fetch(`${CONFIG.backendUrl}/api/devices`);
         if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
         const data = await resp.json();
 
@@ -72,7 +89,7 @@ async function fetchDevices() {
         select.innerHTML = '';
 
         if (devices.length === 0) {
-            select.innerHTML = '<option value="">No devices found</option>';
+            select.innerHTML = '<option value="">No available devices</option>';
             return;
         }
 
@@ -80,10 +97,9 @@ async function fetchDevices() {
 
         devices.forEach(dev => {
             const id = dev.device_id || dev.id || dev.name || '';
-            const status = dev.status || '';
             const opt = document.createElement('option');
             opt.value = id;
-            opt.textContent = `${id} (${status})`;
+            opt.textContent = id;
             if (id === savedId) opt.selected = true;
             select.appendChild(opt);
         });
@@ -208,6 +224,7 @@ function _saveSessionToStorage() {
         currentAppliedPower: currentAppliedPower,
         deviceAcquired: _deviceAcquired,
         deviceId: CONFIG.phoropterId,
+        memoryState: memoryState,
     };
     try { sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(data)); }
     catch (e) { console.warn('sessionStorage write failed:', e); }
@@ -254,6 +271,14 @@ async function _tryRestoreSession() {
         sessionState.responseCount = saved.responseCount || data.total_rows || 0;
         storedPower = saved.storedPower || { ar: null, lenso: null };
         currentAppliedPower = saved.currentAppliedPower || 'none';
+
+        // Restore memory state
+        if (saved.memoryState) {
+            memoryState = saved.memoryState;
+            memoryMode = 'memS';
+            _realtimeBeforeRestore = null;
+            _updateMemButton();
+        }
 
         // Restore UI
         document.getElementById('welcomeScreen').style.display = 'none';
@@ -353,6 +378,25 @@ let manualControlsLocked = false;
 let _manualAutoUnlockTimer = null;
 let typeModeActive = false;
 let _typeModeEditing = false;
+let _phoropterBusy = false;
+
+function _setPhoropterBusy(busy) {
+    _phoropterBusy = busy;
+    // When busy from intents, visually lock manual controls
+    const cells = document.querySelectorAll('.rt-val');
+    if (busy) {
+        cells.forEach(c => c.classList.add('locked'));
+    } else if (!manualControlsLocked) {
+        cells.forEach(c => c.classList.remove('locked'));
+    }
+}
+
+function _setIntentsDisabled(disabled) {
+    document.querySelectorAll('.intent-button').forEach(btn => {
+        btn.disabled = disabled;
+        btn.style.opacity = disabled ? '0.45' : '';
+    });
+}
 
 function _setManualLock(locked) {
     manualControlsLocked = locked;
@@ -549,6 +593,8 @@ async function _commitActiveInput(submit) {
 
     if (!anyChanged || !sessionState.sessionId) return;
 
+    _setPhoropterBusy(true);
+    _setIntentsDisabled(true);
     try {
         showLoading(true);
         const currentOccluder = document.getElementById('occluderState').textContent || 'BINO';
@@ -581,6 +627,8 @@ async function _commitActiveInput(submit) {
         alert('Failed to apply typed power.');
     } finally {
         showLoading(false);
+        _setPhoropterBusy(false);
+        _setIntentsDisabled(false);
     }
 }
 
@@ -600,6 +648,7 @@ function bindTableInteractions() {
 }
 
 async function handleTableMousedown(event, el) {
+    if (_phoropterBusy) return;
     if (!sessionState.sessionId) {
         alert('Please start a test session first.');
         return;
@@ -641,6 +690,8 @@ async function handleTableMousedown(event, el) {
 
 async function applyManualPowerChange(eye, param, delta) {
     if (!sessionState.lastResponse || !sessionState.lastResponse.power) return;
+    _setPhoropterBusy(true);
+    _setIntentsDisabled(true);
 
     const p = sessionState.lastResponse.power;
     const eyeKey = eye === 'R' ? 'right' : 'left';
@@ -714,6 +765,8 @@ async function applyManualPowerChange(eye, param, delta) {
         alert('Failed to push manual power to phoropter. Try again.');
     } finally {
         showLoading(false);
+        _setPhoropterBusy(false);
+        _setIntentsDisabled(false);
     }
 }
 
@@ -859,58 +912,173 @@ function updateLocalPhoropterState(partial) {
     };
 }
 
-function formatStateTooltip(state) {
-    if (!state || !state.power) {
-        return 'No state stored';
-    }
-    const right = state.power.right || { sph: 0, cyl: 0, axis: 180 };
-    const left = state.power.left || { sph: 0, cyl: 0, axis: 180 };
-    const phase = state.phase || 'Unknown';
-    const chart = state.chart || 'Unknown';
-    const occluder = state.occluder || 'Unknown';
+function _formatPowerTooltip(label, power) {
+    if (!power) return `${label}: none`;
+    const r = power.right || { sph: 0, cyl: 0, axis: 180 };
+    const l = power.left  || { sph: 0, cyl: 0, axis: 180 };
     return [
-        `Phase: ${phase}`,
-        `Chart: ${chart}`,
-        `Occluder: ${occluder}`,
-        `Right: ${right.sph.toFixed(2)} / ${right.cyl.toFixed(2)} / ${right.axis.toFixed(0)}°`,
-        `Left: ${left.sph.toFixed(2)} / ${left.cyl.toFixed(2)} / ${left.axis.toFixed(0)}°`
+        `${label}:`,
+        `  R: ${r.sph.toFixed(2)} / ${r.cyl.toFixed(2)} / ${r.axis.toFixed(0)}°`,
+        `  L: ${l.sph.toFixed(2)} / ${l.cyl.toFixed(2)} / ${l.axis.toFixed(0)}°`
     ].join('\n');
 }
 
-function storeCompareState() {
+function _updateMemButton() {
+    const btn = document.getElementById('memBtn');
+    if (!btn) return;
+
+    if (memoryMode === 'mem') {
+        btn.textContent = 'Mem';
+        btn.title = 'Memory';
+    } else if (memoryMode === 'memS') {
+        btn.textContent = 'MemS';
+        btn.title = _formatPowerTooltip('Stored', memoryState?.power)
+            + '\n\nClick to restore these values to phoropter';
+    } else if (memoryMode === 'memR') {
+        btn.textContent = 'MemR';
+        btn.title = _formatPowerTooltip('Realtime (before restore)', _realtimeBeforeRestore)
+            + '\n\nClick to switch back to realtime values';
+    }
+}
+
+async function handleMemClick() {
+    if (_phoropterBusy) return;
     if (!sessionState.sessionId) {
         alert('Please start a test session first.');
         return;
     }
 
+    if (memoryMode === 'mem') {
+        _memStore();
+    } else if (memoryMode === 'memS') {
+        await _memRestore();
+    } else if (memoryMode === 'memR') {
+        await _memSwapBack();
+    }
+}
+
+function _memStore() {
     const currentState = sessionState.lastResponse;
     if (!currentState || !currentState.power) {
         alert('Current phoropter state is not available yet.');
         return;
     }
 
-    storedPhoropterState = {
-        phase: currentState.phase,
-        chart: currentState.chart,
-        occluder: currentState.occluder,
-        power: currentState.power
+    memoryState = {
+        power: JSON.parse(JSON.stringify(currentState.power))
     };
 
-    const btn = document.getElementById('compareStateBtn');
-    if (btn) {
-        btn.title = formatStateTooltip(storedPhoropterState);
-    }
+    memoryMode = 'memS';
+    _updateMemButton();
+    _saveSessionToStorage();
+    addToHistory('Memory stored', 'info');
+}
 
-    addToHistory('Stored compare state', 'info');
+async function _memRestore() {
+    if (!memoryState || !memoryState.power) return;
+
+    // Save current realtime values before overwriting
+    const currentPower = sessionState.lastResponse?.power;
+    _realtimeBeforeRestore = currentPower
+        ? JSON.parse(JSON.stringify(currentPower))
+        : null;
+
+    _setPhoropterBusy(true);
+    _setIntentsDisabled(true);
+    try {
+        showLoading(true);
+        const currentOccluder = document.getElementById('occluderState').textContent || 'BINO';
+
+        if (currentPower) {
+            await syncBrokerState({ right: currentPower.right, left: currentPower.left }, currentOccluder);
+        }
+        await setPower(memoryState.power, currentOccluder);
+
+        if (sessionState.sessionId) {
+            try {
+                await fetch(`${CONFIG.backendUrl}/api/session/${sessionState.sessionId}/sync-power`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(memoryState.power)
+                });
+            } catch (e) { console.warn('sync-power failed:', e); }
+        }
+
+        if (!sessionState.lastResponse) sessionState.lastResponse = {};
+        sessionState.lastResponse.power = JSON.parse(JSON.stringify(memoryState.power));
+        updateSessionInfo(sessionState.lastResponse);
+
+        memoryMode = 'memR';
+        _updateMemButton();
+        addToHistory('Phoropter loaded with memory state', 'success');
+    } catch (error) {
+        console.error('Error restoring memory state:', error);
+        alert('Failed to restore memory state.');
+    } finally {
+        showLoading(false);
+        _setPhoropterBusy(false);
+        _setIntentsDisabled(false);
+    }
+}
+
+async function _memSwapBack() {
+    if (!_realtimeBeforeRestore) return;
+
+    _setPhoropterBusy(true);
+    _setIntentsDisabled(true);
+    try {
+        showLoading(true);
+        const currentOccluder = document.getElementById('occluderState').textContent || 'BINO';
+        const currentPower = sessionState.lastResponse?.power;
+
+        if (currentPower) {
+            await syncBrokerState({ right: currentPower.right, left: currentPower.left }, currentOccluder);
+        }
+        await setPower(_realtimeBeforeRestore, currentOccluder);
+
+        if (sessionState.sessionId) {
+            try {
+                await fetch(`${CONFIG.backendUrl}/api/session/${sessionState.sessionId}/sync-power`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(_realtimeBeforeRestore)
+                });
+            } catch (e) { console.warn('sync-power failed:', e); }
+        }
+
+        if (!sessionState.lastResponse) sessionState.lastResponse = {};
+        sessionState.lastResponse.power = JSON.parse(JSON.stringify(_realtimeBeforeRestore));
+        updateSessionInfo(sessionState.lastResponse);
+
+        memoryMode = 'memS';
+        _updateMemButton();
+        addToHistory('Switched back to realtime values', 'info');
+    } catch (error) {
+        console.error('Error swapping back to realtime:', error);
+        alert('Failed to switch back to realtime values.');
+    } finally {
+        showLoading(false);
+        _setPhoropterBusy(false);
+        _setIntentsDisabled(false);
+    }
+}
+
+function clearMemory() {
+    memoryState = null;
+    memoryMode = 'mem';
+    _realtimeBeforeRestore = null;
+    _updateMemButton();
+    _saveSessionToStorage();
+    addToHistory('Memory cleared', 'info');
 }
 
 async function applyStoredPower(type) {
+    if (_phoropterBusy) return;
     if (!sessionState.sessionId) {
         alert('Please start a test session first.');
         return;
     }
 
-    // Get stored power
     const power = type === 'ar' ? storedPower.ar : storedPower.lenso;
 
     if (!power) {
@@ -918,6 +1086,8 @@ async function applyStoredPower(type) {
         return;
     }
 
+    _setPhoropterBusy(true);
+    _setIntentsDisabled(true);
     try {
         showLoading(true);
 
@@ -967,7 +1137,6 @@ async function applyStoredPower(type) {
             }
         }
 
-        // Keep lastResponse in sync so manual adjustments and next QnA work from this baseline
         if (!sessionState.lastResponse) {
             sessionState.lastResponse = {};
         }
@@ -977,6 +1146,8 @@ async function applyStoredPower(type) {
         alert(`Failed to apply ${type.toUpperCase()} power. Please try again.`);
     } finally {
         showLoading(false);
+        _setPhoropterBusy(false);
+        _setIntentsDisabled(false);
     }
 }
 
@@ -1055,12 +1226,13 @@ async function startTest() {
 
 // Submit Intent Response
 async function submitIntent(intent) {
-    if (sessionState.intentsLocked) {
+    if (sessionState.intentsLocked || _phoropterBusy) {
         return;
     }
     try {
         showLoading(true);
         sessionState.intentsLocked = true;
+        _setPhoropterBusy(true);
 
         // Hide all intent buttons during processing
         const intentButtonsContainer = document.getElementById('intentButtons');
@@ -1108,10 +1280,10 @@ async function submitIntent(intent) {
         console.error('Error submitting intent:', error);
         alert('Failed to submit response. Please try again.');
         sessionState.intentsLocked = false;
-        // Restore intents on error
         const intentButtons = document.querySelectorAll('.intent-button');
         intentButtons.forEach(btn => btn.disabled = false);
     } finally {
+        _setPhoropterBusy(false);
         showLoading(false);
     }
 }
@@ -1706,13 +1878,15 @@ async function setPower(power, occluder) {
     addToHistory(`Power updated - Occluder: ${occluder}`, 'info');
 }
 
-// Complete Test
+// Complete Test - shows prescription + screenshot for validation; does NOT store or release yet
 async function completeTest() {
     try {
+        // Get prescription preview without storing (store: false)
         const response = await fetch(`${CONFIG.backendUrl}/api/session/${sessionState.sessionId}/end`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
+                store: false,
                 ar: storedPower.ar || null,
                 lenso: storedPower.lenso || null,
                 operator_name: operatorName || null
@@ -1725,9 +1899,44 @@ async function completeTest() {
 
         const data = await response.json();
 
-        // Hide test screen
+        // Capture final screenshot before releasing device
+        let screenshotBase64 = null;
+        try {
+            console.log('Capturing screenshot from phoropter...');
+            const brainId = await getBrainId();
+            const ssResp = await fetch(`${CONFIG.phoropterUrl}/phoropter/${CONFIG.phoropterId}/screenshot`, {
+                method: 'POST',
+                headers: { 'x-brain-id': brainId }
+            });
+            if (ssResp.ok) {
+                const rawText = await ssResp.text();
+                screenshotBase64 = rawText.trim();
+                if (screenshotBase64.startsWith('"') && screenshotBase64.endsWith('"')) {
+                    screenshotBase64 = screenshotBase64.slice(1, -1);
+                }
+                if (screenshotBase64.startsWith('{')) {
+                    try {
+                        const parsed = JSON.parse(rawText);
+                        screenshotBase64 = parsed.image || parsed.screenshot || parsed.data || rawText;
+                    } catch (_) {}
+                }
+                screenshotBase64 = screenshotBase64.replace(/\s+/g, '');
+            }
+        } catch (ssErr) {
+            console.error('Screenshot capture exception:', ssErr);
+        }
+
+        // Hide test screen, show complete screen
         document.getElementById('testScreen').style.display = 'none';
         document.getElementById('completeScreen').style.display = 'block';
+
+        // Reset validation UI state
+        const validationBtns = document.getElementById('completeValidationButtons');
+        const afterValidation = document.getElementById('completeAfterValidation');
+        const validationPrompt = document.getElementById('completeValidationPrompt');
+        if (validationBtns) validationBtns.style.display = 'flex';
+        if (afterValidation) afterValidation.style.display = 'none';
+        if (validationPrompt) validationPrompt.style.display = 'block';
 
         // Display final prescription
         if (data.final_prescription) {
@@ -1762,20 +1971,127 @@ async function completeTest() {
                     </div>
                 </div>
             `;
+
             document.getElementById('finalPrescription').innerHTML = prescriptionHtml;
+
+            if (screenshotBase64 && screenshotBase64.length > 100) {
+                try {
+                    const screenshotDiv = document.createElement('div');
+                    screenshotDiv.className = 'info-section';
+                    screenshotDiv.style.marginTop = '20px';
+                    screenshotDiv.innerHTML = `
+                        <h4>Final Phoropter View</h4>
+                        <img src="data:image/jpeg;base64,${screenshotBase64}" 
+                             alt="Phoropter Screenshot"
+                             style="width: 100%; max-width: 800px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); margin-top: 10px;">
+                    `;
+                    document.getElementById('finalPrescription').appendChild(screenshotDiv);
+                } catch (imgErr) {
+                    console.error('Failed to append screenshot:', imgErr);
+                }
+            }
         }
 
         updateStatusIndicator(false);
-        document.getElementById('sessionStatus').textContent = 'Completed';
-        addToHistory('Test completed successfully', 'success');
+        document.getElementById('sessionStatus').textContent = 'Awaiting validation';
+        addToHistory('Test complete – please validate prescription matches image', 'info');
 
     } catch (error) {
         console.error('Error completing test:', error);
         alert('Failed to complete test properly.');
+        _clearSessionStorage();
+        await releaseDevice();
+    }
+}
+
+// Sign-off: store CSV and release phoropter
+async function signOff() {
+    const signOffBtn = document.getElementById('signOffBtn');
+    const powerBtn = document.getElementById('powerDoesNotMatchBtn');
+    if (signOffBtn) signOffBtn.disabled = true;
+    if (powerBtn) powerBtn.disabled = true;
+
+    try {
+        const response = await fetch(`${CONFIG.backendUrl}/api/session/${sessionState.sessionId}/end`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                store: true,
+                ar: storedPower.ar || null,
+                lenso: storedPower.lenso || null,
+                operator_name: operatorName || null
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to store session');
+        }
+
+        document.getElementById('completeValidationButtons').style.display = 'none';
+        document.getElementById('completeValidationPrompt').style.display = 'none';
+        const msgEl = document.getElementById('completeResultMessage');
+        if (msgEl) {
+            msgEl.textContent = 'Prescription signed off. Data stored successfully.';
+            msgEl.className = 'alert alert-success';
+        }
+        document.getElementById('completeAfterValidation').style.display = 'block';
+        addToHistory('Prescription signed off – data stored', 'success');
+    } catch (error) {
+        console.error('Sign-off error:', error);
+        alert('Failed to store data. Please try again.');
+        if (signOffBtn) signOffBtn.disabled = false;
+        if (powerBtn) powerBtn.disabled = false;
+        return;
     } finally {
         _clearSessionStorage();
         await releaseDevice();
     }
+}
+
+// Power does not match: discard session, do not store CSV, release phoropter
+async function powerDoesNotMatch() {
+    const signOffBtn = document.getElementById('signOffBtn');
+    const powerBtn = document.getElementById('powerDoesNotMatchBtn');
+    if (signOffBtn) signOffBtn.disabled = true;
+    if (powerBtn) powerBtn.disabled = true;
+
+    try {
+        const response = await fetch(`${CONFIG.backendUrl}/api/session/${sessionState.sessionId}/discard`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({})
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to discard session');
+        }
+
+        document.getElementById('completeValidationButtons').style.display = 'none';
+        document.getElementById('completeValidationPrompt').style.display = 'none';
+        const msgEl = document.getElementById('completeResultMessage');
+        if (msgEl) {
+            msgEl.textContent = 'Session discarded. Prescription did not match – no data stored.';
+            msgEl.className = 'alert alert-warning';
+        }
+        document.getElementById('completeAfterValidation').style.display = 'block';
+        addToHistory('Prescription did not match – session discarded', 'info');
+    } catch (error) {
+        console.error('Discard error:', error);
+        alert('Failed to discard. Please try again.');
+        if (signOffBtn) signOffBtn.disabled = false;
+        if (powerBtn) powerBtn.disabled = false;
+        return;
+    } finally {
+        _clearSessionStorage();
+        await releaseDevice();
+    }
+}
+
+// Start new test – return to welcome screen
+function startNewTest() {
+    document.getElementById('completeScreen').style.display = 'none';
+    document.getElementById('welcomeScreen').style.display = 'block';
+    document.getElementById('sessionStatus').textContent = 'Not Started';
 }
 
 // End Test Early

@@ -548,6 +548,17 @@
             margin-top: 20px;
         }
 
+        .complete-validation-buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .complete-validation-buttons .btn {
+            min-width: 180px;
+        }
+
         .btn {
             padding: 12px 28px;
             border: none;
@@ -999,9 +1010,10 @@
                     <div style="display: flex; gap: 6px; align-items: center;">
                         <button class="ar-power-btn" onclick="openArPowerModal()">Set AR</button>
                         <button class="ar-power-btn" onclick="openLensoPowerModal()">Set Lenso</button>
-                        <button id="compareStateBtn" class="compare-state-btn" onclick="storeCompareState()"
-                            title="No state stored">
-                            Compare
+                        <button id="memBtn" class="compare-state-btn" onclick="handleMemClick()"
+                            oncontextmenu="event.preventDefault(); clearMemory();"
+                            title="Memory (right-click to clear)">
+                            Mem
                         </button>
                     </div>
                     <div
@@ -1092,11 +1104,18 @@
 
                 <div id="completeScreen" style="display: none;">
                     <h2>✅ Test Complete!</h2>
-                    <div class="alert alert-success">
-                        <strong>Success!</strong> Your eye test has been completed successfully.
+                    <div class="alert alert-info" id="completeValidationPrompt">
+                        <strong>Validate prescription:</strong> Please verify that the final prescription below matches the phoropter image.
                     </div>
                     <div id="finalPrescription"></div>
-                    <button class="btn btn-primary" onclick="startNewTest()">Start New Test</button>
+                    <div id="completeValidationButtons" class="complete-validation-buttons">
+                        <button class="btn btn-primary" id="signOffBtn" onclick="signOff()">Sign-off</button>
+                        <button class="btn btn-secondary" id="powerDoesNotMatchBtn" onclick="powerDoesNotMatch()">Power does not match</button>
+                    </div>
+                    <div id="completeAfterValidation" style="display: none;">
+                        <div class="alert alert-success" id="completeResultMessage"></div>
+                        <button class="btn btn-primary" onclick="startNewTest()">Start New Test</button>
+                    </div>
                 </div>
             </div>
 

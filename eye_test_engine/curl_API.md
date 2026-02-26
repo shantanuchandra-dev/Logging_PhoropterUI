@@ -60,7 +60,7 @@ curl -X POST https://rajasthan-royals.preprod.lenskart.com/phoropter/{Phoropter-
   -H "Content-Type: application/json" \
   -d '{"test_cases": [{"case_id": 1, "right_eye": {"sph": -2.00, "cyl": -1.00, "axis": 90}, "left_eye": {"sph": -1.75, "cyl": -1.00, "axis": 180}}]}'
 
-# 4. Keep sending heartbeat every 15s (or lock auto-releases after 60s)
+# 4. Keep sending heartbeat every 15s (or lock auto-releases after 300s)
 curl -X POST https://rajasthan-royals.preprod.lenskart.com/devices/{Phoropter-ID}/heartbeat \
   -H "Content-Type: application/json" \
   -d '{"brain_id": "brain_01"}'
@@ -499,6 +499,43 @@ curl -X POST https://rajasthan-royals.preprod.lenskart.com/phoropter/{Phoropter-
     "pd": 64
   }'
 ```
+
+---
+
+## 7. Diagnostics & Verification
+
+### Live Screenshot
+Capture a live image of the agent's screen for visual verification. Returns a **raw base64-encoded JPEG string**.
+
+```bash
+curl -X POST https://rajasthan-royals.preprod.lenskart.com/phoropter/{Phoropter-ID}/screenshot \
+  -H "x-brain-id: brain_01"
+```
+
+**Response Example (Raw String):**
+```text
+/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL...
+```
+
+#### Technical Flow: How it works
+This command uses a **request-response relay** to bridge the Brain (Web) and the Agent (Windows):
+
+1. **Request (Brain → Broker)**: Brain sends a standard HTTP POST to the broker. The broker keeps this connection open (on "hold").
+2. **Relay (Broker → Agent)**: Broker sends a WebSocket message to the Windows Agent with `action: "screenshot"`.
+3. **Capture (Agent)**: The agent uses `pyautogui` to grab the screen, converts it to a **JPEG** (70% quality for speed), and encodes it to a **Base64 string**.
+4. **Result (Agent → Broker)**: Agent sends the string back via WebSocket.
+5. **Delivery (Broker → Brain)**: The broker returns the **raw string** directly as the response body.
+
+**Frontend Usage (JavaScript):**
+```javascript
+// Display the image in a browser
+const response = await fetch('/phoropter/lkst1782-1/screenshot', { method: 'POST' });
+const base64Image = await response.text();
+const imgElement = document.getElementById('screen-preview');
+imgElement.src = "data:image/jpeg;base64," + base64Image;
+```
+
+---
 
 ---
 

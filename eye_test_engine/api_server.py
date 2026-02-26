@@ -318,13 +318,17 @@ def sync_power(session_id):
 
 @app.route('/api/session/<session_id>/end', methods=['POST'])
 def end_session(session_id):
-    """End session, write CSV logs, and return final prescription."""
+    """End session. If store=True (default), write CSV logs. Returns final prescription."""
     if session_id not in sessions:
         return jsonify({"error": "Session not found"}), 404
 
     payload = _request_payload()
     _log_api_command(f"/api/session/{session_id}/end", payload)
-    
+
+    store = payload.get("store", True)
+    if isinstance(store, str):
+        store = store.lower() in ("true", "1", "yes")
+
     session = sessions[session_id]
     session.session_end_time = datetime.now()
 
@@ -332,7 +336,7 @@ def end_session(session_id):
     ar = payload.get("ar", None)
     lenso = payload.get("lenso", None)
     operator_name = payload.get("operator_name", "")
-    
+
     # Get final prescription
     if session.session_history:
         last_row = session.session_history[-1]
@@ -353,53 +357,69 @@ def end_session(session_id):
     else:
         final_rx = {}
 
-    # Determine all phases in the protocol to find skipped ones
-    all_phase_ids = list(session.phase_names.keys())
-    phases_completed = session._phases_visited
-    phases_skipped = [p for p in all_phase_ids if p not in phases_completed]
+    if store:
+        # Determine all phases in the protocol to find skipped ones
+        all_phase_ids = list(session.phase_names.keys())
+        phases_completed = session._phases_visited
+        phases_skipped = [p for p in all_phase_ids if p not in phases_completed]
 
-    # Build and write session metadata + CSV
-    try:
-        metadata = build_session_metadata(
-            session_id=session_id,
-            phoropter_id=session.phoropter_id,
-            session_start_time=session.session_start_time or datetime.now(),
-            session_end_time=session.session_end_time,
-            completion_status="completed",
-            rows=session.session_history,
-            ar=ar,
-            lensometry=lenso,
-            phase_jump_count=session._phase_jump_count,
-            unable_to_read_count=session.unable_read_count,
-            jcc_cycles_right=session.jcc_cycle_count,
-            jcc_cycles_left=getattr(session, "jcc_cycle_count", 0),
-            phases_completed=phases_completed,
-            phases_skipped=phases_skipped,
-            duration_per_phase=session.get_duration_per_phase(),
-            operator_name=operator_name,
-        )
+        # Build and write session metadata + CSV
+        try:
+            metadata = build_session_metadata(
+                session_id=session_id,
+                phoropter_id=session.phoropter_id,
+                session_start_time=session.session_start_time or datetime.now(),
+                session_end_time=session.session_end_time,
+                completion_status="completed",
+                rows=session.session_history,
+                ar=ar,
+                lensometry=lenso,
+                phase_jump_count=session._phase_jump_count,
+                unable_to_read_count=session.unable_read_count,
+                jcc_cycles_right=session.jcc_cycle_count,
+                jcc_cycles_left=getattr(session, "jcc_cycle_count", 0),
+                phases_completed=phases_completed,
+                phases_skipped=phases_skipped,
+                duration_per_phase=session.get_duration_per_phase(),
+                operator_name=operator_name,
+            )
 
-        csv_path = SESSIONS_DIR / f"{session_id}.csv"
-        meta_path = SESSIONS_DIR / f"{session_id}_metadata.json"
+            csv_path = SESSIONS_DIR / f"{session_id}.csv"
+            meta_path = SESSIONS_DIR / f"{session_id}_metadata.json"
 
-        write_session_csv(session.session_history, csv_path)
-        write_session_metadata(metadata, meta_path)
-        append_to_combined_log(session.session_history, session_id, COMBINED_LOG_PATH)
-        append_to_combined_metadata(metadata, COMBINED_META_PATH)
+            write_session_csv(session.session_history, csv_path)
+            write_session_metadata(metadata, meta_path)
+            append_to_combined_log(session.session_history, session_id, COMBINED_LOG_PATH)
+            append_to_combined_metadata(metadata, COMBINED_META_PATH)
 
-        print(f"[LOG] Session {session_id}: CSV → {csv_path}, Meta → {meta_path}")
-    except Exception as e:
-        print(f"[LOG ERROR] Failed to write session logs: {e}")
-    
-    # Clean up session
-    del sessions[session_id]
-    
+            print(f"[LOG] Session {session_id}: CSV → {csv_path}, Meta → {meta_path}")
+        except Exception as e:
+            print(f"[LOG ERROR] Failed to write session logs: {e}")
+
+    # Clean up session only when storing (or when store=True)
+    if store:
+        del sessions[session_id]
+    else:
+        # Keep session for later sign-off; session_end_time already set
+        pass
+
     return jsonify({
         "session_id": session_id,
         "status": "ended",
         "total_rows": len(session.session_history),
         "final_prescription": final_rx
     })
+
+
+@app.route('/api/session/<session_id>/discard', methods=['POST'])
+def discard_session(session_id):
+    """Discard session without writing CSV. Use when prescription does not match image."""
+    if session_id not in sessions:
+        return jsonify({"error": "Session not found"}), 404
+
+    _log_api_command(f"/api/session/{session_id}/discard", {})
+    del sessions[session_id]
+    return jsonify({"session_id": session_id, "status": "discarded"})
 
 
 if __name__ == '__main__':
@@ -420,4 +440,5 @@ if __name__ == '__main__':
     print("  POST /api/session/<id>/sync-power")
     print("  GET  /api/session/<id>/status")
     print("  POST /api/session/<id>/end")
+    print("  POST /api/session/<id>/discard")
     app.run(host='0.0.0.0', port=5050, debug=True)

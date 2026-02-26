@@ -6,7 +6,7 @@ firstFrame/
 firstFrame_JSON/
 __pycache__/
 __pycache__
-
+logs/
     
 temp/
 settings.json
