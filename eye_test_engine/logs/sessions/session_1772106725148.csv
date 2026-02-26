@@ -1,5 +1,0 @@
-Row_Number,Timestamp,Manual_or_QnA,R_SPH,R_CYL,R_AXIS,R_ADD,L_SPH,L_CYL,L_AXIS,L_ADD,Occluder_State,Chart_Number,Chart_Display,Change_Delta,Current_Phase,Phase_ID,Optometrist_Question,Patient_Answer_Intent
-1,2026-02-26T17:22:24.456,Manual,-1.0,-2.0,85.0,0.0,-2.0,-2.0,20.0,0.0,BINO,-1,echart_400,Manual Adjust,Phase A: Distance Vision (Step 2.1),distance_vision,Please read the line you can see clearly.,
-2,2026-02-26T17:22:50.497,Manual,-1.0,-2.0,85.0,0.0,-2.0,-2.0,20.0,0.0,BINO,-1,echart_400,Manual Adjust,Phase A: Distance Vision (Step 2.1),distance_vision,Please read the line you can see clearly.,
-3,2026-02-26T17:22:56.609,Manual,-1.0,-2.0,85.0,0.0,-2.0,-2.0,20.0,0.0,BINO,-1,echart_400,Manual Adjust,Phase A: Distance Vision (Step 2.1),distance_vision,Please read the line you can see clearly.,
-4,2026-02-26T17:23:01.728,Manual,-1.0,-2.0,85.0,0.0,-2.0,-2.0,20.0,0.0,BINO,-1,echart_400,Manual Adjust,Phase A: Distance Vision (Step 2.1),distance_vision,Please read the line you can see clearly.,

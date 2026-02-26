@@ -224,12 +224,30 @@ async function _tryRestoreSession() {
     if (!saved || !saved.sessionId) return false;
 
     try {
-        const resp = await fetch(`${CONFIG.backendUrl}/api/session/${saved.sessionId}/status`);
-        if (!resp.ok) {
+        // 1. Verify internet / backend is reachable
+        const statusResp = await fetch(`${CONFIG.backendUrl}/api/session/${saved.sessionId}/status`);
+        if (!statusResp.ok) {
+            console.warn('Backend session gone, starting fresh');
             _clearSessionStorage();
             return false;
         }
-        const data = await resp.json();
+
+        // 2. If device was acquired, verify the lock is still alive via heartbeat
+        if (saved.deviceAcquired && saved.deviceId) {
+            const brainId = await getBrainId();
+            const hbResp = await fetch(`${CONFIG.backendUrl}/api/devices/${saved.deviceId}/heartbeat`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ brain_id: brainId })
+            });
+            if (hbResp.status !== 200 && hbResp.status !== 202) {
+                console.warn(`Heartbeat returned ${hbResp.status}, device lock lost — starting fresh`);
+                _clearSessionStorage();
+                return false;
+            }
+        }
+
+        const data = await statusResp.json();
 
         // Restore JS state
         sessionState.sessionId = saved.sessionId;
@@ -268,7 +286,7 @@ async function _tryRestoreSession() {
         console.log('Session restored:', saved.sessionId);
         return true;
     } catch (err) {
-        console.warn('Failed to restore session:', err);
+        console.warn('No internet or backend unreachable, starting fresh:', err);
         _clearSessionStorage();
         return false;
     }
