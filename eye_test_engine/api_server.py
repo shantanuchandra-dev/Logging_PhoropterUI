@@ -2,6 +2,9 @@
 """
 Simple Flask API server for interactive eye test sessions.
 """
+from datetime import datetime
+from pathlib import Path
+
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import json
@@ -11,12 +14,32 @@ import urllib.request
 
 from interactive_session import InteractiveSession
 
+# Load io/outputs.py directly to avoid clash with Python's built-in io module
+import importlib.util as _ilu
+_spec = _ilu.spec_from_file_location(
+    "io_outputs",
+    str(Path(__file__).resolve().parent / "io" / "outputs.py"),
+)
+_outputs = _ilu.module_from_spec(_spec)
+_spec.loader.exec_module(_outputs)
+write_session_csv = _outputs.write_session_csv
+write_session_metadata = _outputs.write_session_metadata
+append_to_combined_log = _outputs.append_to_combined_log
+append_to_combined_metadata = _outputs.append_to_combined_metadata
+build_session_metadata = _outputs.build_session_metadata
+
 app = Flask(__name__)
 CORS(app)
 
 # Global session storage (in production, use proper session management)
 sessions = {}
 PHOROPTER_BASE_URL = "https://rajasthan-royals.preprod.lenskart.com"
+
+LOGS_DIR = Path(__file__).parent / "logs"
+SESSIONS_DIR = LOGS_DIR / "sessions"
+COMBINED_LOG_PATH = LOGS_DIR / "combined_log.csv"
+COMBINED_META_PATH = LOGS_DIR / "combined_metadata.csv"
+SESSIONS_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def _log_api_command(action: str, payload: dict) -> None:
@@ -291,6 +314,12 @@ def sync_power(session_id):
     if 'sph' in left: session.current_row.l_sph = float(left['sph'])
     if 'cyl' in left: session.current_row.l_cyl = float(left['cyl'])
     if 'axis' in left: session.current_row.l_axis = float(left['axis'])
+
+    # Record as a Manual row in session history
+    delta = session._compute_change_delta("", "Manual")
+    session._stamp_row(session.current_row, "Manual", delta)
+    session.session_history.append(session.current_row)
+    session.current_row = session._copy_row_state()
     
     return jsonify({
         "session_id": session_id,
@@ -301,13 +330,20 @@ def sync_power(session_id):
 
 @app.route('/api/session/<session_id>/end', methods=['POST'])
 def end_session(session_id):
-    """End session and get final prescription."""
+    """End session, write CSV logs, and return final prescription."""
     if session_id not in sessions:
         return jsonify({"error": "Session not found"}), 404
 
-    _log_api_command(f"/api/session/{session_id}/end", {})
+    payload = _request_payload()
+    _log_api_command(f"/api/session/{session_id}/end", payload)
     
     session = sessions[session_id]
+    session.session_end_time = datetime.now()
+
+    # AR, Lensometry, and operator name sent from frontend
+    ar = payload.get("ar", None)
+    lenso = payload.get("lenso", None)
+    operator_name = payload.get("operator_name", "")
     
     # Get final prescription
     if session.session_history:
@@ -328,6 +364,44 @@ def end_session(session_id):
         }
     else:
         final_rx = {}
+
+    # Determine all phases in the protocol to find skipped ones
+    all_phase_ids = list(session.phase_names.keys())
+    phases_completed = session._phases_visited
+    phases_skipped = [p for p in all_phase_ids if p not in phases_completed]
+
+    # Build and write session metadata + CSV
+    try:
+        metadata = build_session_metadata(
+            session_id=session_id,
+            phoropter_id=session.phoropter_id,
+            session_start_time=session.session_start_time or datetime.now(),
+            session_end_time=session.session_end_time,
+            completion_status="completed",
+            rows=session.session_history,
+            ar=ar,
+            lensometry=lenso,
+            phase_jump_count=session._phase_jump_count,
+            unable_to_read_count=session.unable_read_count,
+            jcc_cycles_right=session.jcc_cycle_count,
+            jcc_cycles_left=getattr(session, "jcc_cycle_count", 0),
+            phases_completed=phases_completed,
+            phases_skipped=phases_skipped,
+            duration_per_phase=session.get_duration_per_phase(),
+            operator_name=operator_name,
+        )
+
+        csv_path = SESSIONS_DIR / f"{session_id}.csv"
+        meta_path = SESSIONS_DIR / f"{session_id}_metadata.json"
+
+        write_session_csv(session.session_history, csv_path)
+        write_session_metadata(metadata, meta_path)
+        append_to_combined_log(session.session_history, session_id, COMBINED_LOG_PATH)
+        append_to_combined_metadata(metadata, COMBINED_META_PATH)
+
+        print(f"[LOG] Session {session_id}: CSV → {csv_path}, Meta → {meta_path}")
+    except Exception as e:
+        print(f"[LOG ERROR] Failed to write session logs: {e}")
     
     # Clean up session
     del sessions[session_id]

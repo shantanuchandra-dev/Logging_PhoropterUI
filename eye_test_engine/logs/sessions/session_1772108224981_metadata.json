@@ -1,0 +1,70 @@
+{
+  "session_id": "session_1772108224981",
+  "phoropter_id": "lkst1782-1",
+  "operator_name": "Shantanu Optom",
+  "session_start_time": "2026-02-26T17:47:19.749143",
+  "session_end_time": "2026-02-26T17:52:01.500134",
+  "session_duration_seconds": 281.8,
+  "test_completion_status": "completed",
+  "total_interactions": 49,
+  "ar": {},
+  "lensometry": {},
+  "final_prescription": {
+    "right": {
+      "sph": -0.5,
+      "cyl": -0.5,
+      "axis": 145.0,
+      "add": 0.25
+    },
+    "left": {
+      "sph": -0.75,
+      "cyl": -0.5,
+      "axis": 165.0,
+      "add": 0.25
+    }
+  },
+  "phases_completed": [
+    "distance_vision",
+    "right_eye_refraction",
+    "jcc_axis_right",
+    "jcc_power_right",
+    "duochrome_right",
+    "validation_right",
+    "left_eye_refraction",
+    "jcc_axis_left",
+    "jcc_power_left",
+    "duochrome_left",
+    "validation_left",
+    "validation_distance",
+    "binocular_balance",
+    "near_add_right",
+    "near_add_left",
+    "near_add_bino"
+  ],
+  "phases_skipped": [],
+  "quality_metrics": {
+    "manual_adjustment_count": 6,
+    "qna_interaction_count": 43,
+    "phase_jump_count": 0,
+    "jcc_cycles_right": 0,
+    "jcc_cycles_left": 0,
+    "unable_to_read_count": 0,
+    "duration_per_phase": {
+      "distance_vision": 32.745,
+      "right_eye_refraction": 4.604,
+      "jcc_axis_right": 31.249999999999996,
+      "jcc_power_right": 33.690999999999995,
+      "duochrome_right": 13.977,
+      "validation_right": 5.24,
+      "left_eye_refraction": 19.345,
+      "jcc_axis_left": 23.914,
+      "jcc_power_left": 19.649,
+      "duochrome_left": 5.596,
+      "validation_left": 4.847,
+      "validation_distance": 18.35,
+      "binocular_balance": 41.373,
+      "near_add_right": 15.253,
+      "near_add_left": 9.085
+    }
+  }
+}

@@ -5,6 +5,7 @@ Manages conversation flow with patient and phoropter API calls.
 """
 import json
 import subprocess
+from datetime import datetime
 from typing import Optional, List, Dict
 from pathlib import Path
 
@@ -49,6 +50,14 @@ class InteractiveSession:
         self.current_row = self._init_row()
         self.session_history: List[RowContext] = []
         
+        # Session-level logging state
+        self.session_start_time: Optional[datetime] = None
+        self.session_end_time: Optional[datetime] = None
+        self._row_counter = 0
+        self._phase_jump_count = 0
+        self._phase_start_times: Dict[str, datetime] = {}
+        self._phases_visited: List[str] = []
+
         # Previous state tracking for "Prev State" functionality
         self.previous_state = None
         self.show_prev_state_option = False
@@ -137,6 +146,69 @@ class InteractiveSession:
             ocr_fields_read=0,
             anomalies_fixed=0,
         )
+
+    def _stamp_row(self, row: RowContext, interaction_type: str,
+                   change_delta: str) -> None:
+        """Populate logging fields on a row before appending to history."""
+        self._row_counter += 1
+        row.row_number = self._row_counter
+        row.timestamp = datetime.now().isoformat(timespec="milliseconds")
+        row.interaction_type = interaction_type
+        row.change_delta = change_delta
+        row.phase_id = self.current_phase
+        row.phase_name = self.phase_names.get(self.current_phase, self.current_phase)
+        row.optometrist_question = self.get_question()
+
+    def _compute_change_delta(self, intent: str, interaction_type: str) -> str:
+        """Compute a human-readable change description for the current row.
+
+        For QnA rows the delta is the patient's response.  For manual
+        adjustments it describes which parameters changed and by how much.
+        """
+        if interaction_type == "Manual":
+            prev = self.session_history[-1] if self.session_history else None
+            if prev is None:
+                return "Manual Adjust"
+            parts = []
+            tol = 0.001
+            for eye, prefix in [("R", "r_"), ("L", "l_")]:
+                for param in ["sph", "cyl", "axis"]:
+                    old_val = getattr(prev, f"{prefix}{param}")
+                    new_val = getattr(self.current_row, f"{prefix}{param}")
+                    diff = new_val - old_val
+                    if abs(diff) > tol:
+                        sign = "+" if diff > 0 else ""
+                        if param == "axis":
+                            parts.append(f"{param.upper()} {sign}{int(diff)} [{eye}]")
+                        else:
+                            parts.append(f"{param.upper()} {sign}{diff:.2f} [{eye}]")
+            if parts:
+                return "Manual Adjust: " + ", ".join(parts)
+            return "Manual Adjust"
+
+        return f"Response: {intent}"
+
+    def _track_phase_entry(self, phase: str) -> None:
+        """Record phase entry for duration tracking."""
+        self._phase_start_times[phase] = datetime.now()
+        if phase not in self._phases_visited:
+            self._phases_visited.append(phase)
+
+    def get_duration_per_phase(self) -> Dict[str, float]:
+        """Calculate time spent in each phase based on rows."""
+        durations: Dict[str, float] = {}
+        if not self.session_history:
+            return durations
+        for i, row in enumerate(self.session_history):
+            pid = row.phase_id or "unknown"
+            if i + 1 < len(self.session_history):
+                try:
+                    t0 = datetime.fromisoformat(row.timestamp)
+                    t1 = datetime.fromisoformat(self.session_history[i + 1].timestamp)
+                    durations[pid] = durations.get(pid, 0.0) + (t1 - t0).total_seconds()
+                except (ValueError, TypeError):
+                    pass
+        return durations
 
     def _reset_jcc_choice_tracking(self) -> None:
         """Reset JCC flip choice tracking for reversal detection."""
@@ -410,7 +482,9 @@ class InteractiveSession:
     
     def start_distance_vision(self):
         """Start Phase A: Distance Vision."""
+        self.session_start_time = datetime.now()
         self.current_phase = "distance_vision"
+        self._track_phase_entry(self.current_phase)
         
         print("\n" + "="*60)
         print(self.phase_names[self.current_phase].upper())
@@ -445,8 +519,10 @@ class InteractiveSession:
     
     def process_response(self, intent: str) -> Dict:
         """Process patient response and return next question."""
-        # Record current row
+        # Record current row with logging fields
         self.current_row.patient_answer_intent = intent
+        delta = self._compute_change_delta(intent, "QnA")
+        self._stamp_row(self.current_row, "QnA", delta)
         self.session_history.append(self.current_row)
         
         # Process based on current phase
@@ -562,19 +638,20 @@ class InteractiveSession:
     def _transition_to_right_eye_refraction(self) -> Dict:
         """Transition to right eye refraction."""
         self.current_phase = "right_eye_refraction"
+        self._track_phase_entry(self.current_phase)
         print(f"\n→ Transitioning to {self.phase_names[self.current_phase]}")
         
         self.current_chart_index = 0  # Start with largest chart
         self.unable_read_count = 0
         
-        # Create new row
-        self.current_row = self._init_row()
+        # Carry forward current power (preserves AR/Lenso values if applied)
+        self.current_row = self._copy_row_state()
         self.current_row.occluder_state = "Left_Occluded"
         self.current_row.chart_display = self.snellen_charts[0]
         
         # Set phoropter
         self.set_chart(self.snellen_charts[0])
-        self.set_power(occluder="Left_Occluded") #SHANTANUCHANDRA: Commented out to avoid SETTING POWER during transition
+        self.set_power(occluder="Left_Occluded")
         
         return self._build_response()
     
@@ -2295,6 +2372,7 @@ class InteractiveSession:
     def _transition_to_jcc_axis_right(self) -> Dict:
         """Transition to JCC axis refinement for right eye."""
         self.current_phase = "jcc_axis_right"
+        self._track_phase_entry(self.current_phase)
         print(f"\n→ Transitioning to {self.phase_names[self.current_phase]}")
 
         self._reset_jcc_choice_tracking()
@@ -2316,6 +2394,7 @@ class InteractiveSession:
     def _transition_to_jcc_axis_left(self) -> Dict:
         """Transition to JCC axis refinement for left eye."""
         self.current_phase = "jcc_axis_left"
+        self._track_phase_entry(self.current_phase)
         print(f"\n→ Transitioning to {self.phase_names[self.current_phase]}")
 
         self._reset_jcc_choice_tracking()
@@ -2340,6 +2419,7 @@ class InteractiveSession:
     def _transition_to_jcc_power_right(self) -> Dict:
         """Transition to JCC power refinement for right eye."""
         self.current_phase = "jcc_power_right"
+        self._track_phase_entry(self.current_phase)
         print(f"\n→ Transitioning to {self.phase_names[self.current_phase]}")
 
         self._reset_jcc_choice_tracking()
@@ -2361,6 +2441,7 @@ class InteractiveSession:
     def _transition_to_jcc_power_left(self) -> Dict:
         """Transition to JCC power refinement for left eye."""
         self.current_phase = "jcc_power_left"
+        self._track_phase_entry(self.current_phase)
         print(f"\n→ Transitioning to {self.phase_names[self.current_phase]}")
 
         self._reset_jcc_choice_tracking()
@@ -2382,6 +2463,7 @@ class InteractiveSession:
     def _transition_to_duochrome_right(self) -> Dict:
         """Transition to duochrome test for right eye."""
         self.current_phase = "duochrome_right"
+        self._track_phase_entry(self.current_phase)
         print(f"\n→ Transitioning to {self.phase_names[self.current_phase]}")
 
         self._reset_duochrome_choice_tracking()
@@ -2399,6 +2481,7 @@ class InteractiveSession:
     def _transition_to_duochrome_left(self) -> Dict:
         """Transition to duochrome test for left eye."""
         self.current_phase = "duochrome_left"
+        self._track_phase_entry(self.current_phase)
         print(f"\n→ Transitioning to {self.phase_names[self.current_phase]}")
 
         self._reset_duochrome_choice_tracking()
@@ -2421,6 +2504,7 @@ class InteractiveSession:
         as the same to maintain current power while switching occluder.
         """
         self.current_phase = "left_eye_refraction"
+        self._track_phase_entry(self.current_phase)
         print(f"\n→ Transitioning to {self.phase_names[self.current_phase]}")
         
         self.current_chart_index = 0  # Start with largest chart
@@ -2463,6 +2547,7 @@ class InteractiveSession:
         when transitioning from left eye duochrome to binocular balance.
         """
         self.current_phase = "binocular_balance"
+        self._track_phase_entry(self.current_phase)
         print(f"\n→ Transitioning to {self.phase_names[self.current_phase]}")
         
         # Reset previous state tracking
@@ -2502,6 +2587,7 @@ class InteractiveSession:
     def _transition_to_validation_right(self) -> Dict:
         """Transition to 20/20 validation for right eye (Phase H)."""
         self.current_phase = "validation_right"
+        self._track_phase_entry(self.current_phase)
         self._validation_fallback_active = None
         print(f"\n→ Transitioning to {self.phase_names[self.current_phase]}")
         self.current_row = self._copy_row_state()
@@ -2522,6 +2608,7 @@ class InteractiveSession:
     def _transition_to_validation_left(self) -> Dict:
         """Transition to 20/20 validation for left eye (Phase M)."""
         self.current_phase = "validation_left"
+        self._track_phase_entry(self.current_phase)
         self._validation_fallback_active = None
         print(f"\n→ Transitioning to {self.phase_names[self.current_phase]}")
         self.current_row = self._copy_row_state()
@@ -2542,6 +2629,7 @@ class InteractiveSession:
     def _transition_to_validation_distance(self) -> Dict:
         """Transition to 6/6 binocular validation (Phase N)."""
         self.current_phase = "validation_distance"
+        self._track_phase_entry(self.current_phase)
         print(f"\n→ Transitioning to {self.phase_names[self.current_phase]}")
         self.current_row = self._copy_row_state()
         self.current_row.occluder_state = "BINO"
@@ -2561,6 +2649,7 @@ class InteractiveSession:
     def _transition_to_near_add_right(self) -> Dict:
         """Transition to Near Vision ADD adjustment for Right eye (Phase P)."""
         self.current_phase = "near_add_right"
+        self._track_phase_entry(self.current_phase)
         print(f"\n→ Transitioning to {self.phase_names[self.current_phase]}")
         self.current_row = self._copy_row_state()
         self.current_row.occluder_state = "Left_Occluded"
@@ -2581,6 +2670,7 @@ class InteractiveSession:
     def _transition_to_near_add_left(self) -> Dict:
         """Transition to Near Vision ADD adjustment for Left eye (Phase Q)."""
         self.current_phase = "near_add_left"
+        self._track_phase_entry(self.current_phase)
         print(f"\n→ Transitioning to {self.phase_names[self.current_phase]}")
         self.current_row = self._copy_row_state()
         self.current_row.occluder_state = "Right_Occluded"
@@ -2601,6 +2691,7 @@ class InteractiveSession:
     def _transition_to_near_add_bino(self) -> Dict:
         """Transition to Near Vision binocular ADD verification (Phase R)."""
         self.current_phase = "near_add_bino"
+        self._track_phase_entry(self.current_phase)
         print(f"\n→ Transitioning to {self.phase_names[self.current_phase]}")
         self.current_row = self._copy_row_state()
         self.current_row.occluder_state = "BINO"
@@ -2651,6 +2742,8 @@ class InteractiveSession:
         """
         # Set current phase
         self.current_phase = phase
+        self._track_phase_entry(phase)
+        self._phase_jump_count += 1
         print(f"\n→ Jumping to {self.phase_names.get(phase, phase)}")
         
         # Create new row for this phase

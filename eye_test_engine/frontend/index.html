@@ -1251,6 +1251,29 @@
         </div>
     </div>
 
+    <!-- Optometrist Name Modal -->
+    <div class="modal-backdrop" id="optometristModal">
+        <div class="modal" style="width: 420px;">
+            <div class="modal-header">
+                <h3>Optometrist Identification</h3>
+                <p>Please enter your name before proceeding</p>
+            </div>
+            <div class="modal-body">
+                <div class="modal-section">
+                    <div class="modal-section-label">Full Name</div>
+                    <input id="optometristNameInput" type="text" placeholder="e.g. Dr. Sharma"
+                        style="width: 100%; padding: 12px 14px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 15px; font-weight: 500; background: #fafafa; transition: all 0.2s;"
+                        onfocus="this.style.borderColor='#667eea'; this.style.background='white'; this.style.boxShadow='0 0 0 3px rgba(102,126,234,0.1)';"
+                        onblur="this.style.borderColor='#e0e0e0'; this.style.background='#fafafa'; this.style.boxShadow='none';"
+                        onkeydown="if(event.key==='Enter') saveOptometristName();">
+                </div>
+                <div class="modal-actions">
+                    <button class="btn btn-primary" onclick="saveOptometristName()">Continue</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="app.js"></script>
 </body>
 

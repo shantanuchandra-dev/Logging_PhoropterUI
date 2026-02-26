@@ -1,7 +1,7 @@
 """
 Context module: Manages row-level context and normalization.
 """
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Optional
 
 
@@ -42,6 +42,11 @@ class RowContext:
     # Phase tracking (populated by state machine)
     phase_id: Optional[str] = None
     phase_name: Optional[str] = None
+
+    # Logging fields for CSV export
+    row_number: int = 0
+    interaction_type: str = ""  # "QnA" or "Manual"
+    change_delta: str = ""  # human-readable description of what changed
     
     def __post_init__(self):
         """Derive fields after initialization."""

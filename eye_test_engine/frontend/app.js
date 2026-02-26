@@ -29,6 +29,8 @@ let storedPower = {
 
 let currentAppliedPower = 'none';  // 'none', 'ar', or 'lenso'
 
+let operatorName = '';  // cached optometrist name
+
 // Stored phoropter state snapshot for comparison
 let storedPhoropterState = null;
 
@@ -55,21 +57,189 @@ function savePhoropterId() {
     console.log(`Phoropter ID set to: ${id}`);
 }
 
+// ── Device Management ────────────────────────────────
+
+async function fetchDevices() {
+    const select = document.getElementById('phoropterIdInput');
+    if (!select) return;
+
+    try {
+        const resp = await fetch(`${CONFIG.backendUrl}/api/devices?all=true`);
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const data = await resp.json();
+
+        const devices = Array.isArray(data) ? data : (data.devices || []);
+        select.innerHTML = '';
+
+        if (devices.length === 0) {
+            select.innerHTML = '<option value="">No devices found</option>';
+            return;
+        }
+
+        const savedId = localStorage.getItem('phoropterId');
+
+        devices.forEach(dev => {
+            const id = dev.device_id || dev.id || dev.name || '';
+            const status = dev.status || '';
+            const opt = document.createElement('option');
+            opt.value = id;
+            opt.textContent = `${id} (${status})`;
+            if (id === savedId) opt.selected = true;
+            select.appendChild(opt);
+        });
+
+        if (select.value) {
+            localStorage.setItem('phoropterId', select.value);
+        }
+        onDeviceSelectionChanged();
+    } catch (err) {
+        console.warn('Could not fetch devices:', err);
+        select.innerHTML = '<option value="phoropter-1">phoropter-1 (default)</option>';
+        localStorage.setItem('phoropterId', 'phoropter-1');
+    }
+}
+
+function onDeviceSelectionChanged() {
+    const select = document.getElementById('phoropterIdInput');
+    const acquireBtn = document.getElementById('acquireDeviceBtn');
+    if (!select) return;
+
+    const id = select.value;
+    if (id) {
+        localStorage.setItem('phoropterId', id);
+        if (acquireBtn) acquireBtn.style.display = 'inline-block';
+    } else {
+        if (acquireBtn) acquireBtn.style.display = 'none';
+    }
+}
+
+let _cachedClientIp = null;
+
+async function getClientIp() {
+    if (_cachedClientIp) return _cachedClientIp;
+    try {
+        const resp = await fetch('https://api.ipify.org?format=json');
+        const data = await resp.json();
+        _cachedClientIp = data.ip || 'unknown';
+    } catch {
+        _cachedClientIp = 'unknown';
+    }
+    return _cachedClientIp;
+}
+
+async function getBrainId() {
+    const ip = await getClientIp();
+    const name = (operatorName || 'unknown').replace(/\s+/g, '_');
+    return `${name}@${ip}`;
+}
+
+async function acquireSelectedDevice() {
+    const deviceId = CONFIG.phoropterId;
+    if (!deviceId) return;
+
+    const btn = document.getElementById('acquireDeviceBtn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Acquiring...'; }
+
+    try {
+        const brainId = await getBrainId();
+        const resp = await fetch(`${CONFIG.backendUrl}/api/devices/${deviceId}/acquire`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ brain_id: brainId, name: operatorName || 'Eye Test UI' })
+        });
+        const data = await resp.json();
+
+        if (resp.ok) {
+            if (btn) btn.style.display = 'none';
+            console.log('Device acquired:', deviceId, data);
+        } else {
+            alert(`Could not acquire ${deviceId}: ${data.error || data.reason || resp.status}`);
+            if (btn) { btn.disabled = false; btn.textContent = 'Acquire'; }
+        }
+    } catch (err) {
+        alert(`Failed to acquire device: ${err.message}`);
+        if (btn) { btn.disabled = false; btn.textContent = 'Acquire'; }
+    }
+}
+
+async function releaseDevice() {
+    const deviceId = CONFIG.phoropterId;
+    if (!deviceId) return;
+
+    try {
+        const brainId = await getBrainId();
+        await fetch(`${CONFIG.backendUrl}/api/devices/${deviceId}/release`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ brain_id: brainId })
+        });
+        console.log('Device released:', deviceId);
+    } catch (err) {
+        console.warn('Could not release device:', err);
+    }
+
+    const btn = document.getElementById('acquireDeviceBtn');
+    if (btn) {
+        btn.style.display = 'inline-block';
+        btn.disabled = false;
+        btn.textContent = 'Acquire';
+        btn.style.background = '';
+    }
+}
+
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     console.log('Eye Test Engine Frontend Loaded');
 
-    // Restore saved phoropter ID from localStorage
-    const savedId = localStorage.getItem('phoropterId');
-    const idInput = document.getElementById('phoropterIdInput');
-    if (idInput && savedId) {
-        idInput.value = savedId;
-    }
-
     updateStatusIndicator(false);
     populateDirectCommands();
     bindTableInteractions();
+    checkOptometristName();
+    fetchDevices();
 });
+
+// ── Optometrist Name Cache (12-hour TTL) ─────────────
+
+const OPTOMETRIST_CACHE_KEY = 'optometristName';
+const OPTOMETRIST_TS_KEY = 'optometristNameTimestamp';
+const OPTOMETRIST_TTL_MS = 12 * 60 * 60 * 1000;
+
+function checkOptometristName() {
+    const cached = localStorage.getItem(OPTOMETRIST_CACHE_KEY);
+    const ts = parseInt(localStorage.getItem(OPTOMETRIST_TS_KEY) || '0', 10);
+    const expired = (Date.now() - ts) > OPTOMETRIST_TTL_MS;
+
+    if (cached && !expired) {
+        operatorName = cached;
+        return;
+    }
+
+    localStorage.removeItem(OPTOMETRIST_CACHE_KEY);
+    localStorage.removeItem(OPTOMETRIST_TS_KEY);
+
+    const modal = document.getElementById('optometristModal');
+    if (modal) {
+        modal.classList.add('active');
+        const input = document.getElementById('optometristNameInput');
+        if (input) setTimeout(() => input.focus(), 200);
+    }
+}
+
+function saveOptometristName() {
+    const input = document.getElementById('optometristNameInput');
+    const name = (input ? input.value.trim() : '');
+    if (!name) {
+        input.style.borderColor = '#f44336';
+        input.placeholder = 'Name is required';
+        return;
+    }
+    operatorName = name;
+    localStorage.setItem(OPTOMETRIST_CACHE_KEY, name);
+    localStorage.setItem(OPTOMETRIST_TS_KEY, String(Date.now()));
+
+    const modal = document.getElementById('optometristModal');
+    if (modal) modal.classList.remove('active');
+}
 
 // ── Manual Refraction Adjustments ─────────────────────
 
@@ -365,13 +535,40 @@ async function applyStoredPower(type) {
         const label = type === 'ar' ? 'AR' : 'Lenso';
         addToHistory(`${label} power applied`, 'info');
 
-        // Update UI display
-        document.getElementById('rightPower').textContent =
-            `${power.right.sph.toFixed(2)} / ${power.right.cyl.toFixed(2)} / ${power.right.axis.toFixed(0)}°`;
-        document.getElementById('leftPower').textContent =
-            `${power.left.sph.toFixed(2)} / ${power.left.cyl.toFixed(2)} / ${power.left.axis.toFixed(0)}°`;
+        // Update refraction table to reflect applied power
+        const fmtSign = (v) => (v >= 0 ? '+' : '') + v.toFixed(2);
+        const rSph = document.getElementById('rt-r-sph');
+        const rCyl = document.getElementById('rt-r-cyl');
+        const rAxis = document.getElementById('rt-r-axis');
+        const lSph = document.getElementById('rt-l-sph');
+        const lCyl = document.getElementById('rt-l-cyl');
+        const lAxis = document.getElementById('rt-l-axis');
+        if (rSph) rSph.textContent = fmtSign(power.right.sph);
+        if (rCyl) rCyl.textContent = fmtSign(power.right.cyl);
+        if (rAxis) rAxis.textContent = power.right.axis.toFixed(0);
+        if (lSph) lSph.textContent = fmtSign(power.left.sph);
+        if (lCyl) lCyl.textContent = fmtSign(power.left.cyl);
+        if (lAxis) lAxis.textContent = power.left.axis.toFixed(0);
         document.getElementById('occluderState').textContent = 'BINO';
-        updateLocalPhoropterState({ power: power, occluder: 'BINO' });
+
+        // Sync applied power to backend session state
+        if (sessionState.sessionId) {
+            try {
+                await fetch(`${CONFIG.backendUrl}/api/session/${sessionState.sessionId}/sync-power`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(power)
+                });
+            } catch (syncErr) {
+                console.warn('Failed to sync applied power to backend:', syncErr);
+            }
+        }
+
+        // Keep lastResponse in sync so manual adjustments and next QnA work from this baseline
+        if (!sessionState.lastResponse) {
+            sessionState.lastResponse = {};
+        }
+        sessionState.lastResponse.power = power;
     } catch (error) {
         console.error(`Error applying ${type} power:`, error);
         alert(`Failed to apply ${type.toUpperCase()} power. Please try again.`);
@@ -1111,7 +1308,13 @@ async function setPower(power, occluder) {
 async function completeTest() {
     try {
         const response = await fetch(`${CONFIG.backendUrl}/api/session/${sessionState.sessionId}/end`, {
-            method: 'POST'
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                ar: storedPower.ar || null,
+                lenso: storedPower.lenso || null,
+                operator_name: operatorName || null
+            })
         });
 
         if (!response.ok) {
@@ -1167,6 +1370,8 @@ async function completeTest() {
     } catch (error) {
         console.error('Error completing test:', error);
         alert('Failed to complete test properly.');
+    } finally {
+        await releaseDevice();
     }
 }
 
