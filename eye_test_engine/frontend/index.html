@@ -890,10 +890,79 @@
             transition: background 0.15s;
             user-select: none;
             -webkit-user-select: none;
+            position: relative;
         }
 
         .rt-val:hover {
             background: #e3f2fd;
+        }
+
+        .rt-val::after {
+            content: attr(data-tip);
+            position: absolute;
+            bottom: calc(100% + 6px);
+            left: 50%;
+            transform: translateX(-50%);
+            background: #333;
+            color: #fff;
+            font-size: 0.72em;
+            font-family: 'Segoe UI', sans-serif;
+            font-weight: 500;
+            white-space: nowrap;
+            padding: 4px 8px;
+            border-radius: 5px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.15s;
+            z-index: 100;
+        }
+
+        .rt-val:hover::after {
+            opacity: 1;
+        }
+
+        .rt-val.locked {
+            cursor: not-allowed;
+            opacity: 0.45;
+        }
+
+        #manualLockBtn.locked {
+            color: #f44336;
+        }
+
+        #typeModeBtn.active {
+            background: rgba(102, 126, 234, 0.12) !important;
+            border-radius: 4px;
+        }
+
+        .rt-val.type-mode {
+            cursor: text;
+        }
+
+        .rt-val.type-mode:hover {
+            background: #e8eaf6;
+            outline: 2px solid #667eea;
+            outline-offset: -2px;
+            border-radius: 3px;
+        }
+
+        .rt-type-input {
+            width: 100%;
+            border: none;
+            outline: none;
+            background: #e8eaf6;
+            text-align: center;
+            font-family: 'JetBrains Mono', 'Courier New', monospace;
+            font-size: 1.05rem;
+            font-weight: 600;
+            color: #1a237e;
+            padding: 2px 0;
+            box-shadow: inset 0 0 0 2px #667eea;
+            border-radius: 3px;
+        }
+
+        .rt-type-input:focus {
+            background: #c5cae9;
         }
 
         @media (max-width: 768px) {
@@ -923,8 +992,7 @@
             <div
                 style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                 <div>
-                    <h1>👁️ Eye Test Engine</h1>
-                    <p>Interactive Phoropter-Controlled Eye Examination</p>
+                    <h2>👁️ Eye Test Engine</h2>
                 </div>
                 <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
                     <div style="display: flex; gap: 6px; align-items: center;">
@@ -1042,21 +1110,30 @@
                         <span class="info-value" id="sessionStatus">Not Started</span>
                     </div>
                     <div class="info-item">
-                        <span class="info-label">Session ID</span>
-                        <span class="info-value" id="sessionId">-</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">Current Phase</span>
-                        <span class="info-value" id="currentPhase">-</span>
-                    </div>
-                    <div class="info-item">
                         <span class="info-label">Responses</span>
                         <span class="info-value" id="responseCount">0</span>
                     </div>
+                    <!-- Hidden elements kept for JS compatibility -->
+                    <span id="sessionId" style="display:none;"></span>
+                    <span id="currentPhase" style="display:none;"></span>
                 </div>
 
                 <div class="info-section">
-                    <h4>Current Power</h4>
+                    <h4 style="display:flex; align-items:center; gap:8px;">
+                        Current Power
+                        <button id="manualLockBtn" onclick="toggleManualLock()"
+                            title="Lock/unlock click controls"
+                            style="background:none; border:none; cursor:pointer; font-size:1.1em; padding:2px 4px; border-radius:4px; line-height:1; color:#667eea;"
+                            aria-label="Toggle manual control lock">
+                            🔓
+                        </button>
+                        <button id="typeModeBtn" onclick="toggleTypeMode()"
+                            title="Type mode: click to enter values directly"
+                            style="background:none; border:none; cursor:pointer; font-size:1.1em; padding:2px 4px; border-radius:4px; line-height:1; color:#667eea;"
+                            aria-label="Toggle type mode">
+                            ⌨️
+                        </button>
+                    </h4>
 
                     <table class="refraction-table" id="refractionTable">
                         <thead>
@@ -1075,7 +1152,7 @@
                                 <td class="rt-val" id="rt-r-sph" data-param="sph" data-eye="R">0.00</td>
                                 <td class="rt-val" id="rt-r-cyl" data-param="cyl" data-eye="R">0.00</td>
                                 <td class="rt-val" id="rt-r-axis" data-param="axis" data-eye="R">180</td>
-                                <td class="rt-val rt-add-val" id="rt-r-add" style="display:none;">0.00</td>
+                                <td class="rt-val rt-add-val" id="rt-r-add" data-param="add" data-eye="R" style="display:none;">0.00</td>
                             </tr>
                             <!-- Left Eye -->
                             <tr class="rt-row" data-eye="L">
@@ -1083,7 +1160,7 @@
                                 <td class="rt-val" id="rt-l-sph" data-param="sph" data-eye="L">0.00</td>
                                 <td class="rt-val" id="rt-l-cyl" data-param="cyl" data-eye="L">0.00</td>
                                 <td class="rt-val" id="rt-l-axis" data-param="axis" data-eye="L">180</td>
-                                <td class="rt-add-val" id="rt-l-add" style="display:none;">0.00</td>
+                                <td class="rt-val rt-add-val" id="rt-l-add" data-param="add" data-eye="L" style="display:none;">0.00</td>
                             </tr>
                         </tbody>
                     </table>

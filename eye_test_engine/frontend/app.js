@@ -107,7 +107,7 @@ function onDeviceSelectionChanged() {
     const id = select.value;
     if (id) {
         localStorage.setItem('phoropterId', id);
-        if (acquireBtn) acquireBtn.style.display = 'inline-block';
+        if (acquireBtn && !_deviceAcquired) acquireBtn.style.display = 'inline-block';
     } else {
         if (acquireBtn) acquireBtn.style.display = 'none';
     }
@@ -150,7 +150,9 @@ async function acquireSelectedDevice() {
         const data = await resp.json();
 
         if (resp.ok) {
+            _deviceAcquired = true;
             if (btn) btn.style.display = 'none';
+            document.getElementById('phoropterIdInput').disabled = true;
             console.log('Device acquired:', deviceId, data);
         } else {
             alert(`Could not acquire ${deviceId}: ${data.error || data.reason || resp.status}`);
@@ -178,6 +180,9 @@ async function releaseDevice() {
         console.warn('Could not release device:', err);
     }
 
+    _deviceAcquired = false;
+    document.getElementById('phoropterIdInput').disabled = false;
+
     const btn = document.getElementById('acquireDeviceBtn');
     if (btn) {
         btn.style.display = 'inline-block';
@@ -188,7 +193,88 @@ async function releaseDevice() {
 }
 
 // Initialize
-document.addEventListener('DOMContentLoaded', () => {
+// ── Session Persistence (survives refresh) ───────────
+
+const SESSION_STORAGE_KEY = 'eyeTestSession';
+
+let _deviceAcquired = false;
+
+function _saveSessionToStorage() {
+    if (!sessionState.sessionId) return;
+    const data = {
+        sessionId: sessionState.sessionId,
+        responseCount: sessionState.responseCount,
+        storedPower: storedPower,
+        currentAppliedPower: currentAppliedPower,
+        deviceAcquired: _deviceAcquired,
+        deviceId: CONFIG.phoropterId,
+    };
+    try { sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(data)); }
+    catch (e) { console.warn('sessionStorage write failed:', e); }
+}
+
+function _clearSessionStorage() {
+    try { sessionStorage.removeItem(SESSION_STORAGE_KEY); } catch (_) {}
+}
+
+async function _tryRestoreSession() {
+    let saved;
+    try { saved = JSON.parse(sessionStorage.getItem(SESSION_STORAGE_KEY)); }
+    catch (_) { return false; }
+    if (!saved || !saved.sessionId) return false;
+
+    try {
+        const resp = await fetch(`${CONFIG.backendUrl}/api/session/${saved.sessionId}/status`);
+        if (!resp.ok) {
+            _clearSessionStorage();
+            return false;
+        }
+        const data = await resp.json();
+
+        // Restore JS state
+        sessionState.sessionId = saved.sessionId;
+        sessionState.responseCount = saved.responseCount || data.total_rows || 0;
+        storedPower = saved.storedPower || { ar: null, lenso: null };
+        currentAppliedPower = saved.currentAppliedPower || 'none';
+
+        // Restore UI
+        document.getElementById('welcomeScreen').style.display = 'none';
+        document.getElementById('testScreen').style.display = 'block';
+
+        updateSessionInfo(data);
+        displayQuestion(data);
+        updateStatusIndicator(true);
+        updatePowerButtonStates(currentAppliedPower);
+
+        if (storedPower.ar) {
+            document.getElementById('applyArBtn').disabled = false;
+            document.getElementById('applyArBtn').title = 'Apply AR Power';
+        }
+        if (storedPower.lenso) {
+            document.getElementById('applyLensoBtn').disabled = false;
+            document.getElementById('applyLensoBtn').title = 'Apply Lenso Power';
+        }
+
+        // Restore device acquisition state
+        if (saved.deviceAcquired && saved.deviceId) {
+            _deviceAcquired = true;
+            const select = document.getElementById('phoropterIdInput');
+            if (select) { select.value = saved.deviceId; select.disabled = true; }
+            const acqBtn = document.getElementById('acquireDeviceBtn');
+            if (acqBtn) acqBtn.style.display = 'none';
+        }
+
+        addToHistory('Session restored after refresh', 'info');
+        console.log('Session restored:', saved.sessionId);
+        return true;
+    } catch (err) {
+        console.warn('Failed to restore session:', err);
+        _clearSessionStorage();
+        return false;
+    }
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
     console.log('Eye Test Engine Frontend Loaded');
 
     updateStatusIndicator(false);
@@ -196,6 +282,8 @@ document.addEventListener('DOMContentLoaded', () => {
     bindTableInteractions();
     checkOptometristName();
     fetchDevices();
+
+    await _tryRestoreSession();
 });
 
 // ── Optometrist Name Cache (12-hour TTL) ─────────────
@@ -243,17 +331,251 @@ function saveOptometristName() {
 
 // ── Manual Refraction Adjustments ─────────────────────
 
+let manualControlsLocked = false;
+let _manualAutoUnlockTimer = null;
+let typeModeActive = false;
+let _typeModeEditing = false;
+
+function _setManualLock(locked) {
+    manualControlsLocked = locked;
+    const btn = document.getElementById('manualLockBtn');
+    const cells = document.querySelectorAll('.rt-val');
+    if (locked) {
+        if (btn) { btn.textContent = '🔒'; btn.classList.add('locked'); }
+        cells.forEach(c => c.classList.add('locked'));
+    } else {
+        if (btn) { btn.textContent = '🔓'; btn.classList.remove('locked'); }
+        cells.forEach(c => c.classList.remove('locked'));
+    }
+}
+
+function toggleManualLock() {
+    if (_manualAutoUnlockTimer) {
+        clearTimeout(_manualAutoUnlockTimer);
+        _manualAutoUnlockTimer = null;
+    }
+    if (!manualControlsLocked && typeModeActive) _exitTypeMode();
+    _setManualLock(!manualControlsLocked);
+}
+
+// ── Type Mode ────────────────────────────────────────
+
+function toggleTypeMode() {
+    if (typeModeActive) {
+        _exitTypeMode();
+    } else {
+        _enterTypeMode();
+    }
+}
+
+function _enterTypeMode() {
+    typeModeActive = true;
+    if (manualControlsLocked) _setManualLock(false);
+
+    const btn = document.getElementById('typeModeBtn');
+    if (btn) btn.classList.add('active');
+
+    document.querySelectorAll('.rt-val[data-param]').forEach(el => {
+        el.classList.add('type-mode');
+        el.setAttribute('data-tip', 'Click to type value');
+    });
+}
+
+function _exitTypeMode() {
+    _commitActiveInput(false);
+    typeModeActive = false;
+    _typeModeEditing = false;
+
+    const btn = document.getElementById('typeModeBtn');
+    if (btn) btn.classList.remove('active');
+
+    document.querySelectorAll('.rt-val[data-param]').forEach(el => {
+        el.classList.remove('type-mode');
+        el.setAttribute('data-tip', 'Right-click = +  |  Left-click = −');
+    });
+}
+
+function _getTypableFields() {
+    return Array.from(document.querySelectorAll('.rt-val[data-param]'));
+}
+
+function _openInputInCell(cell) {
+    if (!cell || cell.querySelector('.rt-type-input')) return;
+
+    _typeModeEditing = true;
+    const originalText = cell.textContent.trim();
+
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'rt-type-input';
+    input.value = originalText.replace(/[+°]/g, '');
+    input.dataset.originalValue = originalText;
+
+    if (cell.dataset.param === 'axis') {
+        input.inputMode = 'numeric';
+        input.pattern = '[0-9]*';
+    } else {
+        input.inputMode = 'decimal';
+    }
+
+    input.addEventListener('keydown', (e) => _handleTypeInputKey(e, cell, input));
+    input.addEventListener('blur', () => {
+        setTimeout(() => {
+            if (cell.contains(input)) {
+                _restoreCell(cell, input.dataset.originalValue);
+                _typeModeEditing = false;
+            }
+        }, 50);
+    });
+
+    cell.textContent = '';
+    cell.appendChild(input);
+    input.focus();
+    input.select();
+}
+
+function _restoreCell(cell, text) {
+    const input = cell.querySelector('.rt-type-input');
+    if (input) input.remove();
+    cell.textContent = text;
+    _typeModeEditing = false;
+}
+
+function _handleTypeInputKey(e, cell, input) {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        _commitActiveInput(true);
+    } else if (e.key === 'Escape') {
+        e.preventDefault();
+        _restoreCell(cell, input.dataset.originalValue);
+    } else if (e.key === 'Tab') {
+        e.preventDefault();
+        const parsed = _parseTypedValue(cell.dataset.param, input.value);
+        if (parsed !== null) {
+            _restoreCell(cell, _formatCellValue(cell.dataset.param, parsed));
+        } else {
+            _restoreCell(cell, input.dataset.originalValue);
+        }
+        const fields = _getTypableFields();
+        const idx = fields.indexOf(cell);
+        const next = fields[(idx + 1) % fields.length];
+        _openInputInCell(next);
+    }
+}
+
+function _parseTypedValue(param, raw) {
+    const s = raw.replace(/[+°\s]/g, '').trim();
+    if (s === '') return null;
+    const n = parseFloat(s);
+    if (isNaN(n)) return null;
+    if (param === 'axis') {
+        const rounded = Math.round(n / 5) * 5;
+        if (rounded <= 0 || rounded > 180) return 180;
+        return rounded;
+    }
+    if (param === 'cyl') {
+        if (n > 0) return 0;
+        return Math.round(n * 4) / 4;
+    }
+    if (param === 'add') {
+        if (n < 0) return 0;
+        return Math.round(n * 4) / 4;
+    }
+    return Math.round(n * 4) / 4;
+}
+
+function _formatCellValue(param, val) {
+    if (param === 'axis') return String(Math.round(val));
+    if (param === 'add') return '+' + val.toFixed(2);
+    return (val >= 0 ? '+' : '') + val.toFixed(2);
+}
+
+async function _commitActiveInput(submit) {
+    if (!submit) {
+        document.querySelectorAll('.rt-type-input').forEach(input => {
+            const cell = input.parentElement;
+            if (cell) _restoreCell(cell, input.dataset.originalValue);
+        });
+        _typeModeEditing = false;
+        return;
+    }
+
+    const fields = _getTypableFields();
+    const power = {
+        right: { sph: 0, cyl: 0, axis: 180, add: 0 },
+        left:  { sph: 0, cyl: 0, axis: 180, add: 0 }
+    };
+    const oldPower = sessionState.lastResponse?.power || { right: {sph:0,cyl:0,axis:180,add:0}, left: {sph:0,cyl:0,axis:180,add:0} };
+    let anyChanged = false;
+
+    for (const cell of fields) {
+        const eye = cell.dataset.eye === 'R' ? 'right' : 'left';
+        const param = cell.dataset.param;
+        const input = cell.querySelector('.rt-type-input');
+        const rawText = input ? input.value : cell.textContent;
+        const parsed = _parseTypedValue(param, rawText);
+
+        if (parsed !== null) {
+            power[eye][param] = parsed;
+        } else {
+            power[eye][param] = oldPower[eye]?.[param] || (param === 'axis' ? 180 : 0);
+        }
+
+        const orig = oldPower[eye]?.[param] || (param === 'axis' ? 180 : 0);
+        if (Math.abs(power[eye][param] - orig) > 0.001) anyChanged = true;
+
+        _restoreCell(cell, _formatCellValue(param, power[eye][param]));
+    }
+
+    _typeModeEditing = false;
+
+    if (!anyChanged || !sessionState.sessionId) return;
+
+    try {
+        showLoading(true);
+        const currentOccluder = document.getElementById('occluderState').textContent || 'BINO';
+
+        if (sessionState.sessionId) {
+            try {
+                await fetch(`${CONFIG.backendUrl}/api/session/${sessionState.sessionId}/sync-power`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(power)
+                });
+            } catch (syncErr) {
+                console.warn('Failed to sync typed power to backend:', syncErr);
+            }
+        }
+
+        await syncBrokerState(oldPower, currentOccluder);
+        await setPower(power, currentOccluder);
+
+        if (!sessionState.lastResponse) sessionState.lastResponse = {};
+        sessionState.lastResponse.power = power;
+        updateSessionInfo({ ...sessionState.lastResponse, power });
+
+        sessionState.responseCount++;
+        document.getElementById('responseCount').textContent = sessionState.responseCount;
+        addToHistory('Typed power applied', 'adjust');
+        _saveSessionToStorage();
+    } catch (error) {
+        console.error('Error applying typed power:', error);
+        alert('Failed to apply typed power.');
+    } finally {
+        showLoading(false);
+    }
+}
+
 function bindTableInteractions() {
     const table = document.getElementById('refractionTable');
     if (table) {
-        // Disable context menu on the refraction area to allow right-click subtraction/addition
         table.oncontextmenu = function (e) {
             e.preventDefault();
             e.stopPropagation();
             return false;
         };
-        // Add mousedown listeners to all editable cells
         table.querySelectorAll('.rt-val').forEach(el => {
+            el.setAttribute('data-tip', 'R = +  |  L = −');
             el.addEventListener('mousedown', (event) => handleTableMousedown(event, el));
         });
     }
@@ -265,22 +587,36 @@ async function handleTableMousedown(event, el) {
         return;
     }
 
+    if (typeModeActive) {
+        event.preventDefault();
+        event.stopPropagation();
+        if (el.dataset.param) _openInputInCell(el);
+        return;
+    }
+
+    if (manualControlsLocked) return;
+
     // button 0 = left, button 2 = right
     const action = (event.button === 0) ? 'subtract' : (event.button === 2 ? 'add' : null);
     if (!action) return;
 
-    // Block default behavior
     event.preventDefault();
     event.stopPropagation();
 
-    const param = el.dataset.param; // sph, cyl, axis
-    const eye = el.dataset.eye; // R or L
+    const param = el.dataset.param;
+    const eye = el.dataset.eye;
 
     let delta = 0.25;
     if (param === 'axis') delta = 5;
 
-    // Left click subtracts, Right click adds
     if (action === 'subtract') delta = -delta;
+
+    _setManualLock(true);
+    if (_manualAutoUnlockTimer) clearTimeout(_manualAutoUnlockTimer);
+    _manualAutoUnlockTimer = setTimeout(() => {
+        _manualAutoUnlockTimer = null;
+        _setManualLock(false);
+    }, 1000);
 
     await applyManualPowerChange(eye, param, delta);
 }
@@ -288,13 +624,18 @@ async function handleTableMousedown(event, el) {
 async function applyManualPowerChange(eye, param, delta) {
     if (!sessionState.lastResponse || !sessionState.lastResponse.power) return;
 
-    // Ensure we have a working power object
     const p = sessionState.lastResponse.power;
     const eyeKey = eye === 'R' ? 'right' : 'left';
 
     if (!p[eyeKey]) {
         p[eyeKey] = { sph: 0, cyl: 0, axis: 180 };
     }
+
+    // Snapshot the pre-adjustment state for broker sync
+    const prevPower = {
+        right: { sph: p.right?.sph || 0, cyl: p.right?.cyl || 0, axis: p.right?.axis || 180 },
+        left:  { sph: p.left?.sph  || 0, cyl: p.left?.cyl  || 0, axis: p.left?.axis  || 180 }
+    };
 
     let current = parseFloat(p[eyeKey][param]) || 0;
     let newVal = current + delta;
@@ -309,11 +650,8 @@ async function applyManualPowerChange(eye, param, delta) {
     // Update UI optimistically
     updateSessionInfo(sessionState.lastResponse);
 
-    // Call backend to update phoropter
     try {
         showLoading(true);
-        // Note: The /api/session/.../set-power endpoint might not exist securely mapped for a partial update.
-        // We will call setPower directly from app.js to the phoropter using the existing wrapper
         const reqPower = {
             right: {
                 sph: p.right.sph || 0,
@@ -330,7 +668,6 @@ async function applyManualPowerChange(eye, param, delta) {
         const currentOccluder = document.getElementById('occluderState').textContent || 'BINO';
 
         // Sync the manually adjusted power with the backend session state
-        // so that the next test question calculates based on this new power.
         if (sessionState.sessionId) {
             try {
                 await fetch(`${CONFIG.backendUrl}/api/session/${sessionState.sessionId}/sync-power`, {
@@ -343,14 +680,52 @@ async function applyManualPowerChange(eye, param, delta) {
             }
         }
 
+        // Tell the broker what the phoropter's actual state is before sending
+        // the new target. JCC increase/decrease commands move the phoropter
+        // without updating the broker's internal tracker, so without this the
+        // broker would calculate clicks from a stale baseline.
+        await syncBrokerState(prevPower, currentOccluder);
         await setPower(reqPower, currentOccluder);
 
+        sessionState.responseCount++;
+        document.getElementById('responseCount').textContent = sessionState.responseCount;
         addToHistory(`Manual Adjust: ${param.toUpperCase()} ${delta > 0 ? '+' : ''}${delta} [${eye}]`, 'adjust');
+        _saveSessionToStorage();
     } catch (error) {
         console.error('Error applying manual power:', error);
         alert('Failed to push manual power to phoropter. Try again.');
     } finally {
         showLoading(false);
+    }
+}
+
+async function syncBrokerState(power, occluder) {
+    const right = power.right || { sph: 0, cyl: 0, axis: 180 };
+    const left  = power.left  || { sph: 0, cyl: 0, axis: 180 };
+
+    let auxLens = "OFF";
+    if (occluder === "Left_Occluded") auxLens = "AuxLensL";
+    else if (occluder === "Right_Occluded") auxLens = "AuxLensR";
+
+    const rightEye = { sph: right.sph, cyl: right.cyl, axis: right.axis };
+    const leftEye  = { sph: left.sph,  cyl: left.cyl,  axis: left.axis };
+    if (right.add !== undefined && right.add !== 0) rightEye.add = right.add;
+    if (left.add  !== undefined && left.add  !== 0) leftEye.add  = left.add;
+
+    const payload = {
+        right_eye: rightEye,
+        left_eye:  leftEye,
+        aux_lens: auxLens
+    };
+
+    try {
+        await fetch(`${CONFIG.phoropterUrl}/phoropter/${CONFIG.phoropterId}/sync-state`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+    } catch (err) {
+        console.warn('Failed to sync broker state:', err);
     }
 }
 
@@ -527,13 +902,23 @@ async function applyStoredPower(type) {
 
     try {
         showLoading(true);
+
+        // Sync broker to current phoropter state before applying new absolute values
+        const currentOccluder = document.getElementById('occluderState').textContent || 'BINO';
+        if (sessionState.lastResponse && sessionState.lastResponse.power) {
+            await syncBrokerState(sessionState.lastResponse.power, currentOccluder);
+        }
+
         await setPower(power, 'BINO');
 
         currentAppliedPower = type;
         updatePowerButtonStates(type);
 
+        sessionState.responseCount++;
+        document.getElementById('responseCount').textContent = sessionState.responseCount;
         const label = type === 'ar' ? 'AR' : 'Lenso';
         addToHistory(`${label} power applied`, 'info');
+        _saveSessionToStorage();
 
         // Update refraction table to reflect applied power
         const fmtSign = (v) => (v >= 0 ? '+' : '') + v.toFixed(2);
@@ -634,6 +1019,7 @@ async function startTest() {
 
         addToHistory('Test started', 'success');
         updateStatusIndicator(true);
+        _saveSessionToStorage();
 
         // Check if auto-flip is needed (JCC Flip1 → Flip2)
         if (data.auto_flip) {
@@ -693,6 +1079,7 @@ async function submitIntent(intent) {
 
         // Display question and intents AFTER processing is complete
         displayQuestion(data);
+        _saveSessionToStorage();
 
         // Check if auto-flip is needed (JCC Flip1 → Flip2)
         if (data.auto_flip) {
@@ -1279,19 +1666,16 @@ async function setPower(power, occluder) {
         auxLens = "AuxLensR";
     }
 
+    const rightEye = { sph: right.sph, cyl: right.cyl, axis: right.axis };
+    const leftEye  = { sph: left.sph,  cyl: left.cyl,  axis: left.axis };
+    if (right.add !== undefined && right.add !== 0) rightEye.add = right.add;
+    if (left.add  !== undefined && left.add  !== 0) leftEye.add  = left.add;
+
     const payload = {
         test_cases: [{
             aux_lens: auxLens,
-            right_eye: {
-                sph: right.sph,
-                cyl: right.cyl,
-                axis: right.axis
-            },
-            left_eye: {
-                sph: left.sph,
-                cyl: left.cyl,
-                axis: left.axis
-            }
+            right_eye: rightEye,
+            left_eye: leftEye
         }]
     };
 
@@ -1371,6 +1755,7 @@ async function completeTest() {
         console.error('Error completing test:', error);
         alert('Failed to complete test properly.');
     } finally {
+        _clearSessionStorage();
         await releaseDevice();
     }
 }
@@ -1486,6 +1871,9 @@ async function jumpToPhase() {
 
 // Keyboard shortcuts
 document.addEventListener('keydown', (e) => {
+    // Block intent shortcuts while type mode input is active
+    if (_typeModeEditing) return;
+
     // Number keys 1-9 to select intents
     if (e.key >= '1' && e.key <= '9') {
         const index = parseInt(e.key) - 1;

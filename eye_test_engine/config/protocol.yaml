@@ -349,9 +349,10 @@ phases:
       - "Clear"
       - "Comfortable"
     adjustment_rules:
-      blurry: "+0.25D to R_ADD"
-      clear: "Offer -0.25D R_ADD adjustment"
-      comfortable: "Accept current R_ADD, proceed to Left eye"
+      blurry: "+0.25D to R_ADD (no power change sent on exit)"
+      clear: "Offer -0.25D R_ADD reduction; sub-intents: Try reduction | Stay current"
+      comfortable: "Exit to Left eye phase — no power change sent"
+      stay_current: "Exit to Left eye phase — no power change sent"
     exit_conditions:
       - type: "near_right_confirmed"
         next_phase: "near_add_left"
@@ -369,9 +370,10 @@ phases:
       - "Clear"
       - "Comfortable"
     adjustment_rules:
-      blurry: "+0.25D to L_ADD"
-      clear: "Offer -0.25D L_ADD adjustment"
-      comfortable: "Accept current L_ADD, proceed to Binocular"
+      blurry: "+0.25D to L_ADD (no power change sent on exit)"
+      clear: "Offer -0.25D L_ADD reduction; sub-intents: Try reduction | Stay current"
+      comfortable: "Exit to Binocular phase — no power change sent"
+      stay_current: "Exit to Binocular phase — no power change sent"
     exit_conditions:
       - type: "near_left_confirmed"
         next_phase: "near_add_bino"
@@ -391,8 +393,9 @@ phases:
       - "Confirmed"
     adjustment_rules:
       blurry: "+0.25D to both ADD"
-      clear: "Offer -0.25D ADD adjustment"
-      comfortable: "Accept current ADD power"
+      clear: "Offer -0.25D ADD reduction; sub-intents: Try reduction | Stay current | Confirmed"
+      comfortable: "Confirm and finalize — no power change sent"
+      stay_current: "Confirm and finalize — no power change sent"
       confirmed: "Finalize near prescription"
     exit_conditions:
       - type: "near_bino_confirmed"

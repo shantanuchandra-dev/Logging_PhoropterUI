@@ -374,12 +374,19 @@ class InteractiveSession:
                                    r_sph: float, r_cyl: float, r_axis: float,
                                    l_sph: float, l_cyl: float, l_axis: float,
                                    prev_aux_lens: str = None, aux_lens: str = None,
-                                   r_add: float = None, l_add: float = None):
+                                   r_add: float = None, l_add: float = None,
+                                   prev_r_add: float = None, prev_l_add: float = None):
         """Set power with previous state for accurate click calculations.
-        Optional r_add/l_add for near vision (if backend supports add in run-tests).
+        Optional r_add/l_add for near vision target ADD values.
+        Optional prev_r_add/prev_l_add: the ADD the phoropter is currently at
+        so the broker computes the correct delta instead of assuming prev ADD = 0.
         """
         prev_right = {"sph": prev_r_sph, "cyl": prev_r_cyl, "axis": prev_r_axis}
         prev_left = {"sph": prev_l_sph, "cyl": prev_l_cyl, "axis": prev_l_axis}
+        if prev_r_add is not None:
+            prev_right["add"] = prev_r_add
+        if prev_l_add is not None:
+            prev_left["add"] = prev_l_add
         right_eye = {"sph": r_sph, "cyl": r_cyl, "axis": r_axis}
         left_eye = {"sph": l_sph, "cyl": l_cyl, "axis": l_axis}
         if r_add is not None:
@@ -2095,6 +2102,7 @@ class InteractiveSession:
         - Comfortable → Accept and transition to Left Eye near test
         """
         if intent == "Blurry":
+            prev_add_right = self.add_right  # capture before increment
             self.add_right += 0.25
             self.current_row.r_add = self.add_right
             self.set_power_with_prev_state(
@@ -2103,6 +2111,7 @@ class InteractiveSession:
                 r_sph=self.current_row.r_sph, r_cyl=self.current_row.r_cyl, r_axis=self.current_row.r_axis,
                 l_sph=self.current_row.l_sph, l_cyl=self.current_row.l_cyl, l_axis=self.current_row.l_axis,
                 r_add=self.add_right, l_add=self.add_left,
+                prev_r_add=prev_add_right, prev_l_add=self.add_left,
             )
             response = self._build_response()
             response["question"] = f"Right eye near at ADD +{self.add_right:.2f}D. Can you read clearly now?"
@@ -2114,13 +2123,14 @@ class InteractiveSession:
                 "phase": self.phase_names.get(self.current_phase, self.current_phase),
                 "status": "add_refinement_offered",
                 "question": "Would you like to try reducing Right eye ADD by 0.25D for more comfort?",
-                "intents": ["Try reduction", "Stay current", "Comfortable"],
+                "intents": ["Try reduction", "Stay current"],
                 "occluder": self.current_row.occluder_state,
                 "chart": self.current_row.chart_display,
                 "power": self._build_response()["power"],
             }
 
         elif intent == "Try reduction":
+            prev_add_right = self.add_right  # capture before decrement
             self.add_right = max(0.0, self.add_right - 0.25)
             self.current_row.r_add = self.add_right
             self.set_power_with_prev_state(
@@ -2129,13 +2139,15 @@ class InteractiveSession:
                 r_sph=self.current_row.r_sph, r_cyl=self.current_row.r_cyl, r_axis=self.current_row.r_axis,
                 l_sph=self.current_row.l_sph, l_cyl=self.current_row.l_cyl, l_axis=self.current_row.l_axis,
                 r_add=self.add_right, l_add=self.add_left,
+                prev_r_add=prev_add_right, prev_l_add=self.add_left,
             )
             response = self._build_response()
             response["question"] = f"Right eye near at ADD +{self.add_right:.2f}D. How is this?"
-            response["intents"] = ["Blurry", "Clear", "Comfortable"]
+            response["intents"] = ["Blurry", "Clear"]
             return response
 
         elif intent in ("Comfortable", "Stay current"):
+            # Exit to next phase — no power change needed; ADD is already set correctly
             return self._transition_to_near_add_left()
 
         return self._build_response()
@@ -2149,6 +2161,7 @@ class InteractiveSession:
         - Comfortable → Accept and transition to Binocular near test
         """
         if intent == "Blurry":
+            prev_add_left = self.add_left  # capture before increment
             self.add_left += 0.25
             self.current_row.l_add = self.add_left
             self.set_power_with_prev_state(
@@ -2157,6 +2170,7 @@ class InteractiveSession:
                 r_sph=self.current_row.r_sph, r_cyl=self.current_row.r_cyl, r_axis=self.current_row.r_axis,
                 l_sph=self.current_row.l_sph, l_cyl=self.current_row.l_cyl, l_axis=self.current_row.l_axis,
                 r_add=self.add_right, l_add=self.add_left,
+                prev_r_add=self.add_right, prev_l_add=prev_add_left,
             )
             response = self._build_response()
             response["question"] = f"Left eye near at ADD +{self.add_left:.2f}D. Can you read clearly now?"
@@ -2168,13 +2182,14 @@ class InteractiveSession:
                 "phase": self.phase_names.get(self.current_phase, self.current_phase),
                 "status": "add_refinement_offered",
                 "question": "Would you like to try reducing Left eye ADD by 0.25D for more comfort?",
-                "intents": ["Try reduction", "Stay current", "Comfortable"],
+                "intents": ["Try reduction", "Stay current"],
                 "occluder": self.current_row.occluder_state,
                 "chart": self.current_row.chart_display,
                 "power": self._build_response()["power"],
             }
 
         elif intent == "Try reduction":
+            prev_add_left = self.add_left  # capture before decrement
             self.add_left = max(0.0, self.add_left - 0.25)
             self.current_row.l_add = self.add_left
             self.set_power_with_prev_state(
@@ -2183,13 +2198,15 @@ class InteractiveSession:
                 r_sph=self.current_row.r_sph, r_cyl=self.current_row.r_cyl, r_axis=self.current_row.r_axis,
                 l_sph=self.current_row.l_sph, l_cyl=self.current_row.l_cyl, l_axis=self.current_row.l_axis,
                 r_add=self.add_right, l_add=self.add_left,
+                prev_r_add=self.add_right, prev_l_add=prev_add_left,
             )
             response = self._build_response()
             response["question"] = f"Left eye near at ADD +{self.add_left:.2f}D. How is this?"
-            response["intents"] = ["Blurry", "Clear", "Comfortable"]
+            response["intents"] = ["Blurry", "Clear"]
             return response
 
         elif intent in ("Comfortable", "Stay current"):
+            # Exit to next phase — no power change needed; ADD is already set correctly
             return self._transition_to_near_add_bino()
 
         return self._build_response()
@@ -2203,6 +2220,8 @@ class InteractiveSession:
         - Comfortable / Confirmed → Complete test
         """
         if intent == "Blurry":
+            prev_add_right = self.add_right  # capture before increment
+            prev_add_left = self.add_left
             self.add_right += 0.25
             self.add_left += 0.25
             self.current_row.r_add = self.add_right
@@ -2213,6 +2232,7 @@ class InteractiveSession:
                 r_sph=self.current_row.r_sph, r_cyl=self.current_row.r_cyl, r_axis=self.current_row.r_axis,
                 l_sph=self.current_row.l_sph, l_cyl=self.current_row.l_cyl, l_axis=self.current_row.l_axis,
                 r_add=self.add_right, l_add=self.add_left,
+                prev_r_add=prev_add_right, prev_l_add=prev_add_left,
             )
             response = self._build_response()
             response["question"] = f"Binocular near at ADD R+{self.add_right:.2f}D / L+{self.add_left:.2f}D. Comfortable now?"
@@ -2224,13 +2244,15 @@ class InteractiveSession:
                 "phase": self.phase_names.get(self.current_phase, self.current_phase),
                 "status": "add_refinement_offered",
                 "question": "Would you like to try reducing binocular ADD by 0.25D for more comfort?",
-                "intents": ["Try reduction", "Stay current", "Comfortable", "Confirmed"],
+                "intents": ["Try reduction", "Stay current", "Confirmed"],
                 "occluder": self.current_row.occluder_state,
                 "chart": self.current_row.chart_display,
                 "power": self._build_response()["power"],
             }
 
         elif intent == "Try reduction":
+            prev_add_right = self.add_right  # capture before decrement
+            prev_add_left = self.add_left
             self.add_right = max(0.0, self.add_right - 0.25)
             self.add_left = max(0.0, self.add_left - 0.25)
             self.current_row.r_add = self.add_right
@@ -2241,13 +2263,15 @@ class InteractiveSession:
                 r_sph=self.current_row.r_sph, r_cyl=self.current_row.r_cyl, r_axis=self.current_row.r_axis,
                 l_sph=self.current_row.l_sph, l_cyl=self.current_row.l_cyl, l_axis=self.current_row.l_axis,
                 r_add=self.add_right, l_add=self.add_left,
+                prev_r_add=prev_add_right, prev_l_add=prev_add_left,
             )
             response = self._build_response()
             response["question"] = f"Binocular near at ADD R+{self.add_right:.2f}D / L+{self.add_left:.2f}D. How is this?"
-            response["intents"] = ["Blurry", "Clear", "Comfortable", "Confirmed"]
+            response["intents"] = ["Blurry", "Clear", "Confirmed"]
             return response
 
         elif intent in ("Comfortable", "Stay current"):
+            # Exit to test complete — no power change needed; ADD is already set correctly
             response = self._build_response()
             response["question"] = "Excellent! Near vision comfortable with both eyes. Ready to finalize?"
             response["intents"] = ["Confirmed"]
@@ -2676,15 +2700,9 @@ class InteractiveSession:
         self.current_row.occluder_state = "Right_Occluded"
         self.current_row.chart_display = "near_chart"
         self.set_chart_near()
-        curr_r = (self.current_row.r_sph, self.current_row.r_cyl, self.current_row.r_axis)
-        curr_l = (self.current_row.l_sph, self.current_row.l_cyl, self.current_row.l_axis)
-        self.set_power_with_prev_state(
-            prev_r_sph=curr_r[0], prev_r_cyl=curr_r[1], prev_r_axis=curr_r[2],
-            prev_l_sph=curr_l[0], prev_l_cyl=curr_l[1], prev_l_axis=curr_l[2],
-            r_sph=curr_r[0], r_cyl=curr_r[1], r_axis=curr_r[2],
-            l_sph=curr_l[0], l_cyl=curr_l[1], l_axis=curr_l[2],
-            r_add=self.add_right, l_add=self.add_left,
-        )
+        # Do NOT re-apply power here: ADD was already set on the phoropter during
+        # the Blurry iterations. Re-sending via run-tests would cause the broker
+        # to recalculate ADD clicks from its stale baseline (0.00), doubling the movement.
         self.jcc_control("L")
         return self._build_response()
 
@@ -2697,15 +2715,9 @@ class InteractiveSession:
         self.current_row.occluder_state = "BINO"
         self.current_row.chart_display = "near_chart"
         self.set_chart_near()
-        curr_r = (self.current_row.r_sph, self.current_row.r_cyl, self.current_row.r_axis)
-        curr_l = (self.current_row.l_sph, self.current_row.l_cyl, self.current_row.l_axis)
-        self.set_power_with_prev_state(
-            prev_r_sph=curr_r[0], prev_r_cyl=curr_r[1], prev_r_axis=curr_r[2],
-            prev_l_sph=curr_l[0], prev_l_cyl=curr_l[1], prev_l_axis=curr_l[2],
-            r_sph=curr_r[0], r_cyl=curr_r[1], r_axis=curr_r[2],
-            l_sph=curr_l[0], l_cyl=curr_l[1], l_axis=curr_l[2],
-            r_add=self.add_right, l_add=self.add_left,
-        )
+        # Do NOT re-apply power here: ADD was already set on the phoropter during
+        # the Blurry iterations. Re-sending via run-tests would cause the broker
+        # to recalculate ADD clicks from its stale baseline (0.00), doubling the movement.
         self.jcc_control("BINO")
         return self._build_response()
     

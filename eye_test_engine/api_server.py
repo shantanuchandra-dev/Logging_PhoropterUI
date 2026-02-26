@@ -209,30 +209,18 @@ def respond(session_id):
 
 @app.route('/api/session/<session_id>/status', methods=['GET'])
 def get_status(session_id):
-    """Get current session status."""
+    """Get full current session state (used to restore UI after refresh)."""
     if session_id not in sessions:
         return jsonify({"error": "Session not found"}), 404
     
     session = sessions[session_id]
+    state = session._build_response()
     
     return jsonify({
         "session_id": session_id,
-        "current_phase": session.current_phase,
+        "status": "active",
         "total_rows": len(session.session_history),
-        "current_power": {
-            "right": {
-                "sph": session.current_row.r_sph,
-                "cyl": session.current_row.r_cyl,
-                "axis": session.current_row.r_axis,
-                "add": getattr(session, "add_right", 0.0),
-            },
-            "left": {
-                "sph": session.current_row.l_sph,
-                "cyl": session.current_row.l_cyl,
-                "axis": session.current_row.l_axis,
-                "add": getattr(session, "add_left", 0.0),
-            }
-        }
+        **state
     })
 
 
