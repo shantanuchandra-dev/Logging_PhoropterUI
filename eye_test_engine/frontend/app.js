@@ -46,200 +46,29 @@ const OPTOTYPE_MAP = {
 
 let currentOptotype = null;
 
-const DEVICE = {
-    lockAcquired: false,
-    activeDeviceId: null,
-    brainId: null,
-    lockName: 'Eye Test UI',
-    lastCommandAt: Date.now(),
-    lastHeartbeatAt: 0,
-    heartbeatTimerId: null
-};
-
-function getOrCreateBrainId() {
-    const existing = localStorage.getItem('brainId');
-    if (existing) return existing;
-    const generated = `brain_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-    localStorage.setItem('brainId', generated);
-    return generated;
-}
-
 function savePhoropterId() {
     const el = document.getElementById('phoropterIdInput');
     if (!el) return;
-    const id = (el.value || '').trim();
-    if (id) {
-        localStorage.setItem('phoropterId', id);
-    }
-}
-
-function renderAcquireState() {
-    const select = document.getElementById('phoropterIdInput');
-    const acquireBtn = document.getElementById('acquireDeviceBtn');
-    if (!select || !acquireBtn) return;
-
-    if (DEVICE.lockAcquired) {
-        select.disabled = true;
-        acquireBtn.style.display = 'none';
-        return;
-    }
-    select.disabled = false;
-    acquireBtn.disabled = false;
-    acquireBtn.style.display = select.value ? 'inline-flex' : 'none';
-}
-
-function onDeviceSelectionChanged() {
-    savePhoropterId();
-    renderAcquireState();
-}
-
-async function populateDeviceDropdown() {
-    const select = document.getElementById('phoropterIdInput');
-    if (!select) return;
-
-    const preferredId = localStorage.getItem('phoropterId');
-    select.innerHTML = '<option value="">Select Device</option>';
-
-    try {
-        const response = await fetch(`${CONFIG.backendUrl}/api/devices`);
-        const data = await response.json();
-        const devices = Array.isArray(data) ? data : (data.devices || []);
-
-        devices.forEach((device) => {
-            const id = device.device_id || device.id || device.phoropter_id;
-            if (!id) return;
-            const option = document.createElement('option');
-            option.value = id;
-            option.textContent = `${id}${device.status ? ` (${device.status})` : ''}`;
-            select.appendChild(option);
-        });
-
-        if (preferredId) {
-            select.value = preferredId;
-        } else if (select.options.length > 1) {
-            select.selectedIndex = 1;
-        }
-    } catch (error) {
-        console.error('Failed to load devices:', error);
-        const fallback = document.createElement('option');
-        fallback.value = localStorage.getItem('phoropterId') || 'phoropter-1';
-        fallback.textContent = `${fallback.value} (manual fallback)`;
-        select.appendChild(fallback);
-        select.value = fallback.value;
-    }
-
-    savePhoropterId();
-    renderAcquireState();
-}
-
-async function acquireSelectedDevice() {
-    const deviceId = CONFIG.phoropterId;
-    if (!deviceId) {
-        alert('Please select a device first.');
-        return;
-    }
-    const acquireBtn = document.getElementById('acquireDeviceBtn');
-    if (acquireBtn) acquireBtn.disabled = true;
-    try {
-        const response = await fetch(`${CONFIG.backendUrl}/api/devices/${deviceId}/acquire`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ brain_id: DEVICE.brainId, name: DEVICE.lockName })
-        });
-        const data = await response.json();
-        if (!response.ok) {
-            throw new Error(data.reason || data.error || 'Acquire failed');
-        }
-        DEVICE.lockAcquired = true;
-        DEVICE.activeDeviceId = deviceId;
-        DEVICE.lastCommandAt = Date.now();
-        renderAcquireState();
-        addToHistory(`Device acquired: ${deviceId}`, 'success');
-    } catch (error) {
-        console.error('Acquire failed:', error);
-        alert(`Could not acquire selected device: ${error.message}`);
-        if (acquireBtn) acquireBtn.disabled = false;
-        return;
-    }
-}
-
-function markPhoropterCommand() {
-    DEVICE.lastCommandAt = Date.now();
-}
-
-function startHeartbeatWatcher() {
-    if (DEVICE.heartbeatTimerId) return;
-    DEVICE.heartbeatTimerId = setInterval(async () => {
-        if (!DEVICE.lockAcquired || !DEVICE.activeDeviceId) return;
-        const now = Date.now();
-        const idleMs = now - DEVICE.lastCommandAt;
-        const sinceHeartbeatMs = now - DEVICE.lastHeartbeatAt;
-        if (idleMs >= 60000 && sinceHeartbeatMs >= 15000) {
-            try {
-                const response = await fetch(`${CONFIG.backendUrl}/api/devices/${DEVICE.activeDeviceId}/heartbeat`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ brain_id: DEVICE.brainId })
-                });
-                if (response.ok) {
-                    DEVICE.lastHeartbeatAt = Date.now();
-                }
-            } catch (error) {
-                console.warn('Heartbeat failed:', error);
-            }
-        }
-    }, 5000);
-}
-
-function _sendReleaseBeacon() {
-    if (!DEVICE.lockAcquired || !DEVICE.activeDeviceId) return;
-    const payload = JSON.stringify({ brain_id: DEVICE.brainId });
-    const url = `${CONFIG.backendUrl}/api/devices/${DEVICE.activeDeviceId}/release`;
-    if (navigator.sendBeacon) {
-        const blob = new Blob([payload], { type: 'application/json' });
-        navigator.sendBeacon(url, blob);
-        return;
-    }
-    fetch(url, {
-        method: 'POST',
-        keepalive: true,
-        headers: { 'Content-Type': 'application/json' },
-        body: payload
-    }).catch(() => { });
-}
-
-async function releaseDeviceLock(reason = 'manual') {
-    if (!DEVICE.lockAcquired || !DEVICE.activeDeviceId) return;
-    const deviceId = DEVICE.activeDeviceId;
-    try {
-        await fetch(`${CONFIG.backendUrl}/api/devices/${deviceId}/release`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ brain_id: DEVICE.brainId, reason })
-        });
-    } catch (error) {
-        console.warn('Release failed:', error);
-    } finally {
-        DEVICE.lockAcquired = false;
-        DEVICE.activeDeviceId = null;
-        renderAcquireState();
-    }
+    const id = el.value.trim() || 'phoropter-1';
+    el.value = id;
+    localStorage.setItem('phoropterId', id);
+    console.log(`Phoropter ID set to: ${id}`);
 }
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     console.log('Eye Test Engine Frontend Loaded');
-    DEVICE.brainId = getOrCreateBrainId();
 
-    populateDeviceDropdown();
-    startHeartbeatWatcher();
+    // Restore saved phoropter ID from localStorage
+    const savedId = localStorage.getItem('phoropterId');
+    const idInput = document.getElementById('phoropterIdInput');
+    if (idInput && savedId) {
+        idInput.value = savedId;
+    }
+
     updateStatusIndicator(false);
     populateDirectCommands();
     bindTableInteractions();
-});
-
-window.addEventListener('beforeunload', () => {
-    _sendReleaseBeacon();
 });
 
 // ── Manual Refraction Adjustments ─────────────────────
@@ -573,11 +402,6 @@ async function startTest() {
     if (btn) btn.disabled = true;
 
     try {
-        if (!DEVICE.lockAcquired || !DEVICE.activeDeviceId) {
-            alert('Please select a device and click Acquire before starting.');
-            if (btn) btn.disabled = false;
-            return;
-        }
         showLoading(true);
 
         // Generate session ID
@@ -1173,7 +997,6 @@ async function resetPhoropter() {
         const response = await fetch(`${CONFIG.phoropterUrl}/phoropter/${CONFIG.phoropterId}/reset`, {
             method: 'POST'
         });
-        markPhoropterCommand();
 
         if (response.ok) {
             addToHistory('Phoropter reset to 0/0/180', 'success');
@@ -1243,7 +1066,6 @@ async function setChart(chartName, optotype = null) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
     });
-    markPhoropterCommand();
 
     addToHistory(`Chart: ${chartName}`, 'info');
 }
@@ -1281,7 +1103,6 @@ async function setPower(power, occluder) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
     });
-    markPhoropterCommand();
 
     addToHistory(`Power updated - Occluder: ${occluder}`, 'info');
 }
@@ -1342,7 +1163,6 @@ async function completeTest() {
         updateStatusIndicator(false);
         document.getElementById('sessionStatus').textContent = 'Completed';
         addToHistory('Test completed successfully', 'success');
-        await releaseDeviceLock('test_complete');
 
     } catch (error) {
         console.error('Error completing test:', error);
@@ -1353,14 +1173,8 @@ async function completeTest() {
 // End Test Early
 async function endTest() {
     if (confirm('Are you sure you want to end the test?')) {
-        await releaseDeviceLock('end_test');
         await completeTest();
     }
-}
-
-async function startNewTest() {
-    await releaseDeviceLock('start_new_test');
-    location.reload();
 }
 
 // UI Helper Functions
