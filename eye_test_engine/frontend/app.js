@@ -2,7 +2,9 @@
 // Integrates with Flask API backend and Phoropter API
 
 const CONFIG = {
-    backendUrl: 'http://localhost:5050',
+    // Use same origin when deployed (Vercel); localhost for local dev
+    backendUrl: (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'))
+        ? 'http://localhost:5050' : '',
     phoropterUrl: 'https://rajasthan-royals.preprod.lenskart.com',
     get phoropterId() {
         const el = document.getElementById('phoropterIdInput');

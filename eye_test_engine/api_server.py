@@ -5,7 +5,7 @@ Simple Flask API server for interactive eye test sessions.
 from datetime import datetime
 from pathlib import Path
 
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 import json
 import urllib.error
@@ -35,7 +35,9 @@ CORS(app)
 sessions = {}
 PHOROPTER_BASE_URL = "https://rajasthan-royals.preprod.lenskart.com"
 
-LOGS_DIR = Path(__file__).parent / "logs"
+# On Vercel, use /tmp (ephemeral); otherwise use local logs/
+_IS_VERCEL = bool(__import__("os").environ.get("VERCEL"))
+LOGS_DIR = Path("/tmp/eye_test_logs") if _IS_VERCEL else Path(__file__).parent / "logs"
 SESSIONS_DIR = LOGS_DIR / "sessions"
 COMBINED_LOG_PATH = LOGS_DIR / "combined_log.csv"
 COMBINED_META_PATH = LOGS_DIR / "combined_metadata.csv"
@@ -420,6 +422,23 @@ def discard_session(session_id):
     _log_api_command(f"/api/session/{session_id}/discard", {})
     del sessions[session_id]
     return jsonify({"session_id": session_id, "status": "discarded"})
+
+
+# Serve frontend (for Vercel deployment)
+_FRONTEND_DIR = Path(__file__).parent / "frontend"
+
+
+@app.route("/")
+def serve_index():
+    return send_from_directory(_FRONTEND_DIR, "index.html")
+
+
+@app.route("/<path:path>")
+def serve_frontend(path):
+    """Serve static frontend files (app.js, favicon.svg, etc.)."""
+    if path.startswith("api/"):
+        return jsonify({"error": "Not found"}), 404
+    return send_from_directory(_FRONTEND_DIR, path)
 
 
 if __name__ == '__main__':
