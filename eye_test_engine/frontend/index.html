@@ -949,16 +949,20 @@
                     </div>
                     <div style="border-left: 2px solid #ddd; padding-left: 12px; display: flex; gap: 6px; align-items: center;">
                         <label for="phoropterIdInput" style="color: #666; font-weight: 600; font-size: 0.85em; white-space: nowrap;">Device ID:</label>
-                        <input
+                        <select
                             id="phoropterIdInput"
-                            type="text"
-                            value="lkst1878-6"
-                            placeholder="e.g. lkst1878-6"
                             title="Phoropter device ID used in all API calls"
-                            style="width: 130px; padding: 4px 8px; border: 1.5px solid #c5cae9; border-radius: 6px; font-size: 0.85em; font-family: monospace; color: #333; background: #f8f9ff; outline: none; transition: border-color 0.2s;"
-                            onfocus="this.style.borderColor='#667eea'"
-                            onblur="this.style.borderColor='#c5cae9'; savePhoropterId()"
-                        />
+                            style="width: 180px; padding: 4px 8px; border: 1.5px solid #c5cae9; border-radius: 6px; font-size: 0.85em; font-family: monospace; color: #333; background: #f8f9ff; outline: none;"
+                            onchange="onDeviceSelectionChanged()">
+                            <option value="">Loading devices...</option>
+                        </select>
+                        <button
+                            id="acquireDeviceBtn"
+                            class="btn btn-primary"
+                            onclick="acquireSelectedDevice()"
+                            style="display:none; padding: 6px 10px; font-size: 0.82em;">
+                            Acquire
+                        </button>
                     </div>
                 </div>
             </div>
@@ -1023,7 +1027,7 @@
                         <strong>Success!</strong> Your eye test has been completed successfully.
                     </div>
                     <div id="finalPrescription"></div>
-                    <button class="btn btn-primary" onclick="location.reload()">Start New Test</button>
+                    <button class="btn btn-primary" onclick="startNewTest()">Start New Test</button>
                 </div>
             </div>
 

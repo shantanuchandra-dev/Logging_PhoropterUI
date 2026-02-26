@@ -5,7 +5,9 @@ Simple Flask API server for interactive eye test sessions.
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import json
-from pathlib import Path
+import urllib.error
+import urllib.parse
+import urllib.request
 
 from interactive_session import InteractiveSession
 
@@ -14,11 +16,126 @@ CORS(app)
 
 # Global session storage (in production, use proper session management)
 sessions = {}
+PHOROPTER_BASE_URL = "https://rajasthan-royals.preprod.lenskart.com"
 
 
 def _log_api_command(action: str, payload: dict) -> None:
     """Log incoming API commands for debugging."""
     print(f"[API] {action}: {json.dumps(payload, ensure_ascii=False)}")
+
+
+def _request_payload() -> dict:
+    """Read JSON payload for standard and beacon requests."""
+    payload = request.get_json(silent=True)
+    if isinstance(payload, dict):
+        return payload
+
+    raw = request.get_data(as_text=True) or ""
+    if raw:
+        try:
+            parsed = json.loads(raw)
+            if isinstance(parsed, dict):
+                return parsed
+        except json.JSONDecodeError:
+            pass
+    return {}
+
+
+def _proxy_request(method: str, path: str, payload: dict | None = None, query: dict | None = None):
+    """Forward a request to broker API and return flask response tuple."""
+    url = f"{PHOROPTER_BASE_URL}{path}"
+    if query:
+        cleaned_query = {k: v for k, v in query.items() if v is not None and v != ""}
+        if cleaned_query:
+            url = f"{url}?{urllib.parse.urlencode(cleaned_query)}"
+
+    data = None
+    headers = {}
+    if payload is not None:
+        data = json.dumps(payload).encode("utf-8")
+        headers["Content-Type"] = "application/json"
+
+    req = urllib.request.Request(url=url, data=data, method=method.upper(), headers=headers)
+    try:
+        with urllib.request.urlopen(req, timeout=12) as resp:
+            body = resp.read().decode("utf-8")
+            if body:
+                try:
+                    parsed = json.loads(body)
+                except json.JSONDecodeError:
+                    parsed = {"raw": body}
+            else:
+                parsed = {"status": "success"}
+            return jsonify(parsed), resp.getcode()
+    except urllib.error.HTTPError as e:
+        body = e.read().decode("utf-8") if e.fp else ""
+        try:
+            parsed = json.loads(body) if body else {}
+        except json.JSONDecodeError:
+            parsed = {"error": body or str(e)}
+        if "error" not in parsed and "reason" not in parsed:
+            parsed["error"] = str(e)
+        return jsonify(parsed), e.code
+    except Exception as e:
+        return jsonify({"error": str(e)}), 502
+
+
+@app.route('/api/devices', methods=['GET'])
+def list_devices():
+    """List devices from phoropter broker."""
+    include_all = request.args.get("all")
+    return _proxy_request("GET", "/devices", query={"all": include_all})
+
+
+@app.route('/api/devices/<device_id>', methods=['GET'])
+def get_device(device_id):
+    """Get single device details."""
+    return _proxy_request("GET", f"/devices/{device_id}")
+
+
+@app.route('/api/devices/<device_id>/acquire', methods=['POST'])
+def acquire_device(device_id):
+    """Acquire device lock for a brain."""
+    payload = _request_payload()
+    _log_api_command(f"/api/devices/{device_id}/acquire", payload)
+    return _proxy_request("POST", f"/devices/{device_id}/acquire", payload=payload)
+
+
+@app.route('/api/devices/<device_id>/release', methods=['POST'])
+def release_device(device_id):
+    """Release device lock for a brain."""
+    payload = _request_payload()
+    _log_api_command(f"/api/devices/{device_id}/release", payload)
+    return _proxy_request("POST", f"/devices/{device_id}/release", payload=payload)
+
+
+@app.route('/api/devices/<device_id>/heartbeat', methods=['POST'])
+def heartbeat_device(device_id):
+    """Send heartbeat for active brain lock."""
+    payload = _request_payload()
+    _log_api_command(f"/api/devices/{device_id}/heartbeat", payload)
+    return _proxy_request("POST", f"/devices/{device_id}/heartbeat", payload=payload)
+
+
+@app.route('/api/brains', methods=['GET'])
+def list_brains():
+    """List active brains from broker."""
+    return _proxy_request("GET", "/brains")
+
+
+@app.route('/api/events', methods=['GET'])
+def list_events():
+    """List broker events/audit logs."""
+    limit = request.args.get("limit", "20")
+    return _proxy_request("GET", "/events", query={"limit": limit})
+
+
+@app.route('/api/phoropter/<device_id>/sync-state', methods=['POST'])
+def sync_phoropter_state(device_id):
+    """Sync broker internal state without physical clicks."""
+    payload = _request_payload()
+    _log_api_command(f"/api/phoropter/{device_id}/sync-state", payload)
+    return _proxy_request("POST", f"/phoropter/{device_id}/sync-state", payload=payload)
 
 
 @app.route('/api/session/start', methods=['POST'])
@@ -226,6 +343,14 @@ def end_session(session_id):
 if __name__ == '__main__':
     print("Starting Eye Test API Server...")
     print("Available endpoints:")
+    print("  GET  /api/devices")
+    print("  GET  /api/devices/<id>")
+    print("  POST /api/devices/<id>/acquire")
+    print("  POST /api/devices/<id>/heartbeat")
+    print("  POST /api/devices/<id>/release")
+    print("  GET  /api/brains")
+    print("  GET  /api/events")
+    print("  POST /api/phoropter/<id>/sync-state")
     print("  POST /api/session/start")
     print("  POST /api/session/<id>/respond")
     print("  POST /api/session/<id>/jump")
