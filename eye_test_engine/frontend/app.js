@@ -2,9 +2,11 @@
 // Integrates with Flask API backend and Phoropter API
 
 const CONFIG = {
-    // Use same origin when deployed (Vercel); localhost for local dev
-    backendUrl: (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'))
-        ? 'http://localhost:5050' : '',
+    // Priority: window.BACKEND_URL > localhost:5050 (if dev) > same-origin
+    backendUrl: (typeof window !== 'undefined' && window.BACKEND_URL)
+        ? window.BACKEND_URL
+        : ((typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'))
+            ? 'http://localhost:5050' : ''),
     phoropterUrl: 'https://rajasthan-royals.preprod.lenskart.com',
     get phoropterId() {
         const el = document.getElementById('phoropterIdInput');
@@ -233,7 +235,7 @@ function _saveSessionToStorage() {
 }
 
 function _clearSessionStorage() {
-    try { sessionStorage.removeItem(SESSION_STORAGE_KEY); } catch (_) {}
+    try { sessionStorage.removeItem(SESSION_STORAGE_KEY); } catch (_) { }
 }
 
 async function _tryRestoreSession() {
@@ -567,9 +569,9 @@ async function _commitActiveInput(submit) {
     const fields = _getTypableFields();
     const power = {
         right: { sph: 0, cyl: 0, axis: 180, add: 0 },
-        left:  { sph: 0, cyl: 0, axis: 180, add: 0 }
+        left: { sph: 0, cyl: 0, axis: 180, add: 0 }
     };
-    const oldPower = sessionState.lastResponse?.power || { right: {sph:0,cyl:0,axis:180,add:0}, left: {sph:0,cyl:0,axis:180,add:0} };
+    const oldPower = sessionState.lastResponse?.power || { right: { sph: 0, cyl: 0, axis: 180, add: 0 }, left: { sph: 0, cyl: 0, axis: 180, add: 0 } };
     let anyChanged = false;
 
     for (const cell of fields) {
@@ -705,7 +707,7 @@ async function applyManualPowerChange(eye, param, delta) {
     // Snapshot the pre-adjustment state for broker sync
     const prevPower = {
         right: { sph: p.right?.sph || 0, cyl: p.right?.cyl || 0, axis: p.right?.axis || 180 },
-        left:  { sph: p.left?.sph  || 0, cyl: p.left?.cyl  || 0, axis: p.left?.axis  || 180 }
+        left: { sph: p.left?.sph || 0, cyl: p.left?.cyl || 0, axis: p.left?.axis || 180 }
     };
 
     let current = parseFloat(p[eyeKey][param]) || 0;
@@ -774,20 +776,20 @@ async function applyManualPowerChange(eye, param, delta) {
 
 async function syncBrokerState(power, occluder) {
     const right = power.right || { sph: 0, cyl: 0, axis: 180 };
-    const left  = power.left  || { sph: 0, cyl: 0, axis: 180 };
+    const left = power.left || { sph: 0, cyl: 0, axis: 180 };
 
     let auxLens = "OFF";
     if (occluder === "Left_Occluded") auxLens = "AuxLensL";
     else if (occluder === "Right_Occluded") auxLens = "AuxLensR";
 
     const rightEye = { sph: right.sph, cyl: right.cyl, axis: right.axis };
-    const leftEye  = { sph: left.sph,  cyl: left.cyl,  axis: left.axis };
+    const leftEye = { sph: left.sph, cyl: left.cyl, axis: left.axis };
     if (right.add !== undefined && right.add !== 0) rightEye.add = right.add;
-    if (left.add  !== undefined && left.add  !== 0) leftEye.add  = left.add;
+    if (left.add !== undefined && left.add !== 0) leftEye.add = left.add;
 
     const payload = {
         right_eye: rightEye,
-        left_eye:  leftEye,
+        left_eye: leftEye,
         aux_lens: auxLens
     };
 
@@ -917,7 +919,7 @@ function updateLocalPhoropterState(partial) {
 function _formatPowerTooltip(label, power) {
     if (!power) return `${label}: none`;
     const r = power.right || { sph: 0, cyl: 0, axis: 180 };
-    const l = power.left  || { sph: 0, cyl: 0, axis: 180 };
+    const l = power.left || { sph: 0, cyl: 0, axis: 180 };
     return [
         `${label}:`,
         `  R: ${r.sph.toFixed(2)} / ${r.cyl.toFixed(2)} / ${r.axis.toFixed(0)}°`,
@@ -1859,9 +1861,9 @@ async function setPower(power, occluder) {
     }
 
     const rightEye = { sph: right.sph, cyl: right.cyl, axis: right.axis };
-    const leftEye  = { sph: left.sph,  cyl: left.cyl,  axis: left.axis };
+    const leftEye = { sph: left.sph, cyl: left.cyl, axis: left.axis };
     if (right.add !== undefined && right.add !== 0) rightEye.add = right.add;
-    if (left.add  !== undefined && left.add  !== 0) leftEye.add  = left.add;
+    if (left.add !== undefined && left.add !== 0) leftEye.add = left.add;
 
     const payload = {
         test_cases: [{
@@ -1920,7 +1922,7 @@ async function completeTest() {
                     try {
                         const parsed = JSON.parse(rawText);
                         screenshotBase64 = parsed.image || parsed.screenshot || parsed.data || rawText;
-                    } catch (_) {}
+                    } catch (_) { }
                 }
                 screenshotBase64 = screenshotBase64.replace(/\s+/g, '');
             }

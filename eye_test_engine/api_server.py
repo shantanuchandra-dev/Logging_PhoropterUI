@@ -28,12 +28,16 @@ append_to_combined_log = _outputs.append_to_combined_log
 append_to_combined_metadata = _outputs.append_to_combined_metadata
 build_session_metadata = _outputs.build_session_metadata
 
+import os
+
 app = Flask(__name__)
 CORS(app)
 
 # Global session storage (in production, use proper session management)
 sessions = {}
-PHOROPTER_BASE_URL = "https://rajasthan-royals.preprod.lenskart.com"
+
+# Allow overriding the target broker URL via environment variable
+PHOROPTER_BASE_URL = os.environ.get("PHOROPTER_BASE_URL", "https://rajasthan-royals.preprod.lenskart.com")
 
 # On Vercel, use /tmp (ephemeral); otherwise use local logs/
 _IS_VERCEL = bool(__import__("os").environ.get("VERCEL"))
@@ -460,4 +464,8 @@ if __name__ == '__main__':
     print("  GET  /api/session/<id>/status")
     print("  POST /api/session/<id>/end")
     print("  POST /api/session/<id>/discard")
-    app.run(host='0.0.0.0', port=5050, debug=True)
+    host = os.environ.get('HOST', '0.0.0.0')
+    port = int(os.environ.get('PORT', 5050))
+    debug = os.environ.get('FLASK_ENV') == 'development'
+    
+    app.run(host=host, port=port, debug=debug)
