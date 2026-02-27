@@ -109,6 +109,15 @@ def _proxy_request(method: str, path: str, payload: dict | None = None, query: d
         return jsonify({"error": str(e)}), 502
 
 
+@app.route('/api/config', methods=['GET'])
+def get_config():
+    """Return runtime configuration for the frontend."""
+    return jsonify({
+        "backend_url": os.environ.get("BACKEND_URL", ""),
+        "phoropter_base_url": PHOROPTER_BASE_URL
+    })
+
+
 @app.route('/api/devices', methods=['GET'])
 def list_devices():
     """List devices from phoropter broker."""

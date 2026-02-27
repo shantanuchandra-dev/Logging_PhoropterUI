@@ -54,6 +54,25 @@ const OPTOTYPE_MAP = {
 
 let currentOptotype = null;
 
+async function fetchConfig() {
+    try {
+        const resp = await fetch(`${CONFIG.backendUrl}/api/config`);
+        if (resp.ok) {
+            const data = await resp.json();
+            if (data.backend_url) {
+                CONFIG.backendUrl = data.backend_url;
+                console.log('Backend URL overridden from server config:', CONFIG.backendUrl);
+            }
+            if (data.phoropter_base_url) {
+                CONFIG.phoropterUrl = data.phoropter_base_url;
+                console.log('Phoropter Base URL set to:', CONFIG.phoropterUrl);
+            }
+        }
+    } catch (err) {
+        console.warn('Could not fetch session config:', err);
+    }
+}
+
 function savePhoropterId() {
     const el = document.getElementById('phoropterIdInput');
     if (!el) return;
@@ -323,6 +342,9 @@ async function _tryRestoreSession() {
 
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('Eye Test Engine Frontend Loaded');
+
+    // 1. Initial config from same-origin
+    await fetchConfig();
 
     updateStatusIndicator(false);
     populateDirectCommands();
