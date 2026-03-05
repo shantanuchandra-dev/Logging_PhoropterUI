@@ -76,6 +76,110 @@ function clearRequestLogs() {
     }
 }
 
+// ── Logs panel: password gate, minimize by default, expand from right ───
+const LOGS_PASSWORD = 'Shantanu';
+const LOGS_UNLOCK_HOURS = 24;
+const LOGS_STORAGE_DENIED = 'eyeTest_logsUnlockDenied';
+const LOGS_STORAGE_UNTIL = 'eyeTest_logsUnlockUntil';
+
+function isLogsAccessDenied() {
+    try {
+        return localStorage.getItem(LOGS_STORAGE_DENIED) === 'true';
+    } catch (_) {
+        return false;
+    }
+}
+
+function getLogsUnlockUntil() {
+    try {
+        const v = localStorage.getItem(LOGS_STORAGE_UNTIL);
+        return v ? parseInt(v, 10) : 0;
+    } catch (_) {
+        return 0;
+    }
+}
+
+function setLogsUnlockUntil(untilMs) {
+    try {
+        localStorage.setItem(LOGS_STORAGE_UNTIL, String(untilMs));
+    } catch (_) {}
+}
+
+function setLogsAccessDenied() {
+    try {
+        localStorage.setItem(LOGS_STORAGE_DENIED, 'true');
+    } catch (_) {}
+}
+
+function isLogsUnlocked() {
+    if (isLogsAccessDenied()) return false;
+    const until = getLogsUnlockUntil();
+    return until > Date.now();
+}
+
+function openLogsPasswordModal() {
+    const modal = document.getElementById('logsPasswordModal');
+    const input = document.getElementById('logsPasswordInput');
+    const err = document.getElementById('logsPasswordError');
+    if (modal) modal.classList.add('active');
+    if (input) {
+        input.value = '';
+        input.focus();
+    }
+    if (err) err.classList.remove('visible');
+}
+
+function closeLogsPasswordModal() {
+    const modal = document.getElementById('logsPasswordModal');
+    if (modal) modal.classList.remove('active');
+}
+
+function submitLogsPassword() {
+    const input = document.getElementById('logsPasswordInput');
+    const err = document.getElementById('logsPasswordError');
+    const value = (input && input.value) ? input.value.trim() : '';
+    if (value !== LOGS_PASSWORD) {
+        setLogsAccessDenied();
+        if (err) {
+            err.textContent = 'Incorrect password. Logs access is disabled on this browser.';
+            err.classList.add('visible');
+        }
+        closeLogsPasswordModal();
+        const tab = document.getElementById('logsTabBtn');
+        if (tab) tab.classList.add('hidden');
+        return;
+    }
+    const until = Date.now() + LOGS_UNLOCK_HOURS * 60 * 60 * 1000;
+    setLogsUnlockUntil(until);
+    closeLogsPasswordModal();
+    openLogsPanel();
+}
+
+function requestShowLogsPanel() {
+    if (isLogsAccessDenied()) {
+        return;
+    }
+    if (isLogsUnlocked()) {
+        openLogsPanel();
+        return;
+    }
+    openLogsPasswordModal();
+}
+
+function openLogsPanel() {
+    const main = document.querySelector('.main-content');
+    const tab = document.getElementById('logsTabBtn');
+    if (main) main.classList.add('logs-expanded');
+    if (tab) tab.classList.add('hidden');
+}
+
+function closeLogsPanel() {
+    const main = document.querySelector('.main-content');
+    const tab = document.getElementById('logsTabBtn');
+    if (main) main.classList.remove('logs-expanded');
+    if (tab && !isLogsAccessDenied()) tab.classList.remove('hidden');
+}
+
 const _originalFetch = window.fetch;
 window.fetch = function (input, init) {
     const url = typeof input === 'string' ? input : (input && input.url) || '';
@@ -454,6 +558,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (sectionCommands) sectionCommands.classList.add('collapsed');
     if (historyArrow) historyArrow.textContent = '▶';
     if (commandsArrow) commandsArrow.textContent = '▶';
+
+    // Logs panel: hide tab if access was previously denied on this browser
+    const logsTab = document.getElementById('logsTabBtn');
+    if (logsTab && isLogsAccessDenied()) logsTab.classList.add('hidden');
 
     // 1. Initial config from same-origin (Vercel or localhost)
     // This MUST complete before we try to restore or start a session

@@ -312,8 +312,53 @@
 
         .main-content {
             display: grid;
-            grid-template-columns: 2fr 1fr minmax(320px, 1fr);
+            grid-template-columns: 2fr 1fr;
             gap: 20px;
+            transition: grid-template-columns 0.2s ease;
+        }
+        .main-content.logs-expanded {
+            grid-template-columns: 2fr 1fr minmax(320px, 1fr);
+        }
+        .logs-panel-wrapper {
+            display: none;
+            min-width: 0;
+            overflow: hidden;
+        }
+        .main-content.logs-expanded .logs-panel-wrapper {
+            display: flex;
+            flex-direction: column;
+            min-width: 320px;
+            animation: logsSlideIn 0.2s ease;
+        }
+        @keyframes logsSlideIn {
+            from { opacity: 0; margin-right: -20px; }
+            to { opacity: 1; margin-right: 0; }
+        }
+        .logs-tab {
+            position: fixed;
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            writing-mode: vertical-rl;
+            text-orientation: mixed;
+            padding: 12px 8px;
+            background: linear-gradient(135deg, #2d2d44 0%, #1e1e2e 100%);
+            color: #e0e0e0;
+            font-size: 0.85em;
+            font-weight: 600;
+            border-radius: 12px 0 0 12px;
+            cursor: pointer;
+            box-shadow: -2px 0 10px rgba(0,0,0,0.2);
+            z-index: 500;
+            border: 1px solid #444;
+            border-right: none;
+        }
+        .logs-tab:hover {
+            background: linear-gradient(135deg, #3d3d54 0%, #2e2e3e 100%);
+            color: white;
+        }
+        .logs-tab.hidden {
+            display: none;
         }
 
         .test-panel {
@@ -362,6 +407,11 @@
         }
         .logs-panel-header button:hover {
             background: #764ba2;
+        }
+        .logs-panel-close {
+            padding: 2px 8px;
+            font-size: 0.9em;
+            margin-left: 8px;
         }
         .logs-panel-content {
             flex: 1;
@@ -1330,33 +1380,38 @@
         }
 
         @media (max-width: 1200px) {
-            .main-content {
-                grid-template-columns: 1fr 1fr;
+            .main-content.logs-expanded {
+                grid-template-columns: 1fr;
             }
-            .logs-panel {
-                grid-column: 1 / -1;
+            .main-content.logs-expanded .logs-panel-wrapper {
+                min-width: 0;
             }
         }
         @media (max-width: 768px) {
-            .main-content {
-                grid-template-columns: 1fr;
+            .logs-tab {
+                padding: 10px 6px;
+                font-size: 0.8em;
             }
-            .logs-panel {
-                grid-column: 1;
-            }
-
-            .footer {
-                padding: 15px;
-            }
-
-            .footer .phase-jump {
-                flex-direction: column;
-                width: 100%;
-            }
-
-            .footer .phase-jump select {
-                width: 100%;
-            }
+        }
+        /* Password modal for logs */
+        .logs-password-modal .modal {
+            max-width: 360px;
+        }
+        .logs-password-modal .modal-body input[type="password"] {
+            width: 100%;
+            padding: 10px 12px;
+            font-size: 1em;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+        }
+        .logs-password-modal .modal-body .password-error {
+            color: #c62828;
+            font-size: 0.9em;
+            margin-top: 8px;
+            display: none;
+        }
+        .logs-password-modal .modal-body .password-error.visible {
+            display: block;
         }
     </style>
 </head>
@@ -1607,16 +1662,23 @@
                 </div>
             </div>
 
-            <div class="logs-panel">
-                <div class="logs-panel-header">
-                    <span>📡 Request logs (curl)</span>
-                    <button type="button" id="clearLogsBtn" onclick="clearRequestLogs()">Clear</button>
-                </div>
-                <div class="logs-panel-content" id="requestLogsContent">
-                    <div class="logs-placeholder" id="requestLogsPlaceholder" style="color: #666;">No requests yet.</div>
+            <div class="logs-panel-wrapper" id="logsPanelWrapper">
+                <div class="logs-panel">
+                    <div class="logs-panel-header">
+                        <span>📡 Request logs (curl)</span>
+                        <span>
+                            <button type="button" id="clearLogsBtn" onclick="clearRequestLogs()">Clear</button>
+                            <button type="button" class="logs-panel-close" id="logsPanelCloseBtn" onclick="closeLogsPanel()" title="Minimize logs">✕</button>
+                        </span>
+                    </div>
+                    <div class="logs-panel-content" id="requestLogsContent">
+                        <div class="logs-placeholder" id="requestLogsPlaceholder" style="color: #666;">No requests yet.</div>
+                    </div>
                 </div>
             </div>
         </div>
+
+        <button type="button" class="logs-tab" id="logsTabBtn" onclick="requestShowLogsPanel()" title="Open request logs">📡 Logs</button>
 
         <!-- Live screenshot button (bottom-left) -->
         <button type="button" id="screenshotViewBtn" class="screenshot-view-btn" onclick="toggleScreenshotModal()" title="Live phoropter screen">
@@ -1755,6 +1817,27 @@
                 </div>
                 <div class="modal-actions">
                     <button class="btn btn-primary" onclick="saveOptometristName()">Continue</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Logs password modal -->
+    <div class="modal-backdrop logs-password-modal" id="logsPasswordModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>🔒 Request logs</h3>
+                <p>Enter password to view request logs</p>
+            </div>
+            <div class="modal-body">
+                <div class="modal-section">
+                    <input type="password" id="logsPasswordInput" placeholder="Password" autocomplete="off"
+                        onkeydown="if(event.key==='Enter') submitLogsPassword();">
+                    <div class="password-error" id="logsPasswordError">Incorrect password. Logs access is disabled on this browser.</div>
+                </div>
+                <div class="modal-actions">
+                    <button class="btn btn-secondary" onclick="closeLogsPasswordModal()">Cancel</button>
+                    <button class="btn btn-primary" onclick="submitLogsPassword()">Submit</button>
                 </div>
             </div>
         </div>
