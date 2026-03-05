@@ -33,6 +33,8 @@ let storedPower = {
 
 let currentAppliedPower = 'none';  // 'none', 'ar', or 'lenso'
 
+let _configReady = false;
+
 let operatorName = '';  // cached optometrist name
 
 // Memory state for store/restore/swap
@@ -55,21 +57,32 @@ const OPTOTYPE_MAP = {
 let currentOptotype = null;
 
 async function fetchConfig() {
+    console.log('[CONFIG] Fetching runtime config from same-origin...');
     try {
-        const resp = await fetch(`${CONFIG.backendUrl}/api/config`);
+        // Always hit same-origin /api/config first to get the real backend URL
+        const resp = await fetch('/api/config');
         if (resp.ok) {
             const data = await resp.json();
             if (data.backend_url) {
                 CONFIG.backendUrl = data.backend_url;
-                console.log('Backend URL overridden from server config:', CONFIG.backendUrl);
+                console.log('[CONFIG] Backend URL overridden from server:', CONFIG.backendUrl);
             }
             if (data.phoropter_base_url) {
                 CONFIG.phoropterUrl = data.phoropter_base_url;
-                console.log('Phoropter Base URL set to:', CONFIG.phoropterUrl);
+                console.log('[CONFIG] Phoropter Base URL set to:', CONFIG.phoropterUrl);
             }
+        } else {
+            console.warn('[CONFIG] Failed to fetch config, status:', resp.status);
         }
     } catch (err) {
-        console.warn('Could not fetch session config:', err);
+        console.warn('[CONFIG] Could not fetch session config:', err);
+    } finally {
+        _configReady = true;
+        const btn = document.getElementById('startTestBtn');
+        if (btn) {
+            btn.disabled = false;
+            btn.textContent = 'Start Eye Test';
+        }
     }
 }
 
@@ -343,15 +356,19 @@ async function _tryRestoreSession() {
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('Eye Test Engine Frontend Loaded');
 
-    // 1. Initial config from same-origin
+    // 1. Initial config from same-origin (Vercel or localhost)
+    // This MUST complete before we try to restore or start a session
     await fetchConfig();
 
     updateStatusIndicator(false);
     populateDirectCommands();
     bindTableInteractions();
     checkOptometristName();
-    fetchDevices();
 
+    // 2. Fetch devices from the RESOLVED backendUrl
+    await fetchDevices();
+
+    // 3. Try to restore session from the RESOLVED backendUrl
     await _tryRestoreSession();
 });
 
@@ -1195,6 +1212,11 @@ function updatePowerButtonStates(activeType) {
 
 // Start Test
 async function startTest() {
+    if (!_configReady) {
+        alert('Still connecting to backend. Please wait a moment.');
+        return;
+    }
+
     const btn = document.getElementById('startTestBtn');
     if (btn) btn.disabled = true;
 

@@ -112,8 +112,10 @@ def _proxy_request(method: str, path: str, payload: dict | None = None, query: d
 @app.route('/api/config', methods=['GET'])
 def get_config():
     """Return runtime configuration for the frontend."""
+    backend_url = os.environ.get("BACKEND_URL", "")
+    print(f"[CONFIG] Serving config: backend_url='{backend_url}', phoropter='{PHOROPTER_BASE_URL}'")
     return jsonify({
-        "backend_url": os.environ.get("BACKEND_URL", ""),
+        "backend_url": backend_url,
         "phoropter_base_url": PHOROPTER_BASE_URL
     })
 
