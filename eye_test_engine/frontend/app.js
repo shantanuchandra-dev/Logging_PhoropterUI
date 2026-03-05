@@ -14,6 +14,87 @@ const CONFIG = {
     }
 };
 
+// ── Request logging (curl commands) ─────────────────────────────────────
+function buildCurlFromFetch(url, options) {
+    const u = typeof url === 'string' ? url : (url.url || '');
+    const absUrl = u.startsWith('http') ? u : new URL(u, window.location.origin).href;
+    const method = (options && options.method) ? String(options.method).toUpperCase() : 'GET';
+    const headers = options && options.headers ? (options.headers instanceof Headers
+        ? Object.fromEntries(options.headers.entries())
+        : options.headers) : {};
+    let body = options && options.body !== undefined ? options.body : null;
+    if (typeof body === 'object' && body !== null && !(body instanceof String)) {
+        try { body = JSON.stringify(body); } catch (_) { body = String(body); }
+    }
+    const escapeShell = (s) => (s || '').replace(/'/g, "'\\''");
+    const parts = ['curl -X ' + method + " '" + escapeShell(absUrl) + "'"];
+    const skipHeaders = ['accept-encoding'];
+    Object.keys(headers).forEach((k) => {
+        if (skipHeaders.includes(k.toLowerCase())) return;
+        const v = headers[k];
+        if (v !== undefined && v !== null) {
+            parts.push("-H '" + escapeShell(k + ': ' + v) + "'");
+        }
+    });
+    if (body != null && body !== '' && method !== 'GET') {
+        parts.push("-d '" + escapeShell(body) + "'");
+    }
+    return parts.join(' \\\n  ');
+}
+
+function addRequestLog(curlString, method, url) {
+    if (typeof document === 'undefined' || !document.getElementById('requestLogsContent')) return;
+    const container = document.getElementById('requestLogsContent');
+    const placeholder = document.getElementById('requestLogsPlaceholder');
+    if (placeholder) placeholder.style.display = 'none';
+    const absUrl = url.startsWith('http') ? url : new URL(url, window.location.origin).href;
+    const time = new Date().toLocaleTimeString(undefined, { hour12: false });
+    const entry = document.createElement('div');
+    entry.className = 'log-entry';
+    entry.innerHTML = `
+        <div class="log-entry-header">
+            <span class="log-entry-method">${method}</span>
+            <span>${time}</span>
+            <span style="flex:1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${absUrl}">${absUrl}</span>
+        </div>
+        <pre class="log-entry-curl">${(curlString || '').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>
+    `;
+    container.appendChild(entry);
+    container.scrollTop = container.scrollHeight;
+}
+
+function clearRequestLogs() {
+    const container = document.getElementById('requestLogsContent');
+    const placeholder = document.getElementById('requestLogsPlaceholder');
+    if (container) {
+        container.innerHTML = '';
+        if (placeholder) {
+            container.appendChild(placeholder);
+            placeholder.style.display = 'block';
+            placeholder.textContent = 'No requests yet.';
+        }
+    }
+}
+
+const _originalFetch = window.fetch;
+window.fetch = function (input, init) {
+    const url = typeof input === 'string' ? input : (input && input.url) || '';
+    const options = init || (input && typeof input === 'object' ? {
+        method: input.method,
+        headers: input.headers,
+        body: input.body
+    } : {});
+    const method = (options.method || 'GET').toUpperCase();
+    const absUrl = url.startsWith('http') ? url : new URL(url, window.location.origin).href;
+    try {
+        const curl = buildCurlFromFetch(input, options);
+        addRequestLog(curl, method, absUrl);
+    } catch (e) {
+        console.warn('Request log build failed:', e);
+    }
+    return _originalFetch.call(this, input, init);
+};
+
 let sessionState = {
     sessionId: null,
     currentPhase: null,
@@ -353,8 +434,26 @@ async function _tryRestoreSession() {
     }
 }
 
+function toggleSection(sectionId) {
+    const section = document.getElementById('section-' + sectionId);
+    const arrowEl = document.getElementById(sectionId === 'history' ? 'historyArrow' : 'commandsArrow');
+    if (!section || !arrowEl) return;
+    section.classList.toggle('collapsed');
+    arrowEl.textContent = section.classList.contains('collapsed') ? '▶' : '▼';
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('Eye Test Engine Frontend Loaded');
+
+    // Start with Test History and Chart Commands collapsed (compact row visible)
+    const sectionHistory = document.getElementById('section-history');
+    const sectionCommands = document.getElementById('section-commands');
+    const historyArrow = document.getElementById('historyArrow');
+    const commandsArrow = document.getElementById('commandsArrow');
+    if (sectionHistory) sectionHistory.classList.add('collapsed');
+    if (sectionCommands) sectionCommands.classList.add('collapsed');
+    if (historyArrow) historyArrow.textContent = '▶';
+    if (commandsArrow) commandsArrow.textContent = '▶';
 
     // 1. Initial config from same-origin (Vercel or localhost)
     // This MUST complete before we try to restore or start a session
@@ -665,6 +764,7 @@ async function _commitActiveInput(submit) {
         document.getElementById('responseCount').textContent = sessionState.responseCount;
         addToHistory('Typed power applied', 'adjust');
         _saveSessionToStorage();
+        refreshScreenshotIfModalOpen();
     } catch (error) {
         console.error('Error applying typed power:', error);
         alert('Failed to apply typed power.');
@@ -803,6 +903,7 @@ async function applyManualPowerChange(eye, param, delta) {
         document.getElementById('responseCount').textContent = sessionState.responseCount;
         addToHistory(`Manual Adjust: ${param.toUpperCase()} ${delta > 0 ? '+' : ''}${delta} [${eye}]`, 'adjust');
         _saveSessionToStorage();
+        refreshScreenshotIfModalOpen();
     } catch (error) {
         console.error('Error applying manual power:', error);
         alert('Failed to push manual power to phoropter. Try again.');
@@ -871,6 +972,288 @@ function closeLensoPowerModal() {
     if (modal) {
         modal.classList.remove('active');
     }
+}
+
+// ── Live screenshot modal (draggable, zoomable, resizable; refresh when open; backdrop does not block clicks) ───
+let _screenshotDragInited = false;
+let _screenshotZoom = 1;
+const SCREENSHOT_ZOOM_MIN = 0.25;
+const SCREENSHOT_ZOOM_MAX = 3;
+const SCREENSHOT_ZOOM_STEP = 0.25;
+const SCREENSHOT_HISTORY_MAX = 50;
+let _screenshotHistory = [];   // { base64, ts }
+let _screenshotHistoryIndex = -1;
+
+function isScreenshotModalOpen() {
+    const backdrop = document.getElementById('screenshotModalBackdrop');
+    return backdrop && backdrop.classList.contains('active');
+}
+
+async function fetchScreenshot() {
+    try {
+        const brainId = await getBrainId();
+        const resp = await fetch(`${CONFIG.phoropterUrl}/phoropter/${CONFIG.phoropterId}/screenshot`, {
+            method: 'POST',
+            headers: { 'x-brain-id': brainId }
+        });
+        if (!resp.ok) return null;
+        let rawText = await resp.text();
+        let base64 = rawText.trim();
+        if (base64.startsWith('"') && base64.endsWith('"')) base64 = base64.slice(1, -1);
+        if (base64.startsWith('{')) {
+            try {
+                const parsed = JSON.parse(rawText);
+                base64 = parsed.image || parsed.screenshot || parsed.data || rawText;
+            } catch (_) {}
+        }
+        base64 = base64.replace(/\s+/g, '');
+        return base64 && base64.length > 50 ? base64 : null;
+    } catch (e) {
+        console.warn('Screenshot fetch failed:', e);
+        return null;
+    }
+}
+
+function formatScreenshotTimestamp(ts) {
+    if (ts == null) return '';
+    const d = new Date(ts);
+    return d.toLocaleString(undefined, {
+        dateStyle: 'short',
+        timeStyle: 'medium',
+        hour12: false
+    });
+}
+
+function updateScreenshotTimestamp() {
+    const el = document.getElementById('screenshotTimestamp');
+    if (!el) return;
+    if (_screenshotHistoryIndex < 0 || _screenshotHistoryIndex >= _screenshotHistory.length) {
+        el.textContent = '';
+        el.style.display = 'none';
+        return;
+    }
+    const entry = _screenshotHistory[_screenshotHistoryIndex];
+    el.textContent = formatScreenshotTimestamp(entry.ts);
+    el.style.display = 'block';
+}
+
+function setScreenshotImage(base64) {
+    const img = document.getElementById('screenshotImage');
+    const wrap = document.getElementById('screenshotImgWrap');
+    const loading = document.getElementById('screenshotLoading');
+    const err = document.getElementById('screenshotError');
+    if (!img || !loading || !err) return;
+    if (base64) {
+        _screenshotHistory.push({ base64, ts: Date.now() });
+        if (_screenshotHistory.length > SCREENSHOT_HISTORY_MAX) {
+            _screenshotHistory = _screenshotHistory.slice(-SCREENSHOT_HISTORY_MAX);
+        }
+        _screenshotHistoryIndex = _screenshotHistory.length - 1;
+        img.src = 'data:image/jpeg;base64,' + base64;
+        img.classList.add('loaded');
+        loading.style.display = 'none';
+        err.style.display = 'none';
+        if (wrap) wrap.style.transform = `scale(${_screenshotZoom})`;
+        updateScreenshotTimestamp();
+        updateScreenshotNavUI();
+    } else {
+        img.removeAttribute('src');
+        img.classList.remove('loaded');
+        loading.style.display = 'none';
+        err.style.display = 'block';
+        updateScreenshotTimestamp();
+        updateScreenshotNavUI();
+    }
+}
+
+function showScreenshotAtIndex(index) {
+    if (index < 0 || index >= _screenshotHistory.length) return;
+    _screenshotHistoryIndex = index;
+    const img = document.getElementById('screenshotImage');
+    const wrap = document.getElementById('screenshotImgWrap');
+    const loading = document.getElementById('screenshotLoading');
+    const err = document.getElementById('screenshotError');
+    if (!img) return;
+    const entry = _screenshotHistory[index];
+    img.src = 'data:image/jpeg;base64,' + entry.base64;
+    img.classList.add('loaded');
+    if (loading) loading.style.display = 'none';
+    if (err) err.style.display = 'none';
+    if (wrap) wrap.style.transform = `scale(${_screenshotZoom})`;
+    updateScreenshotTimestamp();
+    updateScreenshotNavUI();
+}
+
+function updateScreenshotNavUI() {
+    const prevBtn = document.getElementById('screenshotPrevBtn');
+    const nextBtn = document.getElementById('screenshotNextBtn');
+    const latestBtn = document.getElementById('screenshotLatestBtn');
+    const label = document.getElementById('screenshotHistoryLabel');
+    const n = _screenshotHistory.length;
+    if (prevBtn) prevBtn.disabled = n === 0 || _screenshotHistoryIndex <= 0;
+    if (nextBtn) nextBtn.disabled = n === 0 || _screenshotHistoryIndex >= n - 1;
+    if (latestBtn) latestBtn.disabled = n === 0 || _screenshotHistoryIndex === n - 1;
+    if (label) {
+        if (n === 0) label.textContent = '—';
+        else label.textContent = `${_screenshotHistoryIndex + 1} / ${n}`;
+    }
+}
+
+function screenshotShowPrevious() {
+    if (_screenshotHistoryIndex > 0) showScreenshotAtIndex(_screenshotHistoryIndex - 1);
+}
+
+function screenshotShowNext() {
+    if (_screenshotHistoryIndex < _screenshotHistory.length - 1) showScreenshotAtIndex(_screenshotHistoryIndex + 1);
+}
+
+function screenshotShowLatest() {
+    if (_screenshotHistory.length > 0) showScreenshotAtIndex(_screenshotHistory.length - 1);
+}
+
+function applyScreenshotZoom() {
+    const wrap = document.getElementById('screenshotImgWrap');
+    const label = document.getElementById('screenshotZoomLabel');
+    if (wrap) wrap.style.transform = `scale(${_screenshotZoom})`;
+    if (label) label.textContent = Math.round(_screenshotZoom * 100) + '%';
+}
+
+function refreshScreenshotIfModalOpen() {
+    if (!isScreenshotModalOpen()) return;
+    (async () => {
+        const loading = document.getElementById('screenshotLoading');
+        const err = document.getElementById('screenshotError');
+        if (loading) loading.style.display = 'block';
+        if (err) err.style.display = 'none';
+        const base64 = await fetchScreenshot();
+        if (isScreenshotModalOpen()) setScreenshotImage(base64);
+    })();
+}
+
+function openScreenshotModal() {
+    const backdrop = document.getElementById('screenshotModalBackdrop');
+    const modal = document.getElementById('screenshotModal');
+    if (!backdrop || !modal) return;
+    if (!_screenshotDragInited) {
+        initScreenshotModalDrag();
+        initScreenshotModalZoom();
+        initScreenshotModalResize();
+        _screenshotDragInited = true;
+    }
+    _screenshotZoom = 1;
+    applyScreenshotZoom();
+    backdrop.classList.add('active');
+    refreshScreenshotIfModalOpen();
+}
+
+function closeScreenshotModal() {
+    const backdrop = document.getElementById('screenshotModalBackdrop');
+    if (backdrop) backdrop.classList.remove('active');
+}
+
+function toggleScreenshotModal() {
+    if (isScreenshotModalOpen()) closeScreenshotModal();
+    else openScreenshotModal();
+}
+
+function initScreenshotModalDrag() {
+    const modal = document.getElementById('screenshotModal');
+    const header = document.getElementById('screenshotModalHeader');
+    if (!modal || !header) return;
+    let dragging = false;
+    let startX, startY, startLeft, startTop;
+
+    header.addEventListener('mousedown', (e) => {
+        if (e.button !== 0) return;
+        dragging = true;
+        const rect = modal.getBoundingClientRect();
+        startLeft = rect.left;
+        startTop = rect.top;
+        startX = e.clientX;
+        startY = e.clientY;
+        modal.style.left = startLeft + 'px';
+        modal.style.top = startTop + 'px';
+        modal.style.transform = 'none';
+        e.preventDefault();
+    });
+
+    const onMove = (e) => {
+        if (!dragging) return;
+        const dx = e.clientX - startX;
+        const dy = e.clientY - startY;
+        modal.style.left = (startLeft + dx) + 'px';
+        modal.style.top = (startTop + dy) + 'px';
+    };
+    const onUp = () => {
+        dragging = false;
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+    };
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+}
+
+function initScreenshotModalZoom() {
+    const wrap = document.getElementById('screenshotImgWrap');
+    const img = document.getElementById('screenshotImage');
+    const zoomIn = document.getElementById('screenshotZoomIn');
+    const zoomOut = document.getElementById('screenshotZoomOut');
+    if (!wrap || !zoomIn || !zoomOut) return;
+
+    function setZoom(delta) {
+        _screenshotZoom = Math.max(SCREENSHOT_ZOOM_MIN, Math.min(SCREENSHOT_ZOOM_MAX, _screenshotZoom + delta));
+        applyScreenshotZoom();
+    }
+    zoomIn.addEventListener('click', (e) => { e.preventDefault(); setZoom(SCREENSHOT_ZOOM_STEP); });
+    zoomOut.addEventListener('click', (e) => { e.preventDefault(); setZoom(-SCREENSHOT_ZOOM_STEP); });
+    if (img) {
+        img.addEventListener('wheel', (e) => {
+            if (!isScreenshotModalOpen()) return;
+            e.preventDefault();
+            setZoom(e.deltaY > 0 ? -0.1 : 0.1);
+        }, { passive: false });
+    }
+}
+
+function initScreenshotModalResize() {
+    const modal = document.getElementById('screenshotModal');
+    const handle = document.getElementById('screenshotResizeHandle');
+    if (!modal || !handle) return;
+    let resizing = false;
+    let startX, startY, startW, startH;
+
+    handle.addEventListener('mousedown', (e) => {
+        if (e.button !== 0) return;
+        e.preventDefault();
+        resizing = true;
+        startX = e.clientX;
+        startY = e.clientY;
+        const rect = modal.getBoundingClientRect();
+        startW = rect.width;
+        startH = rect.height;
+    });
+    const onMove = (e) => {
+        if (!resizing) return;
+        const dw = e.clientX - startX;
+        const dh = e.clientY - startY;
+        startX = e.clientX;
+        startY = e.clientY;
+        const w = Math.max(320, startW + dw);
+        const h = Math.max(200, startH + dh);
+        modal.style.width = w + 'px';
+        modal.style.height = h + 'px';
+        modal.style.maxWidth = '95vw';
+        modal.style.maxHeight = '90vh';
+        startW = w;
+        startH = h;
+    };
+    const onUp = () => {
+        resizing = false;
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+    };
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
 }
 
 function parseArValue(value, fallback) {
@@ -1061,6 +1444,7 @@ async function _memRestore() {
         showLoading(false);
         _setPhoropterBusy(false);
         _setIntentsDisabled(false);
+        refreshScreenshotIfModalOpen();
     }
 }
 
@@ -1103,6 +1487,7 @@ async function _memSwapBack() {
         showLoading(false);
         _setPhoropterBusy(false);
         _setIntentsDisabled(false);
+        refreshScreenshotIfModalOpen();
     }
 }
 
@@ -1191,6 +1576,7 @@ async function applyStoredPower(type) {
         showLoading(false);
         _setPhoropterBusy(false);
         _setIntentsDisabled(false);
+        refreshScreenshotIfModalOpen();
     }
 }
 
@@ -1269,6 +1655,7 @@ async function startTest() {
         if (btn) btn.disabled = false;
     } finally {
         showLoading(false);
+        refreshScreenshotIfModalOpen();
     }
 }
 
@@ -1315,6 +1702,11 @@ async function submitIntent(intent) {
         // Update phoropter first
         await setPhoropter(data);
 
+        // If we're about to auto-flip (e.g. after "Repeat" intent), refresh live view now so user can confirm Flip 1
+        if (data.auto_flip) {
+            refreshScreenshotIfModalOpen();
+        }
+
         // Display question and intents AFTER processing is complete
         displayQuestion(data);
         _saveSessionToStorage();
@@ -1333,6 +1725,7 @@ async function submitIntent(intent) {
     } finally {
         _setPhoropterBusy(false);
         showLoading(false);
+        refreshScreenshotIfModalOpen();
     }
 }
 
@@ -1384,6 +1777,7 @@ async function handleAutoFlip(waitSeconds) {
         // Note: displayQuestion() creates fresh enabled buttons
 
         addToHistory('Flip 2 displayed', 'info');
+        refreshScreenshotIfModalOpen();
 
     } catch (error) {
         console.error('Error during auto-flip:', error);
@@ -1683,6 +2077,7 @@ async function switchOptotype(optotype) {
         alert('Failed to switch optotype. Please try again.');
     } finally {
         showLoading(false);
+        refreshScreenshotIfModalOpen();
     }
 }
 
@@ -1752,6 +2147,7 @@ async function switchChart(chartIndex) {
         alert('Failed to switch chart. Please try again.');
     } finally {
         showLoading(false);
+        refreshScreenshotIfModalOpen();
     }
 }
 
@@ -1823,9 +2219,11 @@ async function resetPhoropter() {
         if (response.ok) {
             addToHistory('Phoropter reset to 0/0/180', 'success');
         }
+        refreshScreenshotIfModalOpen();
     } catch (error) {
         console.error('Error resetting phoropter:', error);
         addToHistory('Warning: Could not reset phoropter', 'warning');
+        refreshScreenshotIfModalOpen();
     }
 }
 
@@ -2248,6 +2646,7 @@ async function jumpToPhase() {
         showLoading(false);
     } finally {
         jumpBtn.disabled = false;
+        refreshScreenshotIfModalOpen();
     }
 }
 

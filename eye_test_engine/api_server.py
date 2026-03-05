@@ -186,8 +186,8 @@ def start_session():
     session_id = payload.get('session_id', 'default')
     phoropter_id = payload.get('phoropter_id', 'phoropter-1')
     
-    # Create new session with the specified phoropter device ID
-    session = InteractiveSession(phoropter_id=phoropter_id)
+    # Create new session with the specified phoropter device ID and URL
+    session = InteractiveSession(base_url=PHOROPTER_BASE_URL, phoropter_id=phoropter_id)
     sessions[session_id] = session
     
     # Start distance vision phase

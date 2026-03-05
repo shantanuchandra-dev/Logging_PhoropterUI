@@ -21,8 +21,10 @@
         }
 
         .container {
-            max-width: 1200px;
-            margin: 0 auto;
+            max-width: none;
+            width: 100%;
+            margin: 0;
+            padding: 0 10px;
         }
 
         .header {
@@ -310,7 +312,7 @@
 
         .main-content {
             display: grid;
-            grid-template-columns: 2fr 1fr;
+            grid-template-columns: 2fr 1fr minmax(320px, 1fr);
             gap: 20px;
         }
 
@@ -327,6 +329,78 @@
             padding: 20px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
         }
+
+        .logs-panel {
+            background: #1e1e2e;
+            border-radius: 15px;
+            padding: 0;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            display: flex;
+            flex-direction: column;
+            min-height: 400px;
+            max-height: calc(100vh - 180px);
+        }
+        .logs-panel-header {
+            padding: 12px 16px;
+            background: linear-gradient(135deg, #2d2d44 0%, #1e1e2e 100%);
+            color: #e0e0e0;
+            font-weight: 600;
+            font-size: 0.95em;
+            border-bottom: 1px solid #444;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .logs-panel-header button {
+            padding: 4px 10px;
+            font-size: 0.8em;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        .logs-panel-header button:hover {
+            background: #764ba2;
+        }
+        .logs-panel-content {
+            flex: 1;
+            overflow: auto;
+            padding: 12px;
+            font-family: ui-monospace, monospace;
+            font-size: 0.75em;
+            line-height: 1.4;
+        }
+        .log-entry {
+            margin-bottom: 14px;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid #333;
+            background: #252536;
+        }
+        .log-entry-header {
+            padding: 6px 10px;
+            background: #333;
+            color: #aaa;
+            font-size: 0.85em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .log-entry-method {
+            font-weight: 700;
+            color: #667eea;
+        }
+        .log-entry-curl {
+            padding: 10px 12px;
+            white-space: pre-wrap;
+            word-break: break-all;
+            color: #cdd6f4;
+        }
+        .log-entry-curl .curl-url { color: #a6e3a1; }
+        .log-entry-curl .curl-method { color: #f9e2af; }
+        .log-entry-curl .curl-header { color: #89b4fa; }
+        .log-entry-curl .curl-body { color: #cba6f7; }
 
         .phase-badge {
             display: inline-block;
@@ -749,6 +823,87 @@
             font-size: 0.9em;
         }
 
+        /* Collapsible middle section + Jump to Phase (compact row when minimized) */
+        .middle-bottom-row {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 6px 12px;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+            margin-bottom: 8px;
+        }
+        .section-toggle-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 10px;
+            font-size: 0.85em;
+            background: #f0f4ff;
+            border: 1px solid #c5cae9;
+            border-radius: 6px;
+            cursor: pointer;
+            color: #333;
+        }
+        .section-toggle-btn:hover {
+            background: #e8ecff;
+            border-color: #667eea;
+        }
+        .section-toggle-btn .arrow {
+            font-size: 0.75em;
+        }
+        .info-section.collapsible .section-body {
+            overflow: hidden;
+        }
+        .info-section.collapsible.collapsed .section-body {
+            display: none;
+        }
+        .info-section.collapsible.collapsed {
+            display: none;
+        }
+        .info-section.collapsible h4 {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+        .phase-jump-inline {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-left: auto;
+        }
+        .phase-jump-inline label {
+            color: #666;
+            font-weight: 600;
+            font-size: 0.85em;
+            white-space: nowrap;
+        }
+        .phase-jump-inline select {
+            padding: 4px 8px;
+            border: 1px solid #c5cae9;
+            border-radius: 6px;
+            font-size: 0.85em;
+            min-width: 180px;
+        }
+        .phase-jump-inline button {
+            padding: 4px 12px;
+            font-size: 0.85em;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .phase-jump-inline button:hover:not(:disabled) {
+            opacity: 0.95;
+        }
+        .phase-jump-inline button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
         .history-item {
             padding: 8px;
             margin: 5px 0;
@@ -977,9 +1132,217 @@
             background: #c5cae9;
         }
 
+        /* Live view button – bottom left */
+        .screenshot-view-btn {
+            position: fixed;
+            bottom: 24px;
+            left: 24px;
+            z-index: 900;
+            padding: 10px 18px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 0.9em;
+            cursor: pointer;
+            box-shadow: 0 4px 14px rgba(102, 126, 234, 0.4);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .screenshot-view-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+        }
+
+        /* Screenshot modal – click-through backdrop so intents remain clickable */
+        .screenshot-modal-backdrop {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 1100;
+            pointer-events: none;
+        }
+        .screenshot-modal-backdrop.active {
+            display: block;
+        }
+        .screenshot-modal {
+            position: fixed;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            min-width: 320px;
+            width: 85vw;
+            max-width: 900px;
+            min-height: 200px;
+            max-height: 85vh;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            pointer-events: auto;
+            resize: both;
+        }
+        .screenshot-modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 10px 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-weight: 600;
+            cursor: move;
+            user-select: none;
+            flex-shrink: 0;
+        }
+        .screenshot-modal-header .screenshot-zoom-controls {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .screenshot-modal-header .screenshot-zoom-btn {
+            width: 28px;
+            height: 28px;
+            border: none;
+            background: rgba(255,255,255,0.25);
+            color: white;
+            border-radius: 6px;
+            font-size: 1.1em;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .screenshot-modal-header .screenshot-zoom-btn:hover {
+            background: rgba(255,255,255,0.4);
+        }
+        .screenshot-modal-header .screenshot-zoom-label {
+            font-size: 0.8em;
+            min-width: 36px;
+            text-align: center;
+        }
+        .screenshot-modal-close {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            font-size: 1.2em;
+            line-height: 1;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .screenshot-modal-close:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        .screenshot-modal-body {
+            padding: 10px;
+            overflow: auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 180px;
+            background: #1a1a1a;
+            flex: 1;
+        }
+        .screenshot-img-wrap {
+            transform-origin: center center;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        .screenshot-timestamp {
+            position: absolute;
+            bottom: 8px;
+            left: 8px;
+            padding: 4px 8px;
+            background: rgba(0, 0, 0, 0.65);
+            color: #fff;
+            font-size: 0.8em;
+            font-family: monospace;
+            border-radius: 4px;
+            pointer-events: none;
+        }
+        .screenshot-img {
+            max-width: 100%;
+            max-height: 70vh;
+            object-fit: contain;
+            display: none;
+        }
+        .screenshot-img.loaded {
+            display: block;
+        }
+        .screenshot-loading,
+        .screenshot-error {
+            color: #999;
+            padding: 20px;
+        }
+        .screenshot-error {
+            color: #c62828;
+        }
+        .screenshot-resize-handle {
+            position: absolute;
+            right: 0;
+            bottom: 0;
+            width: 20px;
+            height: 20px;
+            cursor: nwse-resize;
+            background: linear-gradient(135deg, transparent 50%, rgba(102, 126, 234, 0.4) 50%);
+            border-radius: 0 0 4px 0;
+        }
+        .screenshot-history-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 12px;
+            background: #f0f4ff;
+            border-top: 1px solid #e0e0e0;
+            flex-shrink: 0;
+        }
+        .screenshot-history-bar .screenshot-nav-btn {
+            padding: 6px 12px;
+            font-size: 0.85em;
+            border: 1px solid #667eea;
+            background: white;
+            color: #667eea;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        .screenshot-history-bar .screenshot-nav-btn:hover:not(:disabled) {
+            background: #667eea;
+            color: white;
+        }
+        .screenshot-history-bar .screenshot-nav-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .screenshot-history-bar .screenshot-history-label {
+            font-size: 0.9em;
+            color: #333;
+            min-width: 64px;
+        }
+
+        @media (max-width: 1200px) {
+            .main-content {
+                grid-template-columns: 1fr 1fr;
+            }
+            .logs-panel {
+                grid-column: 1 / -1;
+            }
+        }
         @media (max-width: 768px) {
             .main-content {
                 grid-template-columns: 1fr;
+            }
+            .logs-panel {
+                grid-column: 1;
             }
 
             .footer {
@@ -1195,45 +1558,71 @@
                     </div>
                 </div>
 
-                <div class="info-section">
-                    <h4>Test History</h4>
-                    <div id="historyLog" class="history-log">
-                        <div style="color: #999; text-align: center; padding: 20px;">No events yet</div>
+                <!-- Compact row: toggles + Jump to Phase (always visible when minimized) -->
+                <div class="middle-bottom-row">
+                    <button type="button" class="section-toggle-btn" id="toggleHistoryBtn" onclick="toggleSection('history')" title="Expand/collapse Test History">
+                        <span class="arrow" id="historyArrow">▼</span> Test History
+                    </button>
+                    <button type="button" class="section-toggle-btn" id="toggleCommandsBtn" onclick="toggleSection('commands')" title="Expand/collapse Chart Commands">
+                        <span class="arrow" id="commandsArrow">▼</span> Chart Commands
+                    </button>
+                    <div class="phase-jump-inline">
+                        <label for="phaseSelect">Jump to Phase:</label>
+                        <select id="phaseSelect">
+                            <option value="">-- Select Phase --</option>
+                            <option value="distance_vision">Phase A: Distance Vision (Step 2.1)</option>
+                            <option value="right_eye_refraction">Phase B: Right Eye Refraction (Step 6.1)</option>
+                            <option value="jcc_axis_right">Phase E: JCC Axis Right (Step 6.2)</option>
+                            <option value="jcc_power_right">Phase F: JCC Power Right (Step 6.2)</option>
+                            <option value="duochrome_right">Phase G: Duochrome Right (Step 6.2)</option>
+                            <option value="left_eye_refraction">Phase D: Left Eye Refraction (Step 6.3)</option>
+                            <option value="jcc_axis_left">Phase H: JCC Axis Left (Step 6.4)</option>
+                            <option value="jcc_power_left">Phase I: JCC Power Left (Step 6.4)</option>
+                            <option value="duochrome_left">Phase J: Duochrome Left (Step 6.4)</option>
+                            <option value="binocular_balance">Phase K: Binocular Balance (Step 6.5)</option>
+                            <option value="near_add_right">Phase P: Near Vision - Right Eye ADD</option>
+                            <option value="near_add_left">Phase Q: Near Vision - Left Eye ADD</option>
+                            <option value="near_add_bino">Phase R: Near Vision - Binocular ADD</option>
+                        </select>
+                        <button type="button" onclick="jumpToPhase()" id="jumpBtn">Go</button>
                     </div>
                 </div>
 
-                <div class="info-section command-section">
-                    <h4>Chart Commands</h4>
-                    <div id="directCommands">
-                        <!-- Populated by JS -->
+                <div class="info-section collapsible" id="section-history">
+                    <h4>Test History <button type="button" class="section-toggle-btn" onclick="toggleSection('history')" aria-label="Collapse">▼</button></h4>
+                    <div class="section-body">
+                        <div id="historyLog" class="history-log">
+                            <div style="color: #999; text-align: center; padding: 20px;">No events yet</div>
+                        </div>
                     </div>
+                </div>
+
+                <div class="info-section collapsible command-section" id="section-commands">
+                    <h4>Chart Commands <button type="button" class="section-toggle-btn" onclick="toggleSection('commands')" aria-label="Collapse">▼</button></h4>
+                    <div class="section-body">
+                        <div id="directCommands">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="logs-panel">
+                <div class="logs-panel-header">
+                    <span>📡 Request logs (curl)</span>
+                    <button type="button" id="clearLogsBtn" onclick="clearRequestLogs()">Clear</button>
+                </div>
+                <div class="logs-panel-content" id="requestLogsContent">
+                    <div class="logs-placeholder" id="requestLogsPlaceholder" style="color: #666;">No requests yet.</div>
                 </div>
             </div>
         </div>
 
-        <!-- Footer with Phase Jump -->
-        <div class="footer">
-            <div class="phase-jump">
-                <label for="phaseSelect">Jump to Phase:</label>
-                <select id="phaseSelect">
-                    <option value="">-- Select Phase --</option>
-                    <option value="distance_vision">Phase A: Distance Vision (Step 2.1)</option>
-                    <option value="right_eye_refraction">Phase B: Right Eye Refraction (Step 6.1)</option>
-                    <option value="jcc_axis_right">Phase E: JCC Axis Right (Step 6.2)</option>
-                    <option value="jcc_power_right">Phase F: JCC Power Right (Step 6.2)</option>
-                    <option value="duochrome_right">Phase G: Duochrome Right (Step 6.2)</option>
-                    <option value="left_eye_refraction">Phase D: Left Eye Refraction (Step 6.3)</option>
-                    <option value="jcc_axis_left">Phase H: JCC Axis Left (Step 6.4)</option>
-                    <option value="jcc_power_left">Phase I: JCC Power Left (Step 6.4)</option>
-                    <option value="duochrome_left">Phase J: Duochrome Left (Step 6.4)</option>
-                    <option value="binocular_balance">Phase K: Binocular Balance (Step 6.5)</option>
-                    <option value="near_add_right">Phase P: Near Vision - Right Eye ADD</option>
-                    <option value="near_add_left">Phase Q: Near Vision - Left Eye ADD</option>
-                    <option value="near_add_bino">Phase R: Near Vision - Binocular ADD</option>
-                </select>
-                <button onclick="jumpToPhase()" id="jumpBtn">Go</button>
-            </div>
-        </div>
+        <!-- Live screenshot button (bottom-left) -->
+        <button type="button" id="screenshotViewBtn" class="screenshot-view-btn" onclick="toggleScreenshotModal()" title="Live phoropter screen">
+            📷 Live view
+        </button>
+
     </div>
 
     <!-- AR Power Modal -->
@@ -1368,6 +1757,36 @@
                     <button class="btn btn-primary" onclick="saveOptometristName()">Continue</button>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- Live screenshot modal (draggable, zoomable, resizable; backdrop does not block clicks) -->
+    <div class="screenshot-modal-backdrop" id="screenshotModalBackdrop">
+        <div class="screenshot-modal" id="screenshotModal">
+            <div class="screenshot-modal-header" id="screenshotModalHeader">
+                <span>📷 Live phoropter screen</span>
+                <div class="screenshot-zoom-controls">
+                    <button type="button" class="screenshot-zoom-btn" id="screenshotZoomOut" title="Zoom out">−</button>
+                    <span class="screenshot-zoom-label" id="screenshotZoomLabel">100%</span>
+                    <button type="button" class="screenshot-zoom-btn" id="screenshotZoomIn" title="Zoom in">+</button>
+                </div>
+                <button type="button" class="screenshot-modal-close" onclick="closeScreenshotModal()" title="Close">✕</button>
+            </div>
+            <div class="screenshot-modal-body">
+                <div class="screenshot-img-wrap" id="screenshotImgWrap">
+                    <img id="screenshotImage" src="" alt="Phoropter screen" class="screenshot-img">
+                    <span class="screenshot-timestamp" id="screenshotTimestamp"></span>
+                </div>
+                <div id="screenshotLoading" class="screenshot-loading">Loading…</div>
+                <div id="screenshotError" class="screenshot-error" style="display: none;">Failed to load image</div>
+            </div>
+            <div class="screenshot-history-bar" id="screenshotHistoryBar">
+                <button type="button" class="screenshot-nav-btn" id="screenshotPrevBtn" onclick="screenshotShowPrevious()" disabled>← Previous</button>
+                <span class="screenshot-history-label" id="screenshotHistoryLabel">—</span>
+                <button type="button" class="screenshot-nav-btn" id="screenshotNextBtn" onclick="screenshotShowNext()" disabled>Next →</button>
+                <button type="button" class="screenshot-nav-btn" id="screenshotLatestBtn" onclick="screenshotShowLatest()" disabled>Latest</button>
+            </div>
+            <div class="screenshot-resize-handle" id="screenshotResizeHandle" title="Drag to resize"></div>
         </div>
     </div>
 

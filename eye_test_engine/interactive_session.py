@@ -4,7 +4,8 @@ Interactive eye test session orchestrator.
 Manages conversation flow with patient and phoropter API calls.
 """
 import json
-import subprocess
+import urllib.error
+import urllib.request
 from datetime import datetime
 from typing import Optional, List, Dict
 from pathlib import Path
@@ -253,11 +254,31 @@ class InteractiveSession:
         self.duochrome_same_choice_count = 1
         return reversal
     
+    def _post_to_phoropter(self, url: str, payload: dict) -> None:
+        """Send a JSON POST to the phoropter broker via urllib (cloud-safe, no curl)."""
+        data = json.dumps(payload).encode("utf-8")
+        req = urllib.request.Request(
+            url,
+            data=data,
+            method="POST",
+            headers={"Content-Type": "application/json"},
+        )
+        print(f"[PHOROPTER] POST {url} payload={json.dumps(payload)}")
+        try:
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                body = resp.read().decode("utf-8")
+                print(f"[PHOROPTER] Response {resp.getcode()}: {body[:200]}")
+        except urllib.error.HTTPError as e:
+            body = e.read().decode("utf-8") if e.fp else ""
+            print(f"[PHOROPTER] HTTP Error {e.code}: {body[:200]}")
+        except Exception as e:
+            print(f"[PHOROPTER] Request failed: {e}")
+
     def reset_phoropter(self):
         """Reset phoropter to neutral state."""
-        cmd = f'curl -X POST {self.base_url}/phoropter/{self.phoropter_id}/reset'
-        print(f"[CMD] {cmd}")
-        subprocess.run(cmd, shell=True, capture_output=True)
+        url = f"{self.base_url}/phoropter/{self.phoropter_id}/reset"
+        print(f"[CMD] POST {url}")
+        self._post_to_phoropter(url, {})
         print("✓ Phoropter reset to 0/0/180")
     
     def set_chart(self, chart_name: str, size: Optional[str] = None, tab: str = "Chart1"):
@@ -275,11 +296,7 @@ class InteractiveSession:
                 }
             }]
         }
-        cmd = f"""curl -X POST {self.api_endpoint} \\
-  -H "Content-Type: application/json" \\
-  -d '{json.dumps(payload)}'"""
-        print(f"[CMD] {cmd}")
-        subprocess.run(cmd, shell=True, capture_output=True)
+        self._post_to_phoropter(self.api_endpoint, payload)
         self.current_row.chart_display = chart_name
         print(f"✓ Displaying: {chart_name}" + (f" size={size}" if size else ""))
 
@@ -290,11 +307,7 @@ class InteractiveSession:
                 "chart": {"tab": "Chart5", "chart_items": ["chart_5"]}
             }]
         }
-        cmd = f"""curl -X POST {self.api_endpoint} \\
-  -H "Content-Type: application/json" \\
-  -d '{json.dumps(payload)}'"""
-        print(f"[CMD] {cmd}")
-        subprocess.run(cmd, shell=True, capture_output=True)
+        self._post_to_phoropter(self.api_endpoint, payload)
         self.current_row.chart_display = "near_chart"
         print("✓ Displaying: Near chart (Chart 5)")
     
@@ -355,11 +368,7 @@ class InteractiveSession:
                 jcc_eye_mode = "BINO"
             self.current_row.occluder_state = occluder
         
-        cmd = f"""curl -X POST {self.api_endpoint} \\
-  -H "Content-Type: application/json" \\
-  -d '{json.dumps(payload)}'"""
-        print(f"[CMD] {cmd}")
-        subprocess.run(cmd, shell=True, capture_output=True)
+        self._post_to_phoropter(self.api_endpoint, payload)
         print(f"✓ Power set: R({r_sph}/{r_cyl}/{r_axis}) L({l_sph}/{l_cyl}/{l_axis}) Occ: {occluder}")
         
         # Set JCC eye mode for non-JCC phases only
@@ -420,32 +429,22 @@ class InteractiveSession:
         self.current_row.l_cyl = l_cyl
         self.current_row.l_axis = l_axis
         
-        cmd = f"""curl -X POST {self.api_endpoint} \\
-  -H "Content-Type: application/json" \\
-  -d '{json.dumps(payload)}'"""
-        print(f"[CMD] {cmd}")
-        subprocess.run(cmd, shell=True, capture_output=True)
+        self._post_to_phoropter(self.api_endpoint, payload)
         print(f"✓ Power set with prev state: R({r_sph}/{r_cyl}/{r_axis}) L({l_sph}/{l_cyl}/{l_axis})")
         print(f"  Previous state: R({prev_r_sph}/{prev_r_cyl}/{prev_r_axis}) L({prev_l_sph}/{prev_l_cyl}/{prev_l_axis})")
     
     def jcc_control(self, action: str):
         """Perform JCC action (handle, increase, decrease, etc.)."""
         payload = {"test_cases": [{"jcc": action}]}
-        
-        cmd = f"""curl -X POST {self.api_endpoint} \\
-  -H "Content-Type: application/json" \\
-  -d '{json.dumps(payload)}'"""
-        print(f"[CMD] {cmd}")
-        subprocess.run(cmd, shell=True, capture_output=True)
+        self._post_to_phoropter(self.api_endpoint, payload)
         print(f"✓ JCC action: {action}")
     
     def set_pinhole(self):
         """Set pinhole on the phoropter."""
-        cmd = f"curl -X POST {self.base_url}/phoropter/{self.phoropter_id}/pinhole"
-        print(f"[CMD] {cmd}")
-        result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
-        print(f"✓ Pinhole activated")
-        return result
+        url = f"{self.base_url}/phoropter/{self.phoropter_id}/pinhole"
+        print(f"[CMD] POST {url}")
+        self._post_to_phoropter(url, {})
+        print("✓ Pinhole activated")
     
     def get_question(self) -> str:
         """Get current question based on phase and state."""
@@ -2396,7 +2395,6 @@ class InteractiveSession:
     def _transition_to_jcc_axis_right(self) -> Dict:
         """Transition to JCC axis refinement for right eye."""
         self.current_phase = "jcc_axis_right"
-        self._track_phase_entry(self.current_phase)
         print(f"\n→ Transitioning to {self.phase_names[self.current_phase]}")
 
         self._reset_jcc_choice_tracking()
