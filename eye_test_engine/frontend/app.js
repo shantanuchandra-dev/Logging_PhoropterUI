@@ -2808,12 +2808,25 @@ async function signOff() {
             throw new Error('Failed to store session');
         }
 
+        const data = await response.json();
         document.getElementById('completeValidationButtons').style.display = 'none';
         document.getElementById('completeValidationPrompt').style.display = 'none';
         const msgEl = document.getElementById('completeResultMessage');
         if (msgEl) {
-            msgEl.textContent = 'Prescription signed off. Data stored successfully.';
-            msgEl.className = 'alert alert-success';
+            let msg = 'Prescription signed off. Data stored successfully.';
+            let isWarning = false;
+            if (data.remote_storage) {
+                if (data.remote_storage.saved) {
+                    msg += ` Saved to ${data.remote_storage.backend}.`;
+                    addToHistory(`Saved to ${data.remote_storage.backend}`, 'success');
+                } else {
+                    msg += ` (Cloud save failed: ${data.remote_storage.error || 'unknown'})`;
+                    isWarning = true;
+                    addToHistory(`Remote save failed: ${data.remote_storage.error}`, 'warning');
+                }
+            }
+            msgEl.textContent = msg;
+            msgEl.className = isWarning ? 'alert alert-warning' : 'alert alert-success';
         }
         document.getElementById('completeAfterValidation').style.display = 'block';
         addToHistory('Prescription signed off – data stored', 'success');

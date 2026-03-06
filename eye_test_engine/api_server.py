@@ -2,8 +2,20 @@
 """
 Simple Flask API server for interactive eye test sessions.
 """
-from datetime import datetime
+import os
 from pathlib import Path
+from typing import Optional
+
+# Load .env from the same directory as this file (or current working directory)
+try:
+    from dotenv import load_dotenv
+    _env_path = Path(__file__).resolve().parent / ".env"
+    load_dotenv(_env_path)
+    load_dotenv()  # also load from cwd
+except ImportError:
+    pass
+
+from datetime import datetime
 
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
@@ -27,8 +39,16 @@ write_session_metadata = _outputs.write_session_metadata
 append_to_combined_log = _outputs.append_to_combined_log
 append_to_combined_metadata = _outputs.append_to_combined_metadata
 build_session_metadata = _outputs.build_session_metadata
+session_csv_string = _outputs.session_csv_string
 
-import os
+# Optional: upload session data to Supabase Storage
+_remote_spec = _ilu.spec_from_file_location(
+    "remote_storage",
+    str(Path(__file__).resolve().parent / "io" / "remote_storage.py"),
+)
+_remote = _ilu.module_from_spec(_remote_spec)
+_remote_spec.loader.exec_module(_remote)
+upload_session_remote = _remote.upload_session
 
 app = Flask(__name__)
 CORS(app)
@@ -70,7 +90,7 @@ def _request_payload() -> dict:
     return {}
 
 
-def _proxy_request(method: str, path: str, payload: dict | None = None, query: dict | None = None):
+def _proxy_request(method: str, path: str, payload: Optional[dict] = None, query: Optional[dict] = None):
     """Forward a request to broker API and return flask response tuple."""
     url = f"{PHOROPTER_BASE_URL}{path}"
     if query:
@@ -346,6 +366,7 @@ def end_session(session_id):
     if isinstance(store, str):
         store = store.lower() in ("true", "1", "yes")
 
+    remote_status = None  # set when Supabase upload is enabled
     session = sessions[session_id]
     session.session_end_time = datetime.now()
 
@@ -409,6 +430,17 @@ def end_session(session_id):
             append_to_combined_log(session.session_history, session_id, COMBINED_LOG_PATH)
             append_to_combined_metadata(metadata, COMBINED_META_PATH)
 
+            # Optional: upload to Supabase Storage when REMOTE_STORAGE=supabase
+            if os.environ.get("REMOTE_STORAGE", "").strip().lower() == "supabase":
+                csv_content = session_csv_string(session.session_history)
+                err = upload_session_remote(session_id, csv_content, metadata)
+                if err:
+                    print(f"[REMOTE_STORAGE] Upload failed for {session_id}: {err}")
+                    remote_status = {"saved": False, "backend": os.environ.get("REMOTE_STORAGE"), "error": err}
+                else:
+                    print(f"[REMOTE_STORAGE] Uploaded session {session_id} to {os.environ.get('REMOTE_STORAGE')}")
+                    remote_status = {"saved": True, "backend": os.environ.get("REMOTE_STORAGE")}
+
             print(f"[LOG] Session {session_id}: CSV → {csv_path}, Meta → {meta_path}")
         except Exception as e:
             print(f"[LOG ERROR] Failed to write session logs: {e}")
@@ -420,12 +452,15 @@ def end_session(session_id):
         # Keep session for later sign-off; session_end_time already set
         pass
 
-    return jsonify({
+    response_data = {
         "session_id": session_id,
         "status": "ended",
         "total_rows": len(session.session_history),
         "final_prescription": final_rx
-    })
+    }
+    if store and remote_status is not None:
+        response_data["remote_storage"] = remote_status
+    return jsonify(response_data)
 
 
 @app.route('/api/session/<session_id>/discard', methods=['POST'])
