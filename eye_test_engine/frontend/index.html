@@ -1225,35 +1225,38 @@
             box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
         }
 
-        /* Screenshot modal – click-through backdrop so intents remain clickable */
+        /* Live screenshot panel (docked inside right panel) */
         .screenshot-modal-backdrop {
             display: none;
-            position: fixed;
-            inset: 0;
-            z-index: 1100;
-            pointer-events: none;
+            position: relative;
+            inset: auto;
+            z-index: 1;
+            pointer-events: auto;
+            margin-top: 10px;
         }
         .screenshot-modal-backdrop.active {
             display: block;
         }
         .screenshot-modal {
-            position: fixed;
-            left: 50%;
-            top: 50%;
-            transform: translate(-50%, -50%);
-            min-width: 320px;
-            width: 85vw;
-            max-width: 900px;
-            min-height: 200px;
-            max-height: 85vh;
+            position: relative;
+            left: auto;
+            top: auto;
+            transform: none;
+            min-width: 0;
+            width: 100%;
+            max-width: 100%;
+            min-height: 220px;
+            height: 320px;
+            max-height: 70vh;
             background: white;
-            border-radius: 12px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+            border-radius: 10px;
+            border: 1px solid #e0e0f5;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
             overflow: hidden;
             display: flex;
             flex-direction: column;
             pointer-events: auto;
-            resize: both;
+            resize: vertical;
         }
         .screenshot-modal-header {
             display: flex;
@@ -1264,7 +1267,7 @@
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             font-weight: 600;
-            cursor: move;
+            cursor: default;
             user-select: none;
             flex-shrink: 0;
             touch-action: none;
@@ -1347,7 +1350,7 @@
         }
         .screenshot-img {
             max-width: 100%;
-            max-height: 70vh;
+            max-height: calc(70vh - 130px);
             object-fit: contain;
             display: none;
         }
@@ -1363,14 +1366,7 @@
             color: #c62828;
         }
         .screenshot-resize-handle {
-            position: absolute;
-            right: 0;
-            bottom: 0;
-            width: 20px;
-            height: 20px;
-            cursor: nwse-resize;
-            background: linear-gradient(135deg, transparent 50%, rgba(102, 126, 234, 0.4) 50%);
-            border-radius: 0 0 4px 0;
+            display: none;
         }
         .screenshot-history-bar {
             display: flex;
@@ -1698,6 +1694,34 @@
                     </div>
                 </div>
 
+                <div class="screenshot-modal-backdrop" id="screenshotModalBackdrop">
+                    <div class="screenshot-modal" id="screenshotModal">
+                        <div class="screenshot-modal-header" id="screenshotModalHeader">
+                            <span>📷 Live phoropter screen</span>
+                            <div class="screenshot-zoom-controls">
+                                <button type="button" class="screenshot-zoom-btn" id="screenshotZoomOut" title="Zoom out">−</button>
+                                <span class="screenshot-zoom-label" id="screenshotZoomLabel">100%</span>
+                                <button type="button" class="screenshot-zoom-btn" id="screenshotZoomIn" title="Zoom in">+</button>
+                            </div>
+                            <button type="button" class="screenshot-modal-close" onclick="closeScreenshotModal()" title="Hide">✕</button>
+                        </div>
+                        <div class="screenshot-modal-body">
+                            <div class="screenshot-img-wrap" id="screenshotImgWrap">
+                                <img id="screenshotImage" src="" alt="Phoropter screen" class="screenshot-img">
+                                <span class="screenshot-timestamp" id="screenshotTimestamp"></span>
+                            </div>
+                            <div id="screenshotLoading" class="screenshot-loading">Loading…</div>
+                            <div id="screenshotError" class="screenshot-error" style="display: none;">Failed to load image</div>
+                        </div>
+                        <div class="screenshot-history-bar" id="screenshotHistoryBar">
+                            <button type="button" class="screenshot-nav-btn" id="screenshotPrevBtn" onclick="screenshotShowPrevious()" disabled>← Previous</button>
+                            <span class="screenshot-history-label" id="screenshotHistoryLabel">—</span>
+                            <button type="button" class="screenshot-nav-btn" id="screenshotNextBtn" onclick="screenshotShowNext()" disabled>Next →</button>
+                            <button type="button" class="screenshot-nav-btn" id="screenshotLatestBtn" onclick="screenshotShowLatest()" disabled>Latest</button>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="info-section collapsible collapse-hides-section" id="section-history">
                     <h4>Test History <button type="button" class="section-toggle-btn" onclick="toggleSection('history')" aria-label="Collapse">▼</button></h4>
                     <div class="section-body">
@@ -1895,36 +1919,6 @@
                     <button class="btn btn-primary" onclick="submitLogsPassword()">Submit</button>
                 </div>
             </div>
-        </div>
-    </div>
-
-    <!-- Live screenshot modal (draggable, zoomable, resizable; backdrop does not block clicks) -->
-    <div class="screenshot-modal-backdrop" id="screenshotModalBackdrop">
-        <div class="screenshot-modal" id="screenshotModal">
-            <div class="screenshot-modal-header" id="screenshotModalHeader">
-                <span>📷 Live phoropter screen</span>
-                <div class="screenshot-zoom-controls">
-                    <button type="button" class="screenshot-zoom-btn" id="screenshotZoomOut" title="Zoom out">−</button>
-                    <span class="screenshot-zoom-label" id="screenshotZoomLabel">100%</span>
-                    <button type="button" class="screenshot-zoom-btn" id="screenshotZoomIn" title="Zoom in">+</button>
-                </div>
-                <button type="button" class="screenshot-modal-close" onclick="closeScreenshotModal()" title="Close">✕</button>
-            </div>
-            <div class="screenshot-modal-body">
-                <div class="screenshot-img-wrap" id="screenshotImgWrap">
-                    <img id="screenshotImage" src="" alt="Phoropter screen" class="screenshot-img">
-                    <span class="screenshot-timestamp" id="screenshotTimestamp"></span>
-                </div>
-                <div id="screenshotLoading" class="screenshot-loading">Loading…</div>
-                <div id="screenshotError" class="screenshot-error" style="display: none;">Failed to load image</div>
-            </div>
-            <div class="screenshot-history-bar" id="screenshotHistoryBar">
-                <button type="button" class="screenshot-nav-btn" id="screenshotPrevBtn" onclick="screenshotShowPrevious()" disabled>← Previous</button>
-                <span class="screenshot-history-label" id="screenshotHistoryLabel">—</span>
-                <button type="button" class="screenshot-nav-btn" id="screenshotNextBtn" onclick="screenshotShowNext()" disabled>Next →</button>
-                <button type="button" class="screenshot-nav-btn" id="screenshotLatestBtn" onclick="screenshotShowLatest()" disabled>Latest</button>
-            </div>
-            <div class="screenshot-resize-handle" id="screenshotResizeHandle" title="Drag to resize"></div>
         </div>
     </div>
 

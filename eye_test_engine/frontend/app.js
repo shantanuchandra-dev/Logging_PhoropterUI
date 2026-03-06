@@ -683,6 +683,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     // 3. Try to restore session from the RESOLVED backendUrl
     await _tryRestoreSession();
 
+    // 4. Keep live view visible by default in the right panel
+    openScreenshotModal();
+
     updateArPowerDisplay();
 });
 
@@ -1206,6 +1209,12 @@ function isScreenshotModalOpen() {
     return backdrop && backdrop.classList.contains('active');
 }
 
+function isScreenshotDocked() {
+    const backdrop = document.getElementById('screenshotModalBackdrop');
+    if (!backdrop) return false;
+    return !!backdrop.closest('.info-panel');
+}
+
 async function fetchScreenshot() {
     if (isTestDeviceId()) return null;
 
@@ -1354,10 +1363,17 @@ function openScreenshotModal() {
     const modal = document.getElementById('screenshotModal');
     if (!backdrop || !modal) return;
     if (!_screenshotDragInited) {
-        initScreenshotModalDrag();
+        if (!isScreenshotDocked()) {
+            initScreenshotModalDrag();
+        }
         initScreenshotModalZoom();
         initScreenshotModalResize();
         _screenshotDragInited = true;
+    }
+    if (isScreenshotDocked()) {
+        modal.style.left = '';
+        modal.style.top = '';
+        modal.style.transform = '';
     }
     _screenshotZoom = 1;
     applyScreenshotZoom();
