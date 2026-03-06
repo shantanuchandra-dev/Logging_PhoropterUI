@@ -631,6 +631,18 @@
             border-color: #2E7D32;
         }
 
+        .optotype-button.pinhole-button {
+            background: #fff3e0;
+            border-color: #ff9800;
+            color: #e65100;
+        }
+
+        .optotype-button.pinhole-button:hover {
+            background: #ffe0b2;
+            border-color: #f57c00;
+            transform: translateY(-2px);
+        }
+
         .intents-container {
             margin: 15px 0;
         }
@@ -908,7 +920,8 @@
         .info-section.collapsible.collapsed .section-body {
             display: none;
         }
-        .info-section.collapsible.collapsed {
+        /* History and Commands: when collapsed hide entire section (compact row shows toggles) */
+        .info-section.collapsible.collapsed.collapse-hides-section {
             display: none;
         }
         .info-section.collapsible h4 {
@@ -1180,6 +1193,14 @@
 
         .rt-type-input:focus {
             background: #c5cae9;
+        }
+
+        /* AR Power table: same look as Current Power, read-only (no drag cursor / tooltip) */
+        #arPowerTable .rt-val {
+            cursor: default;
+        }
+        #arPowerTable .rt-val::after {
+            display: none;
         }
 
         /* Live view button – bottom left */
@@ -1617,6 +1638,36 @@
                     </div>
                 </div>
 
+                <div class="info-section collapsible" id="arPowerSection" style="display: none;">
+                    <h4>📱 AR Power <button type="button" class="section-toggle-btn" id="arPowerToggleBtn" onclick="toggleSection('ar')" aria-label="Collapse"><span class="arrow" id="arArrow">▼</span></button></h4>
+                    <div class="section-body">
+                        <table class="refraction-table" id="arPowerTable">
+                            <thead>
+                                <tr>
+                                    <th></th>
+                                    <th>SPH</th>
+                                    <th>CYL</th>
+                                    <th>AXIS</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="rt-row" data-eye="R">
+                                    <td class="rt-eye-r">R</td>
+                                    <td class="rt-val" id="arPowerRSph">—</td>
+                                    <td class="rt-val" id="arPowerRCyl">—</td>
+                                    <td class="rt-val" id="arPowerRAxis">—</td>
+                                </tr>
+                                <tr class="rt-row" data-eye="L">
+                                    <td class="rt-eye-l">L</td>
+                                    <td class="rt-val" id="arPowerLSph">—</td>
+                                    <td class="rt-val" id="arPowerLCyl">—</td>
+                                    <td class="rt-val" id="arPowerLAxis">—</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
                 <!-- Compact row: toggles + Jump to Phase (always visible when minimized) -->
                 <div class="middle-bottom-row">
                     <button type="button" class="section-toggle-btn" id="toggleHistoryBtn" onclick="toggleSection('history')" title="Expand/collapse Test History">
@@ -1647,7 +1698,7 @@
                     </div>
                 </div>
 
-                <div class="info-section collapsible" id="section-history">
+                <div class="info-section collapsible collapse-hides-section" id="section-history">
                     <h4>Test History <button type="button" class="section-toggle-btn" onclick="toggleSection('history')" aria-label="Collapse">▼</button></h4>
                     <div class="section-body">
                         <div id="historyLog" class="history-log">
@@ -1656,7 +1707,7 @@
                     </div>
                 </div>
 
-                <div class="info-section collapsible command-section" id="section-commands">
+                <div class="info-section collapsible collapse-hides-section command-section" id="section-commands">
                     <h4>Chart Commands <button type="button" class="section-toggle-btn" onclick="toggleSection('commands')" aria-label="Collapse">▼</button></h4>
                     <div class="section-body">
                         <div id="directCommands">
