@@ -613,7 +613,7 @@ class InteractiveSession:
     
     def _process_distance_vision(self, intent: str) -> Dict:
         """Process distance vision phase."""
-        if intent == "Unable to read":
+        if intent in ("Unable to read", "Unable to read / Apply pinhole"):
             # Add pinhole and test again
             print(f"\n→ Patient unable to read, adding pinhole (keeping current chart: {self.current_row.chart_display})")
             self.set_pinhole()

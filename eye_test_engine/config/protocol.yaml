@@ -15,7 +15,7 @@ phases:
     intents:
       - "Able to read"
       - "Blurry"
-      - "Unable to read"
+      - "Unable to read / Apply pinhole"
     exit_conditions:
       - type: "baseline_established"
         next_phase: "right_eye_refraction"

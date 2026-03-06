@@ -281,6 +281,58 @@ function savePhoropterId() {
 }
 
 // ── Device Management ────────────────────────────────
+const TEST_DEVICE_ID = 'Test';
+let _deviceTypeaheadBuffer = '';
+let _deviceTypeaheadTimer = null;
+
+function isTestDeviceId(deviceId = CONFIG.phoropterId) {
+    return String(deviceId || '').trim().toLowerCase() === TEST_DEVICE_ID.toLowerCase();
+}
+
+function setupDeviceTypeahead() {
+    const select = document.getElementById('phoropterIdInput');
+    if (!select || select.dataset.typeaheadBound === '1') return;
+
+    select.dataset.typeaheadBound = '1';
+    select.addEventListener('keydown', (event) => {
+        if (select.disabled) return;
+        const key = event.key;
+
+        if (key === 'Escape') {
+            _deviceTypeaheadBuffer = '';
+            return;
+        }
+
+        if (key === 'Backspace') {
+            _deviceTypeaheadBuffer = _deviceTypeaheadBuffer.slice(0, -1);
+            return;
+        }
+
+        if (key.length !== 1 || event.ctrlKey || event.metaKey || event.altKey) {
+            return;
+        }
+
+        _deviceTypeaheadBuffer += key.toLowerCase();
+        if (_deviceTypeaheadTimer) clearTimeout(_deviceTypeaheadTimer);
+        _deviceTypeaheadTimer = setTimeout(() => {
+            _deviceTypeaheadBuffer = '';
+        }, 800);
+
+        const options = Array.from(select.options || []);
+        const startsWithMatch = options.find(opt =>
+            String(opt.value || '').toLowerCase().startsWith(_deviceTypeaheadBuffer)
+        );
+        const includesMatch = startsWithMatch || options.find(opt =>
+            String(opt.value || '').toLowerCase().includes(_deviceTypeaheadBuffer)
+        );
+
+        if (includesMatch) {
+            select.value = includesMatch.value;
+            onDeviceSelectionChanged();
+            event.preventDefault();
+        }
+    });
+}
 
 async function fetchDevices() {
     const select = document.getElementById('phoropterIdInput');
@@ -293,7 +345,9 @@ async function fetchDevices() {
             select.innerHTML = '';
             const opt = document.createElement('option');
             opt.value = acquiredId;
-            opt.textContent = `${acquiredId} (connected)`;
+            opt.textContent = isTestDeviceId(acquiredId)
+                ? `${acquiredId} (test mode)`
+                : `${acquiredId} (connected)`;
             opt.selected = true;
             select.appendChild(opt);
             select.disabled = true;
@@ -309,30 +363,49 @@ async function fetchDevices() {
         const devices = Array.isArray(data) ? data : (data.devices || []);
         select.innerHTML = '';
 
-        if (devices.length === 0) {
-            select.innerHTML = '<option value="">No available devices</option>';
-            return;
+        const savedId = localStorage.getItem('phoropterId');
+        const deviceIds = devices
+            .map(dev => dev.device_id || dev.id || dev.name || '')
+            .filter(Boolean);
+        if (!deviceIds.some(id => String(id).toLowerCase() === TEST_DEVICE_ID.toLowerCase())) {
+            deviceIds.unshift(TEST_DEVICE_ID);
         }
 
-        const savedId = localStorage.getItem('phoropterId');
+        if (deviceIds.length === 0) {
+            deviceIds.push(TEST_DEVICE_ID);
+        }
 
-        devices.forEach(dev => {
-            const id = dev.device_id || dev.id || dev.name || '';
+        deviceIds.forEach(id => {
             const opt = document.createElement('option');
             opt.value = id;
-            opt.textContent = id;
+            opt.textContent = isTestDeviceId(id) ? `${id} (safe mode)` : id;
             if (id === savedId) opt.selected = true;
             select.appendChild(opt);
         });
 
+        if (!select.value && deviceIds.length > 0) {
+            select.value = deviceIds[0];
+        }
         if (select.value) {
             localStorage.setItem('phoropterId', select.value);
         }
+        setupDeviceTypeahead();
         onDeviceSelectionChanged();
     } catch (err) {
         console.warn('Could not fetch devices:', err);
-        select.innerHTML = '<option value="phoropter-1">phoropter-1 (default)</option>';
-        localStorage.setItem('phoropterId', 'phoropter-1');
+        select.innerHTML = '';
+        select.innerHTML = `
+            <option value="${TEST_DEVICE_ID}">${TEST_DEVICE_ID} (safe mode)</option>
+            <option value="phoropter-1">phoropter-1 (default)</option>
+        `;
+        const savedId = localStorage.getItem('phoropterId');
+        select.value = savedId || TEST_DEVICE_ID;
+        if (!select.value) {
+            select.value = TEST_DEVICE_ID;
+        }
+        localStorage.setItem('phoropterId', select.value);
+        setupDeviceTypeahead();
+        onDeviceSelectionChanged();
     }
 }
 
@@ -344,7 +417,11 @@ function onDeviceSelectionChanged() {
     const id = select.value;
     if (id) {
         localStorage.setItem('phoropterId', id);
-        if (acquireBtn && !_deviceAcquired) acquireBtn.style.display = 'inline-block';
+        if (acquireBtn && !_deviceAcquired && !isTestDeviceId(id)) {
+            acquireBtn.style.display = 'inline-block';
+        } else if (acquireBtn) {
+            acquireBtn.style.display = 'none';
+        }
     } else {
         if (acquireBtn) acquireBtn.style.display = 'none';
     }
@@ -373,6 +450,16 @@ async function getBrainId() {
 async function acquireSelectedDevice() {
     const deviceId = CONFIG.phoropterId;
     if (!deviceId) return;
+
+    if (isTestDeviceId(deviceId)) {
+        _deviceAcquired = true;
+        const select = document.getElementById('phoropterIdInput');
+        const btn = document.getElementById('acquireDeviceBtn');
+        if (select) select.disabled = true;
+        if (btn) btn.style.display = 'none';
+        addToHistory('Test mode active: physical phoropter commands are skipped', 'info');
+        return;
+    }
 
     const btn = document.getElementById('acquireDeviceBtn');
     if (btn) { btn.disabled = true; btn.textContent = 'Acquiring...'; }
@@ -404,6 +491,19 @@ async function acquireSelectedDevice() {
 async function releaseDevice() {
     const deviceId = CONFIG.phoropterId;
     if (!deviceId) return;
+
+    if (isTestDeviceId(deviceId)) {
+        _deviceAcquired = false;
+        const select = document.getElementById('phoropterIdInput');
+        if (select) select.disabled = false;
+        const btn = document.getElementById('acquireDeviceBtn');
+        if (btn) {
+            btn.style.display = 'none';
+            btn.disabled = false;
+            btn.textContent = 'Acquire';
+        }
+        return;
+    }
 
     try {
         const brainId = await getBrainId();
@@ -471,7 +571,7 @@ async function _tryRestoreSession() {
         }
 
         // 2. If device was acquired, verify the lock is still alive via heartbeat
-        if (saved.deviceAcquired && saved.deviceId) {
+        if (saved.deviceAcquired && saved.deviceId && !isTestDeviceId(saved.deviceId)) {
             const brainId = await getBrainId();
             const hbResp = await fetch(`${CONFIG.backendUrl}/api/devices/${saved.deviceId}/heartbeat`, {
                 method: 'POST',
@@ -539,8 +639,13 @@ async function _tryRestoreSession() {
 }
 
 function toggleSection(sectionId) {
-    const section = document.getElementById('section-' + sectionId);
-    const arrowEl = document.getElementById(sectionId === 'history' ? 'historyArrow' : 'commandsArrow');
+    const section = sectionId === 'ar'
+        ? document.getElementById('arPowerSection')
+        : document.getElementById('section-' + sectionId);
+    const arrowEl = sectionId === 'history' ? document.getElementById('historyArrow')
+        : sectionId === 'commands' ? document.getElementById('commandsArrow')
+        : sectionId === 'ar' ? document.getElementById('arArrow')
+        : null;
     if (!section || !arrowEl) return;
     section.classList.toggle('collapsed');
     arrowEl.textContent = section.classList.contains('collapsed') ? '▶' : '▼';
@@ -577,6 +682,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // 3. Try to restore session from the RESOLVED backendUrl
     await _tryRestoreSession();
+
+    updateArPowerDisplay();
 });
 
 // ── Optometrist Name Cache (12-hour TTL) ─────────────
@@ -1023,6 +1130,8 @@ async function applyManualPowerChange(eye, param, delta) {
 }
 
 async function syncBrokerState(power, occluder) {
+    if (isTestDeviceId()) return;
+
     const right = power.right || { sph: 0, cyl: 0, axis: 180 };
     const left = power.left || { sph: 0, cyl: 0, axis: 180 };
 
@@ -1098,6 +1207,8 @@ function isScreenshotModalOpen() {
 }
 
 async function fetchScreenshot() {
+    if (isTestDeviceId()) return null;
+
     try {
         const brainId = await getBrainId();
         const resp = await fetch(`${CONFIG.phoropterUrl}/phoropter/${CONFIG.phoropterId}/screenshot`, {
@@ -1380,6 +1491,38 @@ function parseArValue(value, fallback) {
     return Number.isFinite(parsed) ? parsed : fallback;
 }
 
+function formatPowerVal(v) {
+    if (v == null || !Number.isFinite(v)) return '—';
+    return (v >= 0 ? '+' : '') + v.toFixed(2);
+}
+function formatAxisVal(v) {
+    if (v == null || !Number.isFinite(v)) return '—';
+    return String(Math.round(v));
+}
+
+function updateArPowerDisplay() {
+    const section = document.getElementById('arPowerSection');
+    if (!section) return;
+    const ar = storedPower.ar;
+    if (!ar || !ar.right || !ar.left) {
+        section.style.display = 'none';
+        return;
+    }
+    const r = ar.right;
+    const l = ar.left;
+    const set = (id, text) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = text;
+    };
+    set('arPowerRSph', formatPowerVal(r.sph));
+    set('arPowerRCyl', formatPowerVal(r.cyl));
+    set('arPowerRAxis', formatAxisVal(r.axis));
+    set('arPowerLSph', formatPowerVal(l.sph));
+    set('arPowerLCyl', formatPowerVal(l.cyl));
+    set('arPowerLAxis', formatAxisVal(l.axis));
+    section.style.display = 'block';
+}
+
 function saveArPower() {
     const rightSph = parseArValue(document.getElementById('arRightSph').value, null);
     const rightCyl = parseArValue(document.getElementById('arRightCyl').value, null);
@@ -1403,9 +1546,10 @@ function saveArPower() {
         left: { sph: leftSph, cyl: leftCyl, axis: leftAxis }
     };
 
-    // Enable AR button
+    // Enable AR button and show AR section above Current Power
     document.getElementById('applyArBtn').disabled = false;
     document.getElementById('applyArBtn').title = 'Apply AR Power';
+    updateArPowerDisplay();
 
     addToHistory('AR power values saved', 'info');
     closeArPowerModal();
@@ -2022,6 +2166,12 @@ function updateOptotypeSelector(data, forceShow = false) {
                 button.onclick = () => switchOptotype(optotype);
                 optotypeGrid.appendChild(button);
             });
+
+            const pinholeBtn = document.createElement('button');
+            pinholeBtn.className = 'optotype-button pinhole-button';
+            pinholeBtn.textContent = 'Pinhole';
+            pinholeBtn.onclick = () => activatePinhole();
+            optotypeGrid.appendChild(pinholeBtn);
         } else {
             optotypeGrid.innerHTML = '<div style="font-size: 0.9em; color: #666; padding: 10px;">No specific optotypes for this chart</div>';
         }
@@ -2154,8 +2304,41 @@ function updateOptotypeSelector(data) {
             button.onclick = () => switchOptotype(optotype);
             optotypeGrid.appendChild(button);
         });
+
+        const pinholeBtn = document.createElement('button');
+        pinholeBtn.className = 'optotype-button pinhole-button';
+        pinholeBtn.textContent = 'Pinhole';
+        pinholeBtn.onclick = () => activatePinhole();
+        optotypeGrid.appendChild(pinholeBtn);
     } else {
         optotypeSelector.classList.remove('active');
+    }
+}
+
+// Activate pinhole on phoropter
+async function activatePinhole() {
+    if (!sessionState.sessionId) {
+        alert('No active session');
+        return;
+    }
+    try {
+        showLoading(true);
+        if (isTestDeviceId()) {
+            addToHistory('Test mode: pinhole command skipped', 'info');
+            return;
+        }
+        await fetch(`${CONFIG.phoropterUrl}/phoropter/${CONFIG.phoropterId}/pinhole`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({})
+        });
+        addToHistory('Pinhole activated', 'info');
+    } catch (error) {
+        console.error('Error activating pinhole:', error);
+        alert('Failed to activate pinhole. Please try again.');
+    } finally {
+        showLoading(false);
+        refreshScreenshotIfModalOpen();
     }
 }
 
@@ -2328,6 +2511,11 @@ function updateSessionInfo(data) {
 // Phoropter Control Functions
 async function resetPhoropter() {
     try {
+        if (isTestDeviceId()) {
+            addToHistory('Test mode: reset skipped', 'info');
+            refreshScreenshotIfModalOpen();
+            return;
+        }
         const response = await fetch(`${CONFIG.phoropterUrl}/phoropter/${CONFIG.phoropterId}/reset`, {
             method: 'POST'
         });
@@ -2347,6 +2535,9 @@ async function setPhoropter(data) {
     try {
         // Set chart only if it has changed (avoids duplicate JCC chart calls during flip cycles)
         if (data.chart && (data.chart !== sessionState.currentChart || currentOptotype !== null)) {
+            if (data.chart !== sessionState.currentChart) {
+                currentOptotype = null;
+            }
             await setChart(data.chart, currentOptotype);
             sessionState.currentChart = data.chart;
         }
@@ -2397,6 +2588,11 @@ async function setChart(chartName, optotype = null) {
         }]
     };
 
+    if (isTestDeviceId()) {
+        addToHistory(`Test mode chart: ${chartName}${optotype ? ` [${optotype}]` : ''}`, 'info');
+        return;
+    }
+
     await fetch(`${CONFIG.phoropterUrl}/phoropter/${CONFIG.phoropterId}/run-tests`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -2431,6 +2627,11 @@ async function setPower(power, occluder) {
         }]
     };
 
+    if (isTestDeviceId()) {
+        addToHistory(`Test mode power update - Occluder: ${occluder}`, 'info');
+        return;
+    }
+
     await fetch(`${CONFIG.phoropterUrl}/phoropter/${CONFIG.phoropterId}/run-tests`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -2463,29 +2664,31 @@ async function completeTest() {
 
         // Capture final screenshot before releasing device
         let screenshotBase64 = null;
-        try {
-            console.log('Capturing screenshot from phoropter...');
-            const brainId = await getBrainId();
-            const ssResp = await fetch(`${CONFIG.phoropterUrl}/phoropter/${CONFIG.phoropterId}/screenshot`, {
-                method: 'POST',
-                headers: { 'x-brain-id': brainId }
-            });
-            if (ssResp.ok) {
-                const rawText = await ssResp.text();
-                screenshotBase64 = rawText.trim();
-                if (screenshotBase64.startsWith('"') && screenshotBase64.endsWith('"')) {
-                    screenshotBase64 = screenshotBase64.slice(1, -1);
+        if (!isTestDeviceId()) {
+            try {
+                console.log('Capturing screenshot from phoropter...');
+                const brainId = await getBrainId();
+                const ssResp = await fetch(`${CONFIG.phoropterUrl}/phoropter/${CONFIG.phoropterId}/screenshot`, {
+                    method: 'POST',
+                    headers: { 'x-brain-id': brainId }
+                });
+                if (ssResp.ok) {
+                    const rawText = await ssResp.text();
+                    screenshotBase64 = rawText.trim();
+                    if (screenshotBase64.startsWith('"') && screenshotBase64.endsWith('"')) {
+                        screenshotBase64 = screenshotBase64.slice(1, -1);
+                    }
+                    if (screenshotBase64.startsWith('{')) {
+                        try {
+                            const parsed = JSON.parse(rawText);
+                            screenshotBase64 = parsed.image || parsed.screenshot || parsed.data || rawText;
+                        } catch (_) { }
+                    }
+                    screenshotBase64 = screenshotBase64.replace(/\s+/g, '');
                 }
-                if (screenshotBase64.startsWith('{')) {
-                    try {
-                        const parsed = JSON.parse(rawText);
-                        screenshotBase64 = parsed.image || parsed.screenshot || parsed.data || rawText;
-                    } catch (_) { }
-                }
-                screenshotBase64 = screenshotBase64.replace(/\s+/g, '');
+            } catch (ssErr) {
+                console.error('Screenshot capture exception:', ssErr);
             }
-        } catch (ssErr) {
-            console.error('Screenshot capture exception:', ssErr);
         }
 
         // Hide test screen, show complete screen
