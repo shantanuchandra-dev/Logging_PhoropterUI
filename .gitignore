@@ -25,6 +25,7 @@ env/
 leadership_proposal.md
 *test*.py
 probe_jcc_colors.py
+.env
 .DS_Store
 ai_optometrist_user_journey_uml.puml
 Drysh Flow.png

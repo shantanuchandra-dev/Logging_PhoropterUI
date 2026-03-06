@@ -74,6 +74,19 @@ def _row_to_dict(row: RowContext) -> dict:
     }
 
 
+def session_csv_string(rows: List[RowContext]) -> str:
+    """Return per-session CSV content as a string (19-column schema). For remote upload."""
+    if not rows:
+        return ""
+    import io
+    buf = io.StringIO()
+    writer = csv.DictWriter(buf, fieldnames=SESSION_CSV_FIELDS)
+    writer.writeheader()
+    for row in rows:
+        writer.writerow(_row_to_dict(row))
+    return buf.getvalue()
+
+
 def write_session_csv(rows: List[RowContext], output_path: Path) -> None:
     """Write per-session CSV with the 19-column schema.
 
