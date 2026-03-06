@@ -1271,8 +1271,27 @@ function initScreenshotModalDrag() {
     let dragging = false;
     let startX, startY, startLeft, startTop;
 
-    header.addEventListener('mousedown', (e) => {
+    function onPointerMove(e) {
+        if (!dragging) return;
+        const dx = e.clientX - startX;
+        const dy = e.clientY - startY;
+        modal.style.left = (startLeft + dx) + 'px';
+        modal.style.top = (startTop + dy) + 'px';
+        e.preventDefault();
+    }
+    function onPointerUp(e) {
+        if (!dragging) return;
+        dragging = false;
+        try { header.releasePointerCapture(e.pointerId); } catch (_) {}
+        document.removeEventListener('pointermove', onPointerMove, true);
+        document.removeEventListener('pointerup', onPointerUp, true);
+        document.removeEventListener('pointercancel', onPointerUp, true);
+        e.preventDefault();
+    }
+
+    header.addEventListener('pointerdown', (e) => {
         if (e.button !== 0) return;
+        if (e.target.closest('button')) return;
         dragging = true;
         const rect = modal.getBoundingClientRect();
         startLeft = rect.left;
@@ -1282,23 +1301,12 @@ function initScreenshotModalDrag() {
         modal.style.left = startLeft + 'px';
         modal.style.top = startTop + 'px';
         modal.style.transform = 'none';
+        try { header.setPointerCapture(e.pointerId); } catch (_) {}
+        document.addEventListener('pointermove', onPointerMove, true);
+        document.addEventListener('pointerup', onPointerUp, true);
+        document.addEventListener('pointercancel', onPointerUp, true);
         e.preventDefault();
     });
-
-    const onMove = (e) => {
-        if (!dragging) return;
-        const dx = e.clientX - startX;
-        const dy = e.clientY - startY;
-        modal.style.left = (startLeft + dx) + 'px';
-        modal.style.top = (startTop + dy) + 'px';
-    };
-    const onUp = () => {
-        dragging = false;
-        document.removeEventListener('mousemove', onMove);
-        document.removeEventListener('mouseup', onUp);
-    };
-    document.addEventListener('mousemove', onMove);
-    document.addEventListener('mouseup', onUp);
 }
 
 function initScreenshotModalZoom() {
