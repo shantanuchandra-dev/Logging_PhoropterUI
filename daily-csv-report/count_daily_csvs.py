@@ -1,8 +1,6 @@
 """
 Count CSV files created today in a Supabase Storage bucket and send a
-tabular phase-status report to Google Chat via webhook.
-
-Sessions as rows, phases as columns, plain text format.
+report showing skipped phases per session to Google Chat via webhook.
 
 Required env vars:
     SUPABASE_URL, SUPABASE_SERVICE_KEY, GOOGLE_CHAT_WEBHOOK_URL
@@ -19,24 +17,24 @@ from datetime import datetime, timezone
 import requests
 from supabase import create_client
 
-ALL_PHASES = [
-    ("distance_vision", "DV"),
-    ("right_eye_refraction", "RER"),
-    ("jcc_axis_right", "JAR"),
-    ("jcc_power_right", "JPR"),
-    ("duochrome_right", "DR"),
-    ("validation_right", "VR"),
-    ("left_eye_refraction", "LER"),
-    ("jcc_axis_left", "JAL"),
-    ("jcc_power_left", "JPL"),
-    ("duochrome_left", "DL"),
-    ("validation_left", "VL"),
-    ("validation_distance", "VDi"),
-    ("binocular_balance", "BB"),
-    ("near_add_right", "NAR"),
-    ("near_add_left", "NAL"),
-    ("near_add_bino", "NAB"),
-]
+ALL_PHASES = {
+    "distance_vision": "Distance Vision",
+    "right_eye_refraction": "Right Eye Refraction",
+    "jcc_axis_right": "Jcc Axis Right",
+    "jcc_power_right": "Jcc Power Right",
+    "duochrome_right": "Duochrome Right",
+    "validation_right": "Validation Right",
+    "left_eye_refraction": "Left Eye Refraction",
+    "jcc_axis_left": "Jcc Axis Left",
+    "jcc_power_left": "Jcc Power Left",
+    "duochrome_left": "Duochrome Left",
+    "validation_left": "Validation Left",
+    "validation_distance": "Validation Distance",
+    "binocular_balance": "Binocular Balance",
+    "near_add_right": "Near Add Right",
+    "near_add_left": "Near Add Left",
+    "near_add_bino": "Near Add Bino",
+}
 
 
 def get_env(name: str, default: str | None = None, required: bool = True) -> str:
@@ -75,38 +73,92 @@ def fetch_metadata(storage, session_id: str) -> dict | None:
         return None
 
 
-def get_phase_icon(phase_id: str, metadata: dict | None) -> str:
+def get_skipped_phases(metadata: dict | None) -> list[str]:
     if metadata is None:
-        return "  -"
-    if phase_id in set(metadata.get("phases_completed", [])):
-        return "  ✅"
-    if phase_id in set(metadata.get("phases_skipped", [])):
-        return "  ❌"
-    return "  -"
+        return ["(metadata not found)"]
+    skipped_ids = metadata.get("phases_skipped", [])
+    return [ALL_PHASES.get(p, p) for p in skipped_ids]
 
 
-def build_table(session_ids: list[str], metadata_map: dict[str, dict]) -> str:
-    """Build a clean space-aligned table, no pipes, no markdown."""
-    sid_width = 16
-    col_width = 5
-
-    header = f"{'Session ID':<{sid_width}}"
-    for _, short in ALL_PHASES:
-        header += f"{short:>{col_width}}"
-
-    rows = [header]
+def build_card(
+    today_str: str,
+    count: int,
+    bucket: str,
+    session_ids: list[str],
+    metadata_map: dict[str, dict],
+) -> dict:
+    widgets = []
     for sid in session_ids:
         meta = metadata_map.get(sid)
-        row = f"{sid:<{sid_width}}"
-        for phase_id, _ in ALL_PHASES:
-            row += get_phase_icon(phase_id, meta)
-        rows.append(row)
+        skipped = get_skipped_phases(meta)
 
-    return "\n".join(rows)
+        if skipped:
+            skipped_text = ", ".join(skipped)
+        else:
+            skipped_text = "None — all phases completed ✅"
+
+        widgets.append({
+            "decoratedText": {
+                "topLabel": sid,
+                "text": f"❌ Skipped: {skipped_text}",
+                "wrapText": True,
+            }
+        })
+        widgets.append({"divider": {}})
+
+    if widgets:
+        widgets.pop()
+
+    return {
+        "cardsV2": [
+            {
+                "cardId": "dailyCsvReport",
+                "card": {
+                    "header": {
+                        "title": f"Daily CSV Report — {today_str}",
+                        "subtitle": f"{count} session(s)  •  Bucket: {bucket}",
+                    },
+                    "sections": [
+                        {
+                            "header": "Skipped Phases Per Session",
+                            "widgets": widgets,
+                        }
+                    ],
+                },
+            }
+        ]
+    }
 
 
-def send_google_chat_message(webhook_url: str, text: str) -> None:
-    resp = requests.post(webhook_url, json={"text": text}, timeout=30)
+def build_empty_card(today_str: str, bucket: str) -> dict:
+    return {
+        "cardsV2": [
+            {
+                "cardId": "dailyCsvReport",
+                "card": {
+                    "header": {
+                        "title": f"Daily CSV Report — {today_str}",
+                        "subtitle": f"0 sessions today  •  Bucket: {bucket}",
+                    },
+                    "sections": [
+                        {
+                            "widgets": [
+                                {
+                                    "textParagraph": {
+                                        "text": "No CSV files were created today.",
+                                    }
+                                }
+                            ]
+                        }
+                    ],
+                },
+            }
+        ]
+    }
+
+
+def send_google_chat_card(webhook_url: str, payload: dict) -> None:
+    resp = requests.post(webhook_url, json=payload, timeout=30)
     resp.raise_for_status()
     print("Google Chat notification sent successfully.")
 
@@ -131,25 +183,18 @@ def main() -> None:
 
     session_ids = sorted(name.removesuffix(".csv") for name in csv_files)
 
-    metadata_map: dict[str, dict] = {}
-    for sid in session_ids:
-        meta = fetch_metadata(storage, sid)
-        if meta:
-            metadata_map[sid] = meta
-
-    header = f"*Daily CSV Report — {today_str}*\n"
-    header += f"CSV files created today: *{count}*\n"
-    header += f"Bucket: {bucket}\n"
-    header += "✅ = Completed    ❌ = Skipped\n\n"
-
     if session_ids:
-        table = build_table(session_ids, metadata_map)
-        legend = "\nDV=Distance Vision  RER=Right Eye Refraction  JAR=Jcc Axis Right  JPR=Jcc Power Right  DR=Duochrome Right  VR=Validation Right  LER=Left Eye Refraction  JAL=Jcc Axis Left  JPL=Jcc Power Left  DL=Duochrome Left  VL=Validation Left  VDi=Validation Distance  BB=Binocular Balance  NAR=Near Add Right  NAL=Near Add Left  NAB=Near Add Bino"
-        message = header + "```\n" + table + "\n```" + legend
-    else:
-        message = header + "No CSV files were created today."
+        metadata_map: dict[str, dict] = {}
+        for sid in session_ids:
+            meta = fetch_metadata(storage, sid)
+            if meta:
+                metadata_map[sid] = meta
 
-    send_google_chat_message(webhook_url, message)
+        payload = build_card(today_str, count, bucket, session_ids, metadata_map)
+    else:
+        payload = build_empty_card(today_str, bucket)
+
+    send_google_chat_card(webhook_url, payload)
 
 
 if __name__ == "__main__":
