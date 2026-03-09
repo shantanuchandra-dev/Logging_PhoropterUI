@@ -1,8 +1,8 @@
 """
 Count CSV files created today in a Supabase Storage bucket and send a
-phase-status report to a Google Chat space via incoming webhook.
+visual phase-status table (as an image) to Google Chat via webhook.
 
-Each session is a row, each phase shown with ✅ (completed) or ❌ (skipped).
+Sessions as rows, phases as columns, rendered as a proper table image.
 
 Required env vars:
     SUPABASE_URL, SUPABASE_SERVICE_KEY, GOOGLE_CHAT_WEBHOOK_URL
@@ -11,31 +11,35 @@ Optional:
 """
 from __future__ import annotations
 
+import io
 import json
 import os
 import sys
 from datetime import datetime, timezone
 
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
 import requests
 from supabase import create_client
 
 ALL_PHASES = [
-    ("distance_vision", "DV"),
-    ("right_eye_refraction", "RER"),
-    ("jcc_axis_right", "JAR"),
-    ("jcc_power_right", "JPR"),
-    ("duochrome_right", "DR"),
-    ("validation_right", "VR"),
-    ("left_eye_refraction", "LER"),
-    ("jcc_axis_left", "JAL"),
-    ("jcc_power_left", "JPL"),
-    ("duochrome_left", "DL"),
-    ("validation_left", "VL"),
-    ("validation_distance", "VDi"),
-    ("binocular_balance", "BB"),
-    ("near_add_right", "NAR"),
-    ("near_add_left", "NAL"),
-    ("near_add_bino", "NAB"),
+    ("distance_vision", "Distance\nVision"),
+    ("right_eye_refraction", "Right Eye\nRefraction"),
+    ("jcc_axis_right", "Jcc Axis\nRight"),
+    ("jcc_power_right", "Jcc Power\nRight"),
+    ("duochrome_right", "Duochrome\nRight"),
+    ("validation_right", "Validation\nRight"),
+    ("left_eye_refraction", "Left Eye\nRefraction"),
+    ("jcc_axis_left", "Jcc Axis\nLeft"),
+    ("jcc_power_left", "Jcc Power\nLeft"),
+    ("duochrome_left", "Duochrome\nLeft"),
+    ("validation_left", "Validation\nLeft"),
+    ("validation_distance", "Validation\nDistance"),
+    ("binocular_balance", "Binocular\nBalance"),
+    ("near_add_right", "Near Add\nRight"),
+    ("near_add_left", "Near Add\nLeft"),
+    ("near_add_bino", "Near Add\nBino"),
 ]
 
 
@@ -51,7 +55,6 @@ def get_env(name: str, default: str | None = None, required: bool = True) -> str
 
 
 def list_todays_csvs(storage, today) -> list[str]:
-    """Return names of .csv files created today (UTC) in the bucket."""
     csv_files: list[str] = []
     items = storage.list()
     for item in items:
@@ -68,7 +71,6 @@ def list_todays_csvs(storage, today) -> list[str]:
 
 
 def fetch_metadata(storage, session_id: str) -> dict | None:
-    """Download and parse the metadata JSON for a session."""
     meta_path = f"{session_id}_metadata.json"
     try:
         data = storage.download(meta_path)
@@ -77,103 +79,159 @@ def fetch_metadata(storage, session_id: str) -> dict | None:
         return None
 
 
-def get_phase_icon(phase_id: str, metadata: dict | None) -> str:
+def get_phase_status(phase_id: str, metadata: dict | None) -> str:
     if metadata is None:
-        return "➖"
+        return "skip"
     if phase_id in set(metadata.get("phases_completed", [])):
-        return "✅"
+        return "done"
     if phase_id in set(metadata.get("phases_skipped", [])):
-        return "❌"
-    return "➖"
+        return "skip"
+    return "none"
 
 
-def build_session_widget(session_id: str, metadata: dict | None) -> dict:
-    """Build a decoratedText widget for one session row."""
-    icons = []
-    for phase_id, short_name in ALL_PHASES:
-        icon = get_phase_icon(phase_id, metadata)
-        icons.append(f"{short_name}:{icon}")
-
-    return {
-        "decoratedText": {
-            "topLabel": f"Session {session_id}",
-            "text": "  ".join(icons),
-            "wrapText": True,
-        }
-    }
-
-
-def build_card_payload(
-    today_str: str,
-    count: int,
-    bucket: str,
+def render_table_image(
     session_ids: list[str],
     metadata_map: dict[str, dict],
-) -> dict:
-    """Build a Google Chat Cards v2 payload."""
-    session_widgets = []
-    for sid in session_ids:
+    today_str: str,
+    count: int,
+) -> bytes:
+    """Render the phase-status table as a PNG image and return bytes."""
+    col_headers = ["Session ID"] + [label for _, label in ALL_PHASES]
+    n_rows = len(session_ids)
+    n_cols = len(col_headers)
+
+    cell_data = []
+    cell_colors = []
+
+    header_bg = "#2d2d2d"
+    header_text = "white"
+    row_bg_even = "#1a1a1a"
+    row_bg_odd = "#252525"
+    done_color = "#27ae60"
+    skip_color = "#e74c3c"
+    none_color = "#555555"
+
+    for i, sid in enumerate(session_ids):
         meta = metadata_map.get(sid)
-        session_widgets.append(build_session_widget(sid, meta))
-        session_widgets.append({"divider": {}})
+        row_bg = row_bg_even if i % 2 == 0 else row_bg_odd
+        row = [sid]
+        colors = [row_bg]
+        for phase_id, _ in ALL_PHASES:
+            status = get_phase_status(phase_id, meta)
+            row.append("✓" if status == "done" else "✗" if status == "skip" else "−")
+            colors.append(row_bg)
+        cell_data.append(row)
+        cell_colors.append(colors)
 
-    if session_widgets:
-        session_widgets.pop()
+    fig_width = max(18, n_cols * 1.1)
+    fig_height = max(3, (n_rows + 1) * 0.55 + 1.2)
+    fig, ax = plt.subplots(figsize=(fig_width, fig_height))
+    fig.patch.set_facecolor("#121212")
+    ax.set_facecolor("#121212")
+    ax.axis("off")
 
-    legend_parts = [f"<b>{short}</b> = {full}" for _, short, full in [
-        ("distance_vision", "DV", "Distance Vision"),
-        ("right_eye_refraction", "RER", "Right Eye Refraction"),
-        ("jcc_axis_right", "JAR", "Jcc Axis Right"),
-        ("jcc_power_right", "JPR", "Jcc Power Right"),
-        ("duochrome_right", "DR", "Duochrome Right"),
-        ("validation_right", "VR", "Validation Right"),
-        ("left_eye_refraction", "LER", "Left Eye Refraction"),
-        ("jcc_axis_left", "JAL", "Jcc Axis Left"),
-        ("jcc_power_left", "JPL", "Jcc Power Left"),
-        ("duochrome_left", "DL", "Duochrome Left"),
-        ("validation_left", "VL", "Validation Left"),
-        ("validation_distance", "VDi", "Validation Distance"),
-        ("binocular_balance", "BB", "Binocular Balance"),
-        ("near_add_right", "NAR", "Near Add Right"),
-        ("near_add_left", "NAL", "Near Add Left"),
-        ("near_add_bino", "NAB", "Near Add Bino"),
-    ]]
+    title = f"Daily CSV Report — {today_str}    ({count} sessions)"
+    ax.set_title(title, color="white", fontsize=14, fontweight="bold", pad=20, loc="left")
 
-    return {
+    table = ax.table(
+        cellText=cell_data,
+        colLabels=col_headers,
+        cellLoc="center",
+        loc="center",
+    )
+
+    table.auto_set_font_size(False)
+    table.set_fontsize(9)
+    table.scale(1, 1.8)
+
+    for (row, col), cell in table.get_celld().items():
+        cell.set_edgecolor("#444444")
+        cell.set_linewidth(0.5)
+
+        if row == 0:
+            cell.set_facecolor(header_bg)
+            cell.get_text().set_color(header_text)
+            cell.get_text().set_fontsize(8)
+            cell.get_text().set_fontweight("bold")
+        else:
+            bg = cell_colors[row - 1][col]
+            cell.set_facecolor(bg)
+
+            text_val = cell.get_text().get_text()
+            if col == 0:
+                cell.get_text().set_color("white")
+                cell.get_text().set_fontsize(8)
+                cell.get_text().set_ha("left")
+            elif text_val == "✓":
+                cell.get_text().set_color(done_color)
+                cell.get_text().set_fontsize(13)
+                cell.get_text().set_fontweight("bold")
+            elif text_val == "✗":
+                cell.get_text().set_color(skip_color)
+                cell.get_text().set_fontsize(13)
+                cell.get_text().set_fontweight("bold")
+            else:
+                cell.get_text().set_color(none_color)
+                cell.get_text().set_fontsize(11)
+
+    plt.tight_layout()
+
+    buf = io.BytesIO()
+    fig.savefig(buf, format="png", dpi=150, bbox_inches="tight", facecolor=fig.get_facecolor())
+    plt.close(fig)
+    buf.seek(0)
+    return buf.read()
+
+
+def upload_image(storage, image_bytes: bytes, today_str: str) -> str:
+    """Upload PNG to Supabase Storage and return a signed URL."""
+    path = f"reports/daily_report_{today_str}.png"
+    try:
+        storage.remove([path])
+    except Exception:
+        pass
+    storage.upload(
+        path,
+        image_bytes,
+        {"content-type": "image/png", "upsert": "true"},
+    )
+    signed = storage.create_signed_url(path, 60 * 60 * 24 * 7)
+    return signed["signedURL"]
+
+
+def send_google_chat_card(webhook_url: str, image_url: str, today_str: str, count: int, bucket: str) -> None:
+    payload = {
         "cardsV2": [
             {
                 "cardId": "dailyCsvReport",
                 "card": {
                     "header": {
                         "title": f"Daily CSV Report — {today_str}",
-                        "subtitle": f"{count} CSV file(s)  |  Bucket: {bucket}  |  ✅=Completed  ❌=Skipped",
+                        "subtitle": f"{count} CSV file(s) created today  |  Bucket: {bucket}",
                     },
                     "sections": [
                         {
-                            "header": "Sessions",
-                            "widgets": session_widgets,
-                        },
-                        {
-                            "header": "Legend",
-                            "collapsible": True,
-                            "uncollapsibleWidgetsCount": 0,
                             "widgets": [
                                 {
-                                    "textParagraph": {
-                                        "text": " | ".join(legend_parts),
+                                    "image": {
+                                        "imageUrl": image_url,
+                                        "altText": f"Daily CSV phase status report for {today_str}",
                                     }
                                 }
-                            ],
-                        },
+                            ]
+                        }
                     ],
                 },
             }
         ]
     }
+    resp = requests.post(webhook_url, json=payload, timeout=30)
+    resp.raise_for_status()
+    print("Google Chat notification sent successfully.")
 
 
-def build_empty_card(today_str: str, bucket: str) -> dict:
-    return {
+def send_empty_card(webhook_url: str, today_str: str, bucket: str) -> None:
+    payload = {
         "cardsV2": [
             {
                 "cardId": "dailyCsvReport",
@@ -197,9 +255,6 @@ def build_empty_card(today_str: str, bucket: str) -> dict:
             }
         ]
     }
-
-
-def send_google_chat_card(webhook_url: str, payload: dict) -> None:
     resp = requests.post(webhook_url, json=payload, timeout=30)
     resp.raise_for_status()
     print("Google Chat notification sent successfully.")
@@ -232,11 +287,16 @@ def main() -> None:
             if meta:
                 metadata_map[sid] = meta
 
-        payload = build_card_payload(today_str, count, bucket, session_ids, metadata_map)
-    else:
-        payload = build_empty_card(today_str, bucket)
+        print("Rendering table image ...")
+        image_bytes = render_table_image(session_ids, metadata_map, today_str, count)
 
-    send_google_chat_card(webhook_url, payload)
+        print("Uploading image to Supabase Storage ...")
+        image_url = upload_image(storage, image_bytes, today_str)
+        print(f"Image URL: {image_url}")
+
+        send_google_chat_card(webhook_url, image_url, today_str, count, bucket)
+    else:
+        send_empty_card(webhook_url, today_str, bucket)
 
 
 if __name__ == "__main__":
