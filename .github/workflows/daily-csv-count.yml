@@ -1,0 +1,31 @@
+name: Daily CSV Count Report
+
+on:
+  schedule:
+    # Runs every day at 18:00 UTC (11:30 PM IST)
+    - cron: "0 18 * * *"
+  workflow_dispatch: # allow manual trigger from Actions tab
+
+jobs:
+  count-and-notify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install supabase requests
+
+      - name: Count today's CSVs and notify Google Chat
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          SUPABASE_BUCKET: ${{ secrets.SUPABASE_BUCKET }}
+          GOOGLE_CHAT_WEBHOOK_URL: ${{ secrets.GOOGLE_CHAT_WEBHOOK_URL }}
+        run: python daily-csv-report/count_daily_csvs.py
