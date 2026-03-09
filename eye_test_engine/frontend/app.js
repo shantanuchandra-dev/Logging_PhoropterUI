@@ -507,14 +507,24 @@ async function releaseDevice() {
 
     try {
         const brainId = await getBrainId();
-        await fetch(`${CONFIG.backendUrl}/api/devices/${deviceId}/release`, {
+        // Release via backend proxy (avoids CORS) -> proxies to .../devices/{Phoropter-ID}/release
+        const base = (CONFIG.backendUrl && CONFIG.backendUrl.length > 0) ? CONFIG.backendUrl : '';
+        const url = base ? `${base}/api/devices/${deviceId}/release` : `/api/devices/${deviceId}/release`;
+        const resp = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ brain_id: brainId })
         });
-        console.log('Device released:', deviceId);
+        if (resp.ok) {
+            console.log('Device released:', deviceId);
+            addToHistory('Device released', 'success');
+        } else {
+            console.warn('Release returned', resp.status, await resp.text());
+            addToHistory(`Release failed: ${resp.status}`, 'warning');
+        }
     } catch (err) {
         console.warn('Could not release device:', err);
+        addToHistory('Release failed: ' + (err.message || 'network error'), 'warning');
     }
 
     _deviceAcquired = false;
@@ -2558,11 +2568,14 @@ async function setPhoropter(data) {
             sessionState.currentChart = data.chart;
         }
 
-        // Set power and occluder (skip for JCC and duochrome phases - phoropter handles internally)
+        // Set power and occluder (skip for phases where backend applies power with prev_state)
+        // - JCC/duochrome: phoropter handles internally
+        // - Near ADD (P/Q/R): backend uses set_power_with_prev_state; frontend would double-apply
         const phaseText = (data.phase || '').toLowerCase();
         const isJccPhase = phaseText.includes('jcc') || data.chart === 'jcc_chart';
         const isDuochromePhase = phaseText.includes('duochrome') || data.chart === 'duochrome';
-        if (data.power && !isJccPhase && !isDuochromePhase) {
+        const isNearAddPhase = phaseText.includes('near vision') || phaseText.includes('near_add');
+        if (data.power && !isJccPhase && !isDuochromePhase && !isNearAddPhase) {
             await setPower(data.power, data.occluder);
         }
 
@@ -2777,6 +2790,9 @@ async function completeTest() {
         document.getElementById('sessionStatus').textContent = 'Awaiting validation';
         addToHistory('Test complete – please validate prescription matches image', 'info');
 
+        // Release device when End Test is pressed (middle or end of test)
+        await releaseDevice();
+
     } catch (error) {
         console.error('Error completing test:', error);
         alert('Failed to complete test properly.');
@@ -2884,8 +2900,27 @@ async function powerDoesNotMatch() {
 // Start new test – return to welcome screen
 function startNewTest() {
     document.getElementById('completeScreen').style.display = 'none';
+    document.getElementById('testScreen').style.display = 'none';
     document.getElementById('welcomeScreen').style.display = 'block';
     document.getElementById('sessionStatus').textContent = 'Not Started';
+
+    // Reset session state for a fresh start
+    sessionState.sessionId = null;
+    sessionState.currentPhase = null;
+    sessionState.currentChart = null;
+    sessionState.currentChartIndex = 0;
+    sessionState.availableCharts = [];
+    sessionState.intentsLocked = false;
+    sessionState.responseCount = 0;
+    sessionState.history = [];
+
+    // Re-enable Start Eye Test button
+    const btn = document.getElementById('startTestBtn');
+    if (btn) {
+        btn.disabled = false;
+        btn.textContent = 'Start Eye Test';
+    }
+    updateStatusIndicator(false);
 }
 
 // End Test Early

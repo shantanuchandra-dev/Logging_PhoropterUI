@@ -432,6 +432,38 @@ class InteractiveSession:
         self._post_to_phoropter(self.api_endpoint, payload)
         print(f"✓ Power set with prev state: R({r_sph}/{r_cyl}/{r_axis}) L({l_sph}/{l_cyl}/{l_axis})")
         print(f"  Previous state: R({prev_r_sph}/{prev_r_cyl}/{prev_r_axis}) L({prev_l_sph}/{prev_l_cyl}/{prev_l_axis})")
+
+    def _set_add_bino_delta_only(self, prev_add: float, new_add: float) -> None:
+        """Send ONLY right-eye ADD delta for Phase R (binocular).
+        Omits left add entirely so broker issues single click - binocular ADD
+        uses one physical control; including both R+L causes two clicks.
+        """
+        prev_right = {
+            "sph": self.current_row.r_sph, "cyl": self.current_row.r_cyl, "axis": self.current_row.r_axis,
+            "add": prev_add
+        }
+        prev_left = {
+            "sph": self.current_row.l_sph, "cyl": self.current_row.l_cyl, "axis": self.current_row.l_axis
+        }
+        right_eye = {
+            "sph": self.current_row.r_sph, "cyl": self.current_row.r_cyl, "axis": self.current_row.r_axis,
+            "add": new_add
+        }
+        left_eye = {
+            "sph": self.current_row.l_sph, "cyl": self.current_row.l_cyl, "axis": self.current_row.l_axis
+        }
+        payload = {
+            "test_cases": [{
+                "case_id": 1,
+                "prev_right_eye": prev_right,
+                "prev_left_eye": prev_left,
+                "right_eye": right_eye,
+                "left_eye": left_eye,
+                "aux_lens": "BINO"
+            }]
+        }
+        self._post_to_phoropter(self.api_endpoint, payload)
+        print(f"✓ ADD bino delta only: {prev_add} -> {new_add} (single click)")
     
     def jcc_control(self, action: str):
         """Perform JCC action (handle, increase, decrease, etc.)."""
@@ -2214,25 +2246,20 @@ class InteractiveSession:
         """Process near vision binocular ADD verification (Phase R).
 
         Both eyes open. Final binocular near vision check.
-        - Blurry → +0.25D to both ADD values
+        Uses _set_add_bino_delta_only: sends ONLY right-eye ADD (omit left add entirely)
+        so broker issues single click. Including both R+L in run-tests causes two clicks.
+        - Blurry → +0.25D (single click)
         - Clear → Offer -0.25D reduction
-        - Comfortable / Confirmed → Complete test
+        - Try reduction → -0.25D (single click)
         """
+        ADD_STEP = 0.25
         if intent == "Blurry":
-            prev_add_right = self.add_right  # capture before increment
-            prev_add_left = self.add_left
-            self.add_right += 0.25
-            self.add_left += 0.25
+            prev_add = self.add_right
+            self.add_right += ADD_STEP
+            self.add_left += ADD_STEP
             self.current_row.r_add = self.add_right
             self.current_row.l_add = self.add_left
-            self.set_power_with_prev_state(
-                prev_r_sph=self.current_row.r_sph, prev_r_cyl=self.current_row.r_cyl, prev_r_axis=self.current_row.r_axis,
-                prev_l_sph=self.current_row.l_sph, prev_l_cyl=self.current_row.l_cyl, prev_l_axis=self.current_row.l_axis,
-                r_sph=self.current_row.r_sph, r_cyl=self.current_row.r_cyl, r_axis=self.current_row.r_axis,
-                l_sph=self.current_row.l_sph, l_cyl=self.current_row.l_cyl, l_axis=self.current_row.l_axis,
-                r_add=self.add_right, l_add=self.add_left,
-                prev_r_add=prev_add_right, prev_l_add=prev_add_left,
-            )
+            self._set_add_bino_delta_only(prev_add=prev_add, new_add=self.add_right)
             response = self._build_response()
             response["question"] = f"Binocular near at ADD R+{self.add_right:.2f}D / L+{self.add_left:.2f}D. Comfortable now?"
             response["intents"] = ["Blurry", "Clear", "Comfortable", "Confirmed"]
@@ -2250,20 +2277,12 @@ class InteractiveSession:
             }
 
         elif intent == "Try reduction":
-            prev_add_right = self.add_right  # capture before decrement
-            prev_add_left = self.add_left
-            self.add_right = max(0.0, self.add_right - 0.25)
-            self.add_left = max(0.0, self.add_left - 0.25)
+            prev_add = self.add_right
+            self.add_right = max(0.0, self.add_right - ADD_STEP)
+            self.add_left = max(0.0, self.add_left - ADD_STEP)
             self.current_row.r_add = self.add_right
             self.current_row.l_add = self.add_left
-            self.set_power_with_prev_state(
-                prev_r_sph=self.current_row.r_sph, prev_r_cyl=self.current_row.r_cyl, prev_r_axis=self.current_row.r_axis,
-                prev_l_sph=self.current_row.l_sph, prev_l_cyl=self.current_row.l_cyl, prev_l_axis=self.current_row.l_axis,
-                r_sph=self.current_row.r_sph, r_cyl=self.current_row.r_cyl, r_axis=self.current_row.r_axis,
-                l_sph=self.current_row.l_sph, l_cyl=self.current_row.l_cyl, l_axis=self.current_row.l_axis,
-                r_add=self.add_right, l_add=self.add_left,
-                prev_r_add=prev_add_right, prev_l_add=prev_add_left,
-            )
+            self._set_add_bino_delta_only(prev_add=prev_add, new_add=self.add_right)
             response = self._build_response()
             response["question"] = f"Binocular near at ADD R+{self.add_right:.2f}D / L+{self.add_left:.2f}D. How is this?"
             response["intents"] = ["Blurry", "Clear", "Confirmed"]
