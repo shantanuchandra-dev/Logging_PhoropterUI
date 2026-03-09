@@ -1,8 +1,6 @@
 """
 Count CSV files created today in a Supabase Storage bucket and send a
-readable phase-status report to Google Chat via webhook.
-
-Each session displayed as a card section with phase statuses.
+report showing skipped phases per session to Google Chat via webhook.
 
 Required env vars:
     SUPABASE_URL, SUPABASE_SERVICE_KEY, GOOGLE_CHAT_WEBHOOK_URL
@@ -19,24 +17,24 @@ from datetime import datetime, timezone
 import requests
 from supabase import create_client
 
-ALL_PHASES = [
-    ("distance_vision", "Distance Vision"),
-    ("right_eye_refraction", "Right Eye Refraction"),
-    ("jcc_axis_right", "Jcc Axis Right"),
-    ("jcc_power_right", "Jcc Power Right"),
-    ("duochrome_right", "Duochrome Right"),
-    ("validation_right", "Validation Right"),
-    ("left_eye_refraction", "Left Eye Refraction"),
-    ("jcc_axis_left", "Jcc Axis Left"),
-    ("jcc_power_left", "Jcc Power Left"),
-    ("duochrome_left", "Duochrome Left"),
-    ("validation_left", "Validation Left"),
-    ("validation_distance", "Validation Distance"),
-    ("binocular_balance", "Binocular Balance"),
-    ("near_add_right", "Near Add Right"),
-    ("near_add_left", "Near Add Left"),
-    ("near_add_bino", "Near Add Bino"),
-]
+ALL_PHASES = {
+    "distance_vision": "Distance Vision",
+    "right_eye_refraction": "Right Eye Refraction",
+    "jcc_axis_right": "Jcc Axis Right",
+    "jcc_power_right": "Jcc Power Right",
+    "duochrome_right": "Duochrome Right",
+    "validation_right": "Validation Right",
+    "left_eye_refraction": "Left Eye Refraction",
+    "jcc_axis_left": "Jcc Axis Left",
+    "jcc_power_left": "Jcc Power Left",
+    "duochrome_left": "Duochrome Left",
+    "validation_left": "Validation Left",
+    "validation_distance": "Validation Distance",
+    "binocular_balance": "Binocular Balance",
+    "near_add_right": "Near Add Right",
+    "near_add_left": "Near Add Left",
+    "near_add_bino": "Near Add Bino",
+}
 
 
 def get_env(name: str, default: str | None = None, required: bool = True) -> str:
@@ -75,32 +73,11 @@ def fetch_metadata(storage, session_id: str) -> dict | None:
         return None
 
 
-def format_session_phases(metadata: dict | None) -> str:
-    """Format all phases for one session as readable HTML lines."""
+def get_skipped_phases(metadata: dict | None) -> list[str]:
     if metadata is None:
-        return "(metadata not found)"
-
-    completed = set(metadata.get("phases_completed", []))
-    skipped = set(metadata.get("phases_skipped", []))
-
-    completed_list = []
-    skipped_list = []
-
-    for phase_id, phase_name in ALL_PHASES:
-        if phase_id in completed:
-            completed_list.append(phase_name)
-        elif phase_id in skipped:
-            skipped_list.append(phase_name)
-
-    lines = []
-    if completed_list:
-        lines.append(f"<b>✅ Completed ({len(completed_list)}):</b>")
-        lines.append(", ".join(completed_list))
-    if skipped_list:
-        lines.append(f"<b>❌ Skipped ({len(skipped_list)}):</b>")
-        lines.append(", ".join(skipped_list))
-
-    return "<br>".join(lines)
+        return ["(metadata not found)"]
+    skipped_ids = metadata.get("phases_skipped", [])
+    return [ALL_PHASES.get(p, p) for p in skipped_ids]
 
 
 def build_card(
@@ -110,26 +87,27 @@ def build_card(
     session_ids: list[str],
     metadata_map: dict[str, dict],
 ) -> dict:
-    sections = []
-
+    widgets = []
     for sid in session_ids:
         meta = metadata_map.get(sid)
-        completed = set((meta or {}).get("phases_completed", []))
-        total = len(ALL_PHASES)
-        done = len([p for p, _ in ALL_PHASES if p in completed])
+        skipped = get_skipped_phases(meta)
 
-        sections.append({
-            "header": f"📄 Session {sid}    ({done}/{total} phases completed)",
-            "collapsible": True,
-            "uncollapsibleWidgetsCount": 1,
-            "widgets": [
-                {
-                    "textParagraph": {
-                        "text": format_session_phases(meta),
-                    }
-                }
-            ],
+        if skipped:
+            skipped_text = ", ".join(skipped)
+        else:
+            skipped_text = "None — all phases completed ✅"
+
+        widgets.append({
+            "decoratedText": {
+                "topLabel": sid,
+                "text": f"❌ Skipped: {skipped_text}",
+                "wrapText": True,
+            }
         })
+        widgets.append({"divider": {}})
+
+    if widgets:
+        widgets.pop()
 
     return {
         "cardsV2": [
@@ -138,9 +116,14 @@ def build_card(
                 "card": {
                     "header": {
                         "title": f"Daily CSV Report — {today_str}",
-                        "subtitle": f"{count} CSV file(s) created today  •  Bucket: {bucket}",
+                        "subtitle": f"{count} session(s)  •  Bucket: {bucket}",
                     },
-                    "sections": sections,
+                    "sections": [
+                        {
+                            "header": "Skipped Phases Per Session",
+                            "widgets": widgets,
+                        }
+                    ],
                 },
             }
         ]
@@ -155,7 +138,7 @@ def build_empty_card(today_str: str, bucket: str) -> dict:
                 "card": {
                     "header": {
                         "title": f"Daily CSV Report — {today_str}",
-                        "subtitle": f"0 CSV files created today  •  Bucket: {bucket}",
+                        "subtitle": f"0 sessions today  •  Bucket: {bucket}",
                     },
                     "sections": [
                         {
