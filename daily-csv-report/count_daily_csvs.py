@@ -1,8 +1,8 @@
 """
 Count CSV files created today in a Supabase Storage bucket and send a
-tabular phase-status report to a Google Chat space via incoming webhook.
+phase-status report to a Google Chat space via incoming webhook.
 
-Sessions as rows, phases as columns.
+Each session is a row, each phase shown with ✅ (completed) or ❌ (skipped).
 
 Required env vars:
     SUPABASE_URL, SUPABASE_SERVICE_KEY, GOOGLE_CHAT_WEBHOOK_URL
@@ -36,25 +36,6 @@ ALL_PHASES = [
     ("near_add_right", "NAR"),
     ("near_add_left", "NAL"),
     ("near_add_bino", "NAB"),
-]
-
-LEGEND_LINES = [
-    "DV  = Distance Vision",
-    "RER = Right Eye Refraction",
-    "JAR = Jcc Axis Right",
-    "JPR = Jcc Power Right",
-    "DR  = Duochrome Right",
-    "VR  = Validation Right",
-    "LER = Left Eye Refraction",
-    "JAL = Jcc Axis Left",
-    "JPL = Jcc Power Left",
-    "DL  = Duochrome Left",
-    "VL  = Validation Left",
-    "VDi = Validation Distance",
-    "BB  = Binocular Balance",
-    "NAR = Near Add Right",
-    "NAL = Near Add Left",
-    "NAB = Near Add Bino",
 ]
 
 
@@ -106,27 +87,20 @@ def get_phase_icon(phase_id: str, metadata: dict | None) -> str:
     return "➖"
 
 
-def build_table(session_ids: list[str], metadata_map: dict[str, dict]) -> str:
-    """Build table: sessions as rows, phases as columns."""
-    sid_col_width = 16
-    phase_col_width = 4
+def build_session_widget(session_id: str, metadata: dict | None) -> dict:
+    """Build a decoratedText widget for one session row."""
+    icons = []
+    for phase_id, short_name in ALL_PHASES:
+        icon = get_phase_icon(phase_id, metadata)
+        icons.append(f"{short_name}:{icon}")
 
-    header = f"{'Session ID':<{sid_col_width}}"
-    for _, short in ALL_PHASES:
-        header += f" {short:^{phase_col_width}}"
-
-    separator = "─" * len(header)
-
-    rows = [header, separator]
-    for sid in session_ids:
-        meta = metadata_map.get(sid)
-        row = f"{sid:<{sid_col_width}}"
-        for phase_id, _ in ALL_PHASES:
-            icon = get_phase_icon(phase_id, meta)
-            row += f"  {icon}  "
-        rows.append(row)
-
-    return "\n".join(rows)
+    return {
+        "decoratedText": {
+            "topLabel": f"Session {session_id}",
+            "text": "  ".join(icons),
+            "wrapText": True,
+        }
+    }
 
 
 def build_card_payload(
@@ -136,9 +110,34 @@ def build_card_payload(
     session_ids: list[str],
     metadata_map: dict[str, dict],
 ) -> dict:
-    """Build a Google Chat Cards v2 payload with the phase-status table."""
-    table_text = build_table(session_ids, metadata_map)
-    legend_text = "\n".join(LEGEND_LINES)
+    """Build a Google Chat Cards v2 payload."""
+    session_widgets = []
+    for sid in session_ids:
+        meta = metadata_map.get(sid)
+        session_widgets.append(build_session_widget(sid, meta))
+        session_widgets.append({"divider": {}})
+
+    if session_widgets:
+        session_widgets.pop()
+
+    legend_parts = [f"<b>{short}</b> = {full}" for _, short, full in [
+        ("distance_vision", "DV", "Distance Vision"),
+        ("right_eye_refraction", "RER", "Right Eye Refraction"),
+        ("jcc_axis_right", "JAR", "Jcc Axis Right"),
+        ("jcc_power_right", "JPR", "Jcc Power Right"),
+        ("duochrome_right", "DR", "Duochrome Right"),
+        ("validation_right", "VR", "Validation Right"),
+        ("left_eye_refraction", "LER", "Left Eye Refraction"),
+        ("jcc_axis_left", "JAL", "Jcc Axis Left"),
+        ("jcc_power_left", "JPL", "Jcc Power Left"),
+        ("duochrome_left", "DL", "Duochrome Left"),
+        ("validation_left", "VL", "Validation Left"),
+        ("validation_distance", "VDi", "Validation Distance"),
+        ("binocular_balance", "BB", "Binocular Balance"),
+        ("near_add_right", "NAR", "Near Add Right"),
+        ("near_add_left", "NAL", "Near Add Left"),
+        ("near_add_bino", "NAB", "Near Add Bino"),
+    ]]
 
     return {
         "cardsV2": [
@@ -147,26 +146,21 @@ def build_card_payload(
                 "card": {
                     "header": {
                         "title": f"Daily CSV Report — {today_str}",
-                        "subtitle": f"{count} CSV file(s) created today  |  Bucket: {bucket}",
+                        "subtitle": f"{count} CSV file(s)  |  Bucket: {bucket}  |  ✅=Completed  ❌=Skipped",
                     },
                     "sections": [
                         {
-                            "header": "Phase Status  (✅ = Completed, ❌ = Skipped)",
-                            "widgets": [
-                                {
-                                    "textParagraph": {
-                                        "text": f"<pre>{table_text}</pre>",
-                                    }
-                                }
-                            ],
+                            "header": "Sessions",
+                            "widgets": session_widgets,
                         },
                         {
                             "header": "Legend",
                             "collapsible": True,
+                            "uncollapsibleWidgetsCount": 0,
                             "widgets": [
                                 {
                                     "textParagraph": {
-                                        "text": f"<pre>{legend_text}</pre>",
+                                        "text": " | ".join(legend_parts),
                                     }
                                 }
                             ],
