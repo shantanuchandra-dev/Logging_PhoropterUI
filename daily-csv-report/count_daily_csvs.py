@@ -2,6 +2,8 @@
 Count CSV files created today in a Supabase Storage bucket and send a
 tabular phase-status report to a Google Chat space via incoming webhook.
 
+Sessions as rows, phases as columns.
+
 Required env vars:
     SUPABASE_URL, SUPABASE_SERVICE_KEY, GOOGLE_CHAT_WEBHOOK_URL
 Optional:
@@ -18,25 +20,42 @@ import requests
 from supabase import create_client
 
 ALL_PHASES = [
-    ("distance_vision", "Distance Vision"),
-    ("right_eye_refraction", "Right Eye Refraction"),
-    ("jcc_axis_right", "Jcc Axis Right"),
-    ("jcc_power_right", "Jcc Power Right"),
-    ("duochrome_right", "Duochrome Right"),
-    ("validation_right", "Validation Right"),
-    ("left_eye_refraction", "Left Eye Refraction"),
-    ("jcc_axis_left", "Jcc Axis Left"),
-    ("jcc_power_left", "Jcc Power Left"),
-    ("duochrome_left", "Duochrome Left"),
-    ("validation_left", "Validation Left"),
-    ("validation_distance", "Validation Distance"),
-    ("binocular_balance", "Binocular Balance"),
-    ("near_add_right", "Near Add Right"),
-    ("near_add_left", "Near Add Left"),
-    ("near_add_bino", "Near Add Bino"),
+    ("distance_vision", "DV"),
+    ("right_eye_refraction", "RER"),
+    ("jcc_axis_right", "JAR"),
+    ("jcc_power_right", "JPR"),
+    ("duochrome_right", "DR"),
+    ("validation_right", "VR"),
+    ("left_eye_refraction", "LER"),
+    ("jcc_axis_left", "JAL"),
+    ("jcc_power_left", "JPL"),
+    ("duochrome_left", "DL"),
+    ("validation_left", "VL"),
+    ("validation_distance", "VDi"),
+    ("binocular_balance", "BB"),
+    ("near_add_right", "NAR"),
+    ("near_add_left", "NAL"),
+    ("near_add_bino", "NAB"),
 ]
 
-PHASE_LABEL_WIDTH = max(len(label) for _, label in ALL_PHASES)
+LEGEND_LINES = [
+    "DV  = Distance Vision",
+    "RER = Right Eye Refraction",
+    "JAR = Jcc Axis Right",
+    "JPR = Jcc Power Right",
+    "DR  = Duochrome Right",
+    "VR  = Validation Right",
+    "LER = Left Eye Refraction",
+    "JAL = Jcc Axis Left",
+    "JPL = Jcc Power Left",
+    "DL  = Duochrome Left",
+    "VL  = Validation Left",
+    "VDi = Validation Distance",
+    "BB  = Binocular Balance",
+    "NAR = Near Add Right",
+    "NAL = Near Add Left",
+    "NAB = Near Add Bino",
+]
 
 
 def get_env(name: str, default: str | None = None, required: bool = True) -> str:
@@ -87,16 +106,27 @@ def get_phase_icon(phase_id: str, metadata: dict | None) -> str:
     return "➖"
 
 
-def build_phase_rows(session_ids: list[str], metadata_map: dict[str, dict]) -> list[dict]:
-    """Build phase status data for the card widgets."""
-    rows = []
-    for phase_id, phase_label in ALL_PHASES:
-        icons = []
-        for sid in session_ids:
-            meta = metadata_map.get(sid)
-            icons.append(get_phase_icon(phase_id, meta))
-        rows.append({"label": phase_label, "icons": icons})
-    return rows
+def build_table(session_ids: list[str], metadata_map: dict[str, dict]) -> str:
+    """Build table: sessions as rows, phases as columns."""
+    sid_col_width = 16
+    phase_col_width = 4
+
+    header = f"{'Session ID':<{sid_col_width}}"
+    for _, short in ALL_PHASES:
+        header += f" {short:^{phase_col_width}}"
+
+    separator = "─" * len(header)
+
+    rows = [header, separator]
+    for sid in session_ids:
+        meta = metadata_map.get(sid)
+        row = f"{sid:<{sid_col_width}}"
+        for phase_id, _ in ALL_PHASES:
+            icon = get_phase_icon(phase_id, meta)
+            row += f"  {icon}  "
+        rows.append(row)
+
+    return "\n".join(rows)
 
 
 def build_card_payload(
@@ -107,51 +137,36 @@ def build_card_payload(
     metadata_map: dict[str, dict],
 ) -> dict:
     """Build a Google Chat Cards v2 payload with the phase-status table."""
-    phase_rows = build_phase_rows(session_ids, metadata_map)
+    table_text = build_table(session_ids, metadata_map)
+    legend_text = "\n".join(LEGEND_LINES)
 
-    short_ids = [sid[-6:] for sid in session_ids]
-    header_row = f"{'Test Step':<{PHASE_LABEL_WIDTH}}  " + "  ".join(
-        f"{sid:>6}" for sid in short_ids
-    )
-    separator = "─" * len(header_row)
-
-    table_lines = [header_row, separator]
-    for row in phase_rows:
-        label = f"{row['label']:<{PHASE_LABEL_WIDTH}}"
-        icons_str = "  ".join(f"  {icon}   " for icon in row["icons"])
-        table_lines.append(f"{label}  {icons_str}")
-
-    session_list = "\n".join(
-        f"• <b>...{sid[-6:]}</b> → {sid}" for sid in session_ids
-    )
-
-    card = {
+    return {
         "cardsV2": [
             {
                 "cardId": "dailyCsvReport",
                 "card": {
                     "header": {
-                        "title": f"📊 Daily CSV Report — {today_str}",
+                        "title": f"Daily CSV Report — {today_str}",
                         "subtitle": f"{count} CSV file(s) created today  |  Bucket: {bucket}",
                     },
                     "sections": [
                         {
-                            "header": "Session IDs",
-                            "collapsible": True,
+                            "header": "Phase Status  (✅ = Completed, ❌ = Skipped)",
                             "widgets": [
                                 {
                                     "textParagraph": {
-                                        "text": session_list,
+                                        "text": f"<pre>{table_text}</pre>",
                                     }
                                 }
                             ],
                         },
                         {
-                            "header": "Phase Status",
+                            "header": "Legend",
+                            "collapsible": True,
                             "widgets": [
                                 {
                                     "textParagraph": {
-                                        "text": "<pre>" + "\n".join(table_lines) + "</pre>",
+                                        "text": f"<pre>{legend_text}</pre>",
                                     }
                                 }
                             ],
@@ -161,7 +176,6 @@ def build_card_payload(
             }
         ]
     }
-    return card
 
 
 def build_empty_card(today_str: str, bucket: str) -> dict:
@@ -171,7 +185,7 @@ def build_empty_card(today_str: str, bucket: str) -> dict:
                 "cardId": "dailyCsvReport",
                 "card": {
                     "header": {
-                        "title": f"📊 Daily CSV Report — {today_str}",
+                        "title": f"Daily CSV Report — {today_str}",
                         "subtitle": f"0 CSV files created today  |  Bucket: {bucket}",
                     },
                     "sections": [
