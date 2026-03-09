@@ -77,43 +77,122 @@ def fetch_metadata(storage, session_id: str) -> dict | None:
         return None
 
 
-def build_table(session_ids: list[str], metadata_map: dict[str, dict]) -> str:
-    """Build a monospace text table: phases as rows, sessions as columns."""
-    col_width = max((len(sid) for sid in session_ids), default=6)
-    col_width = max(col_width, 4)
+def get_phase_icon(phase_id: str, metadata: dict | None) -> str:
+    if metadata is None:
+        return "➖"
+    if phase_id in set(metadata.get("phases_completed", [])):
+        return "✅"
+    if phase_id in set(metadata.get("phases_skipped", [])):
+        return "❌"
+    return "➖"
 
-    header_label = "Test Step".ljust(PHASE_LABEL_WIDTH)
-    header_cols = " | ".join(sid.center(col_width) for sid in session_ids)
-    header = f"| {header_label} | {header_cols} |"
 
-    separator_label = "-" * PHASE_LABEL_WIDTH
-    separator_cols = " | ".join("-" * col_width for _ in session_ids)
-    separator = f"| {separator_label} | {separator_cols} |"
-
-    rows: list[str] = [header, separator]
-
+def build_phase_rows(session_ids: list[str], metadata_map: dict[str, dict]) -> list[dict]:
+    """Build phase status data for the card widgets."""
+    rows = []
     for phase_id, phase_label in ALL_PHASES:
-        label = phase_label.ljust(PHASE_LABEL_WIDTH)
-        cells: list[str] = []
+        icons = []
         for sid in session_ids:
             meta = metadata_map.get(sid)
-            if meta is None:
-                icon = "➖"
-            elif phase_id in set(meta.get("phases_completed", [])):
-                icon = "✅"
-            elif phase_id in set(meta.get("phases_skipped", [])):
-                icon = "❌"
-            else:
-                icon = "➖"
-            cells.append(icon.center(col_width))
-        row_cols = " | ".join(cells)
-        rows.append(f"| {label} | {row_cols} |")
-
-    return "\n".join(rows)
+            icons.append(get_phase_icon(phase_id, meta))
+        rows.append({"label": phase_label, "icons": icons})
+    return rows
 
 
-def send_google_chat_message(webhook_url: str, text: str) -> None:
-    resp = requests.post(webhook_url, json={"text": text}, timeout=30)
+def build_card_payload(
+    today_str: str,
+    count: int,
+    bucket: str,
+    session_ids: list[str],
+    metadata_map: dict[str, dict],
+) -> dict:
+    """Build a Google Chat Cards v2 payload with the phase-status table."""
+    phase_rows = build_phase_rows(session_ids, metadata_map)
+
+    short_ids = [sid[-6:] for sid in session_ids]
+    header_row = f"{'Test Step':<{PHASE_LABEL_WIDTH}}  " + "  ".join(
+        f"{sid:>6}" for sid in short_ids
+    )
+    separator = "─" * len(header_row)
+
+    table_lines = [header_row, separator]
+    for row in phase_rows:
+        label = f"{row['label']:<{PHASE_LABEL_WIDTH}}"
+        icons_str = "  ".join(f"  {icon}   " for icon in row["icons"])
+        table_lines.append(f"{label}  {icons_str}")
+
+    session_list = "\n".join(
+        f"• <b>...{sid[-6:]}</b> → {sid}" for sid in session_ids
+    )
+
+    card = {
+        "cardsV2": [
+            {
+                "cardId": "dailyCsvReport",
+                "card": {
+                    "header": {
+                        "title": f"📊 Daily CSV Report — {today_str}",
+                        "subtitle": f"{count} CSV file(s) created today  |  Bucket: {bucket}",
+                    },
+                    "sections": [
+                        {
+                            "header": "Session IDs",
+                            "collapsible": True,
+                            "widgets": [
+                                {
+                                    "textParagraph": {
+                                        "text": session_list,
+                                    }
+                                }
+                            ],
+                        },
+                        {
+                            "header": "Phase Status",
+                            "widgets": [
+                                {
+                                    "textParagraph": {
+                                        "text": "<pre>" + "\n".join(table_lines) + "</pre>",
+                                    }
+                                }
+                            ],
+                        },
+                    ],
+                },
+            }
+        ]
+    }
+    return card
+
+
+def build_empty_card(today_str: str, bucket: str) -> dict:
+    return {
+        "cardsV2": [
+            {
+                "cardId": "dailyCsvReport",
+                "card": {
+                    "header": {
+                        "title": f"📊 Daily CSV Report — {today_str}",
+                        "subtitle": f"0 CSV files created today  |  Bucket: {bucket}",
+                    },
+                    "sections": [
+                        {
+                            "widgets": [
+                                {
+                                    "textParagraph": {
+                                        "text": "No CSV files were created today.",
+                                    }
+                                }
+                            ]
+                        }
+                    ],
+                },
+            }
+        ]
+    }
+
+
+def send_google_chat_card(webhook_url: str, payload: dict) -> None:
+    resp = requests.post(webhook_url, json=payload, timeout=30)
     resp.raise_for_status()
     print("Google Chat notification sent successfully.")
 
@@ -138,28 +217,18 @@ def main() -> None:
 
     session_ids = sorted(name.removesuffix(".csv") for name in csv_files)
 
-    metadata_map: dict[str, dict] = {}
-    for sid in session_ids:
-        meta = fetch_metadata(storage, sid)
-        if meta:
-            metadata_map[sid] = meta
-
-    message_lines = [
-        f"*Daily CSV Report — {today_str}*",
-        f"New CSV files created today: *{count}*",
-        f"Bucket: `{bucket}`",
-        "",
-    ]
-
     if session_ids:
-        message_lines.append("```")
-        message_lines.append(build_table(session_ids, metadata_map))
-        message_lines.append("```")
-    else:
-        message_lines.append("No CSV files created today.")
+        metadata_map: dict[str, dict] = {}
+        for sid in session_ids:
+            meta = fetch_metadata(storage, sid)
+            if meta:
+                metadata_map[sid] = meta
 
-    message = "\n".join(message_lines)
-    send_google_chat_message(webhook_url, message)
+        payload = build_card_payload(today_str, count, bucket, session_ids, metadata_map)
+    else:
+        payload = build_empty_card(today_str, bucket)
+
+    send_google_chat_card(webhook_url, payload)
 
 
 if __name__ == "__main__":
