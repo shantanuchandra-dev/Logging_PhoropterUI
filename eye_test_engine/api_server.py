@@ -331,14 +331,16 @@ def sync_power(session_id):
     right = payload.get('right', {})
     left = payload.get('left', {})
     
-    # Update internal state (current_row)
+    # Update internal state (current_row). Axis 0° = 180°; normalize 0 to 180.
+    def _norm_axis(v):
+        x = float(v)
+        return 180.0 if x == 0 or x == 180 else x
     if 'sph' in right: session.current_row.r_sph = float(right['sph'])
     if 'cyl' in right: session.current_row.r_cyl = float(right['cyl'])
-    if 'axis' in right: session.current_row.r_axis = float(right['axis'])
-    
+    if 'axis' in right: session.current_row.r_axis = _norm_axis(right['axis'])
     if 'sph' in left: session.current_row.l_sph = float(left['sph'])
     if 'cyl' in left: session.current_row.l_cyl = float(left['cyl'])
-    if 'axis' in left: session.current_row.l_axis = float(left['axis'])
+    if 'axis' in left: session.current_row.l_axis = _norm_axis(left['axis'])
 
     # Record as a Manual row in session history
     delta = session._compute_change_delta("", "Manual")

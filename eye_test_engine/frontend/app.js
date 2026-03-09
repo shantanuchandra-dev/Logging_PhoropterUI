@@ -916,8 +916,13 @@ function _parseTypedValue(param, raw) {
     return Math.round(n * 4) / 4;
 }
 
+function _normalizeAxisDisplay(val) {
+    const n = Math.round(parseFloat(val) || 0);
+    return (n === 0 || n === 180) ? '180' : String(n);
+}
+
 function _formatCellValue(param, val) {
-    if (param === 'axis') return String(Math.round(val));
+    if (param === 'axis') return _normalizeAxisDisplay(val);
     if (param === 'add') return '+' + val.toFixed(2);
     return (val >= 0 ? '+' : '') + val.toFixed(2);
 }
@@ -1154,8 +1159,10 @@ async function syncBrokerState(power, occluder) {
     if (occluder === "Left_Occluded") auxLens = "AuxLensL";
     else if (occluder === "Right_Occluded") auxLens = "AuxLensR";
 
-    const rightEye = { sph: right.sph, cyl: right.cyl, axis: right.axis };
-    const leftEye = { sph: left.sph, cyl: left.cyl, axis: left.axis };
+    const rAxis = (right.axis === 0) ? 180 : (right.axis || 180);
+    const lAxis = (left.axis === 0) ? 180 : (left.axis || 180);
+    const rightEye = { sph: right.sph, cyl: right.cyl, axis: rAxis };
+    const leftEye = { sph: left.sph, cyl: left.cyl, axis: lAxis };
     if (right.add !== undefined && right.add !== 0) rightEye.add = right.add;
     if (left.add !== undefined && left.add !== 0) leftEye.add = left.add;
 
@@ -2498,7 +2505,7 @@ function updateSessionInfo(data) {
         if (rCylDoc) rCylDoc.textContent = (right.cyl >= 0 ? '+' : '') + right.cyl.toFixed(2);
 
         const rAxisDoc = document.getElementById('rt-r-axis');
-        if (rAxisDoc) rAxisDoc.textContent = right.axis.toFixed(0);
+        if (rAxisDoc) rAxisDoc.textContent = _normalizeAxisDisplay(right.axis);
 
         const lSphDoc = document.getElementById('rt-l-sph');
         if (lSphDoc) lSphDoc.textContent = (left.sph >= 0 ? '+' : '') + left.sph.toFixed(2);
@@ -2507,7 +2514,7 @@ function updateSessionInfo(data) {
         if (lCylDoc) lCylDoc.textContent = (left.cyl >= 0 ? '+' : '') + left.cyl.toFixed(2);
 
         const lAxisDoc = document.getElementById('rt-l-axis');
-        if (lAxisDoc) lAxisDoc.textContent = left.axis.toFixed(0);
+        if (lAxisDoc) lAxisDoc.textContent = _normalizeAxisDisplay(left.axis);
 
         // Show ADD column only during near vision phases
         const phaseText = (data.phase || '').toLowerCase();
@@ -2645,8 +2652,11 @@ async function setPower(power, occluder) {
         auxLens = "AuxLensR";
     }
 
-    const rightEye = { sph: right.sph, cyl: right.cyl, axis: right.axis };
-    const leftEye = { sph: left.sph, cyl: left.cyl, axis: left.axis };
+    // Axis 0° = 180°; normalize before sending to phoropter
+    const rAxis = (right.axis === 0) ? 180 : (right.axis || 180);
+    const lAxis = (left.axis === 0) ? 180 : (left.axis || 180);
+    const rightEye = { sph: right.sph, cyl: right.cyl, axis: rAxis };
+    const leftEye = { sph: left.sph, cyl: left.cyl, axis: lAxis };
     if (right.add !== undefined && right.add !== 0) rightEye.add = right.add;
     if (left.add !== undefined && left.add !== 0) leftEye.add = left.add;
 
