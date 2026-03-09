@@ -1,6 +1,6 @@
 """
-Count CSV files created today in a Supabase Storage bucket and send the count
-(with per-session phase status) to a Google Chat space via incoming webhook.
+Count CSV files created today in a Supabase Storage bucket and send a
+tabular phase-status report to a Google Chat space via incoming webhook.
 
 Required env vars:
     SUPABASE_URL, SUPABASE_SERVICE_KEY, GOOGLE_CHAT_WEBHOOK_URL
@@ -18,23 +18,25 @@ import requests
 from supabase import create_client
 
 ALL_PHASES = [
-    "distance_vision",
-    "right_eye_refraction",
-    "jcc_axis_right",
-    "jcc_power_right",
-    "duochrome_right",
-    "validation_right",
-    "left_eye_refraction",
-    "jcc_axis_left",
-    "jcc_power_left",
-    "duochrome_left",
-    "validation_left",
-    "validation_distance",
-    "binocular_balance",
-    "near_add_right",
-    "near_add_left",
-    "near_add_bino",
+    ("distance_vision", "Distance Vision"),
+    ("right_eye_refraction", "Right Eye Refraction"),
+    ("jcc_axis_right", "Jcc Axis Right"),
+    ("jcc_power_right", "Jcc Power Right"),
+    ("duochrome_right", "Duochrome Right"),
+    ("validation_right", "Validation Right"),
+    ("left_eye_refraction", "Left Eye Refraction"),
+    ("jcc_axis_left", "Jcc Axis Left"),
+    ("jcc_power_left", "Jcc Power Left"),
+    ("duochrome_left", "Duochrome Left"),
+    ("validation_left", "Validation Left"),
+    ("validation_distance", "Validation Distance"),
+    ("binocular_balance", "Binocular Balance"),
+    ("near_add_right", "Near Add Right"),
+    ("near_add_left", "Near Add Left"),
+    ("near_add_bino", "Near Add Bino"),
 ]
+
+PHASE_LABEL_WIDTH = max(len(label) for _, label in ALL_PHASES)
 
 
 def get_env(name: str, default: str | None = None, required: bool = True) -> str:
@@ -75,21 +77,39 @@ def fetch_metadata(storage, session_id: str) -> dict | None:
         return None
 
 
-def format_phase_status(metadata: dict) -> str:
-    """Build a phase-by-phase status string with ticks and crosses."""
-    completed = set(metadata.get("phases_completed", []))
-    skipped = set(metadata.get("phases_skipped", []))
+def build_table(session_ids: list[str], metadata_map: dict[str, dict]) -> str:
+    """Build a monospace text table: phases as rows, sessions as columns."""
+    col_width = max((len(sid) for sid in session_ids), default=6)
+    col_width = max(col_width, 4)
 
-    lines: list[str] = []
-    for phase in ALL_PHASES:
-        label = phase.replace("_", " ").title()
-        if phase in completed:
-            lines.append(f"    ✅ {label}")
-        elif phase in skipped:
-            lines.append(f"    ❌ {label}")
-        else:
-            lines.append(f"    ➖ {label}")
-    return "\n".join(lines)
+    header_label = "Test Step".ljust(PHASE_LABEL_WIDTH)
+    header_cols = " | ".join(sid.center(col_width) for sid in session_ids)
+    header = f"| {header_label} | {header_cols} |"
+
+    separator_label = "-" * PHASE_LABEL_WIDTH
+    separator_cols = " | ".join("-" * col_width for _ in session_ids)
+    separator = f"| {separator_label} | {separator_cols} |"
+
+    rows: list[str] = [header, separator]
+
+    for phase_id, phase_label in ALL_PHASES:
+        label = phase_label.ljust(PHASE_LABEL_WIDTH)
+        cells: list[str] = []
+        for sid in session_ids:
+            meta = metadata_map.get(sid)
+            if meta is None:
+                icon = "➖"
+            elif phase_id in set(meta.get("phases_completed", [])):
+                icon = "✅"
+            elif phase_id in set(meta.get("phases_skipped", [])):
+                icon = "❌"
+            else:
+                icon = "➖"
+            cells.append(icon.center(col_width))
+        row_cols = " | ".join(cells)
+        rows.append(f"| {label} | {row_cols} |")
+
+    return "\n".join(rows)
 
 
 def send_google_chat_message(webhook_url: str, text: str) -> None:
@@ -116,26 +136,26 @@ def main() -> None:
     count = len(csv_files)
     print(f"Found {count} CSV file(s) created today.")
 
+    session_ids = sorted(name.removesuffix(".csv") for name in csv_files)
+
+    metadata_map: dict[str, dict] = {}
+    for sid in session_ids:
+        meta = fetch_metadata(storage, sid)
+        if meta:
+            metadata_map[sid] = meta
+
     message_lines = [
         f"*Daily CSV Report — {today_str}*",
-        "─" * 30,
         f"New CSV files created today: *{count}*",
         f"Bucket: `{bucket}`",
+        "",
     ]
 
-    for name in sorted(csv_files):
-        session_id = name.removesuffix(".csv")
-        message_lines.append("")
-        message_lines.append(f"📄 *{name}*")
-
-        metadata = fetch_metadata(storage, session_id)
-        if metadata:
-            message_lines.append(format_phase_status(metadata))
-        else:
-            message_lines.append("    (metadata not found)")
-
-    if not csv_files:
-        message_lines.append("")
+    if session_ids:
+        message_lines.append("```")
+        message_lines.append(build_table(session_ids, metadata_map))
+        message_lines.append("```")
+    else:
         message_lines.append("No CSV files created today.")
 
     message = "\n".join(message_lines)
