@@ -20,7 +20,7 @@ jobs:
           python-version: "3.11"
 
       - name: Install dependencies
-        run: pip install supabase requests matplotlib
+        run: pip install supabase requests
 
       - name: Count today's CSVs and notify Google Chat
         env:
