@@ -1081,8 +1081,10 @@ async function applyManualPowerChange(eye, param, delta) {
     let newVal = current + delta;
 
     if (param === 'axis') {
-        newVal = (Math.round(newVal) % 180);
-        if (newVal <= 0) newVal += 180;
+        // Axis 0° = 180°; wrap to 1–180. When at 10 and decrease by 10 → 180, not 0.
+        newVal = Math.round(newVal);
+        newVal = ((newVal - 1) % 180 + 180) % 180 + 1;
+        if (newVal === 0) newVal = 180;
     }
 
     p[eyeKey][param] = newVal;
