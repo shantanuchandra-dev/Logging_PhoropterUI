@@ -210,6 +210,9 @@ let sessionState = {
     history: []
 };
 
+// Pinhole toggle state (Specific Optotype section)
+let pinholeActive = false;
+
 // Stored power values
 let storedPower = {
     ar: null,  // {right: {sph, cyl, axis}, left: {sph, cyl, axis}}
@@ -2203,9 +2206,10 @@ function updateOptotypeSelector(data, forceShow = false) {
             });
 
             const pinholeBtn = document.createElement('button');
+            pinholeBtn.id = 'pinholeToggleBtn';
             pinholeBtn.className = 'optotype-button pinhole-button';
-            pinholeBtn.textContent = 'Pinhole';
             pinholeBtn.onclick = () => activatePinhole();
+            _updatePinholeButtonUI(pinholeBtn);
             optotypeGrid.appendChild(pinholeBtn);
         } else {
             optotypeGrid.innerHTML = '<div style="font-size: 0.9em; color: #666; padding: 10px;">No specific optotypes for this chart</div>';
@@ -2341,37 +2345,67 @@ function updateOptotypeSelector(data) {
         });
 
         const pinholeBtn = document.createElement('button');
+        pinholeBtn.id = 'pinholeToggleBtn';
         pinholeBtn.className = 'optotype-button pinhole-button';
-        pinholeBtn.textContent = 'Pinhole';
         pinholeBtn.onclick = () => activatePinhole();
+        _updatePinholeButtonUI(pinholeBtn);
         optotypeGrid.appendChild(pinholeBtn);
     } else {
         optotypeSelector.classList.remove('active');
     }
 }
 
-// Activate pinhole on phoropter
+// Update pinhole button text and visual state
+function _updatePinholeButtonUI(btn) {
+    if (!btn) return;
+    btn.textContent = pinholeActive ? 'Remove Pinhole' : 'Pinhole';
+    btn.classList.toggle('active', pinholeActive);
+}
+
+// Toggle pinhole on phoropter (activate / remove)
 async function activatePinhole() {
     if (!sessionState.sessionId) {
         alert('No active session');
         return;
     }
+    const btn = document.getElementById('pinholeToggleBtn');
+    if (!btn) return;
+    if (btn.disabled) return;
+
+    const prevState = pinholeActive;
+    const isActivating = !pinholeActive;
+    const endpoint = isActivating ? 'pinhole' : 'occluder';
+
+    btn.disabled = true;
+    showLoading(true);
     try {
-        showLoading(true);
         if (isTestDeviceId()) {
-            addToHistory('Test mode: pinhole command skipped', 'info');
+            pinholeActive = isActivating;
+            _updatePinholeButtonUI(btn);
+            addToHistory(`Test mode: ${isActivating ? 'pinhole' : 'occluder'} command skipped`, 'info');
+            btn.disabled = false;
+            showLoading(false);
             return;
         }
-        await fetch(`${CONFIG.phoropterUrl}/phoropter/${CONFIG.phoropterId}/pinhole`, {
+        const res = await fetch(`${CONFIG.phoropterUrl}/phoropter/${CONFIG.phoropterId}/${endpoint}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({})
         });
-        addToHistory('Pinhole activated', 'info');
+        if (!res.ok) {
+            throw new Error(`API returned ${res.status}`);
+        }
+        pinholeActive = isActivating;
+        _updatePinholeButtonUI(btn);
+        addToHistory(isActivating ? 'Pinhole activated' : 'Pinhole removed', 'info');
     } catch (error) {
-        console.error('Error activating pinhole:', error);
-        alert('Failed to activate pinhole. Please try again.');
+        console.error(`Error ${isActivating ? 'activating' : 'removing'} pinhole:`, error);
+        alert(`Failed to ${isActivating ? 'activate' : 'remove'} pinhole. Please try again.`);
+        // Revert UI to previous state
+        pinholeActive = prevState;
+        _updatePinholeButtonUI(btn);
     } finally {
+        btn.disabled = false;
         showLoading(false);
         refreshScreenshotIfModalOpen();
     }
@@ -2925,6 +2959,7 @@ function startNewTest() {
     sessionState.intentsLocked = false;
     sessionState.responseCount = 0;
     sessionState.history = [];
+    pinholeActive = false;
 
     // Re-enable Start Eye Test button
     const btn = document.getElementById('startTestBtn');

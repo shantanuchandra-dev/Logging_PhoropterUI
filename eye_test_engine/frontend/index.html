@@ -631,16 +631,15 @@
             border-color: #2E7D32;
         }
 
-        .optotype-button.pinhole-button {
-            background: #fff3e0;
-            border-color: #ff9800;
-            color: #e65100;
+        .optotype-button.pinhole-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
         }
 
-        .optotype-button.pinhole-button:hover {
-            background: #ffe0b2;
-            border-color: #f57c00;
-            transform: translateY(-2px);
+        .optotype-button.pinhole-button:disabled:hover {
+            background: inherit;
+            transform: none;
         }
 
         .intents-container {
