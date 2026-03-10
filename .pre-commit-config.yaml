@@ -1,0 +1,12 @@
+# See https://pre-commit.com for more
+# Install: pre-commit install && pre-commit install --hook-type pre-push
+
+repos:
+  - repo: local
+    hooks:
+      - id: eye-test-engine-unit-tests
+        name: eye_test_engine unit tests
+        entry: python -m unittest discover -s eye_test_engine/tests -p "test_*.py" -v
+        language: system
+        pass_filenames: false
+        stages: [pre-push]
