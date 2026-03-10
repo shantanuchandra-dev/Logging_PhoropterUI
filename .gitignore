@@ -4,9 +4,21 @@ __pycache__/*
 eye_test_engine/__pycache__/*
 *.png
 .venv
-node_modules/
-dist/
+.venv/
+venv
+venv/
+env
+env/
+*debug*
+.vscode
+leadership_proposal.md
+probe_jcc_colors.py
 .env
-node_modules/
-.env
-server.log
+.DS_Store
+ai_optometrist_user_journey_uml.puml
+Drysh Flow.png
+.gitignore
+*.log
+frame_*.png
+rca_*.py
+debug*.py
