@@ -1,0 +1,67 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug Flask API Server",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "eye_test_engine.api_server",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "FLASK_APP": "eye_test_engine.api_server",
+                "FLASK_ENV": "development",
+                "FLASK_DEBUG": "0"
+            }
+        },
+        {
+            "name": "Attach to Running Flask Server",
+            "type": "debugpy",
+            "request": "attach",
+            "connect": {
+                "host": "localhost",
+                "port": 5678
+            },
+            "pathMappings": [
+                {
+                    "localRoot": "${workspaceFolder}",
+                    "remoteRoot": "."
+                }
+            ],
+            "justMyCode": false
+        },
+        {
+            "name": "Python Debugger: Current File",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "justMyCode": false
+        },
+        {
+            "name": "Debug Chrome Frontend",
+            "type": "chrome",
+            "request": "launch",
+            "url": "http://localhost:8000",
+            "webRoot": "${workspaceFolder}/eye_test_engine/frontend",
+            "sourceMaps": true,
+            "sourceMapPathOverride": {
+                "webpack:///./~/*": "${workspaceFolder}/node_modules/*",
+                "webpack:///./*": "${workspaceFolder}/*"
+            },
+            "skipFiles": ["<node_internals>/**"]
+        },
+        {
+            "name": "Debug Firefox Frontend",
+            "type": "firefox",
+            "request": "launch",
+            "url": "http://localhost:8000",
+            "webRoot": "${workspaceFolder}/eye_test_engine/frontend",
+            "pathMapping": {
+                "/": "${workspaceFolder}/eye_test_engine/frontend/",
+                "http://localhost:8000": "${workspaceFolder}/eye_test_engine/frontend/"
+            }
+        }
+    ]
+}

@@ -1,9 +1,0 @@
-Timestamp,R_SPH,R_CYL,R_AXIS,R_ADD,L_SPH,L_CYL,L_AXIS,L_ADD,PD,Chart_Number,Occluder_State,Chart_Display,OCR_Fields_Read,Anomalies_Fixed
-00:38,-2.5,-1.5,70.0,1.25,0.25,-1.25,80.0,1.25,,-1,BINO,snellen_chart_12_9_7.5,8,1
-00:40,-2.5,-1.5,70.0,1.25,0.25,-1.25,80.0,1.25,,-1,BINO,snellen_chart_12_9_7.5,8,1
-00:42,-2.5,-1.5,70.0,1.25,0.25,-1.25,80.0,1.25,,-1,BINO,snellen_chart_12_9_7.5,8,1
-01:08,,,,,,,,,,-1,Both_Occluded,,0,1
-04:04,0.0,0.0,180.0,0.0,0.0,0.0,180.0,0.0,,-1,BINO,echart_400,8,1
-06:02,0.0,0.0,180.0,0.0,0.0,0.0,180.0,0.0,,-1,BINO,snellen_chart_12_9_7_5,8,1
-06:04,0.0,0.0,180.0,0.0,0.0,0.0,180.0,0.0,,-1,BINO,snellen_chart_40_30_25_25,8,1
-06:10,,,,,,,,,,-1,Both_Occluded,,0,1

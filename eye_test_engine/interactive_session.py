@@ -2326,9 +2326,11 @@ class InteractiveSession:
         new_row.r_sph = self.current_row.r_sph
         new_row.r_cyl = self.current_row.r_cyl
         new_row.r_axis = self.current_row.r_axis
+        new_row.r_add = self.current_row.r_add
         new_row.l_sph = self.current_row.l_sph
         new_row.l_cyl = self.current_row.l_cyl
         new_row.l_axis = self.current_row.l_axis
+        new_row.l_add = self.current_row.l_add
         new_row.occluder_state = self.current_row.occluder_state
         new_row.chart_display = self.current_row.chart_display
         return new_row
@@ -2339,9 +2341,11 @@ class InteractiveSession:
         new_row.r_sph = state_dict.get('r_sph', 0.0)
         new_row.r_cyl = state_dict.get('r_cyl', 0.0)
         new_row.r_axis = state_dict.get('r_axis', 180.0)
+        new_row.r_add = state_dict.get('r_add', 0.0)
         new_row.l_sph = state_dict.get('l_sph', 0.0)
         new_row.l_cyl = state_dict.get('l_cyl', 0.0)
         new_row.l_axis = state_dict.get('l_axis', 180.0)
+        new_row.l_add = state_dict.get('l_add', 0.0)
         new_row.occluder_state = state_dict.get('occluder_state', 'BINO')
         new_row.chart_display = state_dict.get('chart_display', '')
         return new_row

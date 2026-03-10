@@ -1,6 +1,0 @@
-Timestamp,R_SPH,R_CYL,R_AXIS,R_ADD,L_SPH,L_CYL,L_AXIS,L_ADD,PD,Chart_Number,Occluder_State,Chart_Display
-00:42,-1.50,0.00,180,+1.00,-2.00,0.00,90,+1.00,,-1,BINO,duochrome
-01:42,-1.50,0.00,180,+1.00,-2.00,0.00,90,0.00,,-1,Both_Occluded,echart_400
-01:44,0.00,0.00,180,0.00,0.00,0.00,180,0.00,,-1,BINO,echart_400
-04:12,0.00,0.00,180,0.00,0.00,0.00,180,0.00,,-1,Left_Occluded,snellen_chart_12_9_7_5
-10:16,0.00,0.00,90,0.00,-0.25,0.00,85,0.00,,-1,BINO,snellen_chart_20_20_20

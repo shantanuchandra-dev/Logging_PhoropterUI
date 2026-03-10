@@ -1,8 +1,0 @@
-Timestamp,R_SPH,R_CYL,R_AXIS,R_ADD,L_SPH,L_CYL,L_AXIS,L_ADD,PD,Chart_Number,Occluder_State,Chart_Display,OCR_Fields_Read,Anomalies_Fixed
-03:34,0.0,0.0,180.0,0.0,0.0,0.0,180.0,0.0,,1,Left_Occluded,snellen_chart_12_9_7_5,8,8
-03:48,0.0,0.0,180.0,0.0,,0.0,180.0,0.0,,1,Left_Occluded,snellen_chart_12_9_7_5,7,8
-03:52,0.0,0.0,180.0,0.0,,0.0,180.0,0.0,,-1,Both_Occluded,,7,8
-03:54,0.0,0.0,180.0,0.0,,0.0,180.0,0.0,,1,Left_Occluded,snellen_chart_12_9_7_5,7,8
-03:58,0.0,0.0,180.0,0.0,0.0,0.0,180.0,0.0,,1,Left_Occluded,snellen_chart_12_9_7_5,8,8
-04:00,0.0,0.0,180.0,0.0,0.0,0.0,180.0,0.0,,1,Left_Occluded,snellen_chart_12_9_7_5,8,8
-04:02,0.0,0.0,180.0,0.0,0.0,0.0,180.0,0.0,,1,Left_Occluded,snellen_chart_12_9_7_5,8,8
