@@ -10,7 +10,11 @@ from eye_test_engine.modules.spherical import SphericalModule
 def module(thresholds):
     return SphericalModule(thresholds)
 
+<<<<<<< HEAD
 # checking unit testing 
+=======
+
+>>>>>>> c6614c2 (Adding Unit Test Folder)
 # ── analyze_sequence ─────────────────────────────────────────────────────
 
 class TestAnalyzeSequence:
