@@ -1,0 +1,43 @@
+name: Eye Test Engine - Tests & Formatting
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "eye_test_engine/**"
+      - ".github/workflows/eye-test-engine-ci.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "eye_test_engine/**"
+      - ".github/workflows/eye-test-engine-ci.yml"
+  workflow_dispatch: # allow manual trigger from Actions tab
+
+jobs:
+  test-and-format:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r eye_test_engine/requirements.txt
+
+      - name: Run unit tests (eye_test_engine)
+        run: |
+          python -m unittest discover -s eye_test_engine/tests -p "test_*.py" -v
+
+      - name: Install Black
+        run: pip install black
+
+      - name: Check code formatting (Black)
+        run: black --check eye_test_engine/
