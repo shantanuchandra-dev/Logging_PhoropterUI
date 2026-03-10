@@ -203,6 +203,33 @@
             font-size: 0.95em;
         }
 
+        /* Distinct visual identity for AR vs Lenso modal */
+        #arPowerModal .modal-header {
+            background: linear-gradient(135deg, #0d47a1 0%, #1976d2 100%);
+        }
+
+        #arPowerModal .modal {
+            border: 2px solid #90caf9;
+        }
+
+        #arPowerModal .eye-badge {
+            background: #e3f2fd;
+            color: #0d47a1;
+        }
+
+        #lensoPowerModal .modal-header {
+            background: linear-gradient(135deg, #1b5e20 0%, #43a047 100%);
+        }
+
+        #lensoPowerModal .modal {
+            border: 2px solid #a5d6a7;
+        }
+
+        #lensoPowerModal .eye-badge {
+            background: #e8f5e9;
+            color: #1b5e20;
+        }
+
         .modal-body {
             padding: 28px;
         }
@@ -1499,6 +1526,33 @@
                         <strong>Note:</strong> Make sure the phoropter API is accessible at:
                         <code>https://rajasthan-royals.preprod.lenskart.com</code>
                     </div>
+                    <div class="info-section" style="margin-top: 14px;">
+                        <h4>Customer Details (Optional)</h4>
+                        <input
+                            id="customerNameInput"
+                            type="text"
+                            placeholder="Enter customer name"
+                            maxlength="80"
+                            style="width: 100%; padding: 10px 12px; border: 1.5px solid #d7dcf5; border-radius: 8px; font: inherit; color: #222; background: #fff; margin-bottom: 10px;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                            <input
+                                id="customerAgeInput"
+                                type="number"
+                                min="18"
+                                max="120"
+                                placeholder="Age"
+                                style="width: 100%; padding: 10px 12px; border: 1.5px solid #d7dcf5; border-radius: 8px; font: inherit; color: #222; background: #fff;">
+                            <select
+                                id="customerGenderInput"
+                                style="width: 100%; padding: 10px 12px; border: 1.5px solid #d7dcf5; border-radius: 8px; font: inherit; color: #222; background: #fff;">
+                                <option value="">Gender</option>
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
+                                <option value="Other">Other</option>
+                                <option value="Prefer not to say">Prefer not to say</option>
+                            </select>
+                        </div>
+                    </div>
                     <button class="btn btn-primary" id="startTestBtn" onclick="startTest()" disabled>Connecting to backend...</button>
                 </div>
 
@@ -1566,18 +1620,37 @@
             </div>
 
             <div class="info-panel">
-                <div class="info-section">
-                    <h4>Session Status</h4>
-                    <div class="info-item">
-                        <span class="info-label">
-                            <span class="status-indicator" id="statusIndicator"></span>
-                            Status
-                        </span>
-                        <span class="info-value" id="sessionStatus">Not Started</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">Responses</span>
-                        <span class="info-value" id="responseCount">0</span>
+                <div class="info-section collapsible" id="section-session-status">
+                    <h4>
+                        Session Status
+                        <button type="button" class="section-toggle-btn" onclick="toggleSection('session-status')" aria-label="Collapse">
+                            <span class="arrow" id="sessionStatusArrow">▼</span>
+                        </button>
+                    </h4>
+                    <div class="section-body">
+                        <div class="info-item">
+                            <span class="info-label">
+                                <span class="status-indicator" id="statusIndicator"></span>
+                                Status
+                            </span>
+                            <span class="info-value" id="sessionStatus">Not Started</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Responses</span>
+                            <span class="info-value" id="responseCount">0</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Customer</span>
+                            <span class="info-value" id="customerNameStatus">-</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Age</span>
+                            <span class="info-value" id="customerAgeStatus">-</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Gender</span>
+                            <span class="info-value" id="customerGenderStatus">-</span>
+                        </div>
                     </div>
                     <!-- Hidden elements kept for JS compatibility -->
                     <span id="sessionId" style="display:none;"></span>

@@ -151,6 +151,9 @@ COMBINED_METADATA_FIELDS = [
     "Session_ID",
     "Phoropter_ID",
     "Operator_Name",
+    "Customer_Name",
+    "Customer_Age",
+    "Customer_Gender",
     "Start_Time",
     "End_Time",
     "Duration_Seconds",
@@ -199,6 +202,9 @@ def append_to_combined_metadata(metadata: dict, combined_path: Path) -> None:
         "Session_ID": metadata.get("session_id", ""),
         "Phoropter_ID": metadata.get("phoropter_id", ""),
         "Operator_Name": metadata.get("operator_name", ""),
+        "Customer_Name": metadata.get("customer_name", ""),
+        "Customer_Age": metadata.get("customer_age", ""),
+        "Customer_Gender": metadata.get("customer_gender", ""),
         "Start_Time": metadata.get("session_start_time", ""),
         "End_Time": metadata.get("session_end_time", ""),
         "Duration_Seconds": metadata.get("session_duration_seconds", ""),
@@ -255,6 +261,9 @@ def build_session_metadata(
     phases_skipped: Optional[List[str]] = None,
     duration_per_phase: Optional[Dict[str, float]] = None,
     operator_name: str = "",
+    customer_name: str = "",
+    customer_age: str = "",
+    customer_gender: str = "",
     qualitative_feedback: str = "",
 ) -> dict:
     """Build the session metadata dict from session state.
@@ -276,6 +285,9 @@ def build_session_metadata(
         phases_skipped: List of phase IDs that were skipped.
         duration_per_phase: Dict mapping phase_id to seconds spent.
         operator_name: Name of the optometrist conducting the test.
+        customer_name: Name of the customer/patient.
+        customer_age: Customer age.
+        customer_gender: Customer gender.
         qualitative_feedback: Optional free-text session feedback from optometrist.
 
     Returns:
@@ -300,6 +312,9 @@ def build_session_metadata(
         "session_id": session_id,
         "phoropter_id": phoropter_id,
         "operator_name": operator_name,
+        "customer_name": customer_name or "",
+        "customer_age": customer_age or "",
+        "customer_gender": customer_gender or "",
         "session_start_time": session_start_time.isoformat(),
         "session_end_time": session_end_time.isoformat(),
         "session_duration_seconds": round(duration, 1),

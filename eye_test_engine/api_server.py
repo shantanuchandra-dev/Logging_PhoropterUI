@@ -376,6 +376,9 @@ def end_session(session_id):
     ar = payload.get("ar", None)
     lenso = payload.get("lenso", None)
     operator_name = payload.get("operator_name", "")
+    customer_name = payload.get("customer_name", "")
+    customer_age = payload.get("customer_age", "")
+    customer_gender = payload.get("customer_gender", "")
     qualitative_feedback = payload.get("qualitative_feedback", "")
 
     # Get final prescription
@@ -401,8 +404,11 @@ def end_session(session_id):
     if store:
         # Determine all phases in the protocol to find skipped ones
         all_phase_ids = list(session.phase_names.keys())
-        phases_completed = session._phases_visited
-        phases_skipped = [p for p in all_phase_ids if p not in phases_completed]
+        visited_phase_ids = set(session._phases_visited or [])
+        history_phase_ids = {row.phase_id for row in session.session_history if row.phase_id}
+        covered_phase_ids = visited_phase_ids | history_phase_ids
+        phases_completed = [p for p in all_phase_ids if p in covered_phase_ids]
+        phases_skipped = [p for p in all_phase_ids if p not in covered_phase_ids]
 
         # Build and write session metadata + CSV
         try:
@@ -423,6 +429,9 @@ def end_session(session_id):
                 phases_skipped=phases_skipped,
                 duration_per_phase=session.get_duration_per_phase(),
                 operator_name=operator_name,
+                customer_name=customer_name,
+                customer_age=customer_age,
+                customer_gender=customer_gender,
                 qualitative_feedback=qualitative_feedback,
             )
 

@@ -224,6 +224,9 @@ let currentAppliedPower = 'none';  // 'none', 'ar', or 'lenso'
 let _configReady = false;
 
 let operatorName = '';  // cached optometrist name
+let customerName = '';
+let customerAge = '';
+let customerGender = '';
 
 // Memory state for store/restore/swap
 let memoryState = null;       // {power: {right: {...}, left: {...}}}
@@ -654,10 +657,13 @@ async function _tryRestoreSession() {
 function toggleSection(sectionId) {
     const section = sectionId === 'ar'
         ? document.getElementById('arPowerSection')
+        : sectionId === 'session-status'
+            ? document.getElementById('section-session-status')
         : document.getElementById('section-' + sectionId);
     const arrowEl = sectionId === 'history' ? document.getElementById('historyArrow')
         : sectionId === 'commands' ? document.getElementById('commandsArrow')
         : sectionId === 'ar' ? document.getElementById('arArrow')
+        : sectionId === 'session-status' ? document.getElementById('sessionStatusArrow')
         : null;
     if (!section || !arrowEl) return;
     section.classList.toggle('collapsed');
@@ -670,12 +676,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Start with Test History and Chart Commands collapsed (compact row visible)
     const sectionHistory = document.getElementById('section-history');
     const sectionCommands = document.getElementById('section-commands');
+    const sectionStatus = document.getElementById('section-session-status');
     const historyArrow = document.getElementById('historyArrow');
     const commandsArrow = document.getElementById('commandsArrow');
+    const statusArrow = document.getElementById('sessionStatusArrow');
     if (sectionHistory) sectionHistory.classList.add('collapsed');
     if (sectionCommands) sectionCommands.classList.add('collapsed');
+    if (sectionStatus) sectionStatus.classList.add('collapsed');
     if (historyArrow) historyArrow.textContent = '▶';
     if (commandsArrow) commandsArrow.textContent = '▶';
+    if (statusArrow) statusArrow.textContent = '▶';
 
     // Logs panel: hide tab if access was previously denied on this browser
     const logsTab = document.getElementById('logsTabBtn');
@@ -686,6 +696,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     await fetchConfig();
 
     updateStatusIndicator(false);
+    updateCustomerStatusPanel();
     populateDirectCommands();
     bindTableInteractions();
     checkOptometristName();
@@ -1207,6 +1218,109 @@ function openLensoPowerModal() {
     if (modal) {
         modal.classList.add('active');
     }
+}
+
+function _showStartupModalWithTimeout(openModal, closeModal, modalId, timeoutMs) {
+    return new Promise((resolve) => {
+        const modal = document.getElementById(modalId);
+        if (!modal) {
+            resolve(false);
+            return;
+        }
+
+        let settled = false;
+        const finish = (interacted) => {
+            if (settled) return;
+            settled = true;
+            clearTimeout(timer);
+            modal.removeEventListener('click', onInteract, true);
+            modal.removeEventListener('input', onInteract, true);
+            modal.removeEventListener('focusin', onInteract, true);
+            resolve(interacted);
+        };
+
+        const onInteract = (event) => {
+            if (!modal.classList.contains('active')) return;
+            if (!event || !event.target) return;
+            const target = event.target;
+            if (target.closest('input, select, textarea, button, label')) {
+                finish(true);
+            }
+        };
+
+        modal.addEventListener('click', onInteract, true);
+        modal.addEventListener('input', onInteract, true);
+        modal.addEventListener('focusin', onInteract, true);
+        openModal();
+
+        const timer = setTimeout(() => {
+            if (!settled) {
+                closeModal();
+                finish(false);
+            }
+        }, timeoutMs);
+    });
+}
+
+async function runStartupPowerModalFlow() {
+    const arInteracted = await _showStartupModalWithTimeout(
+        openArPowerModal,
+        closeArPowerModal,
+        'arPowerModal',
+        5000
+    );
+    if (arInteracted) return;
+    await _showStartupModalWithTimeout(
+        openLensoPowerModal,
+        closeLensoPowerModal,
+        'lensoPowerModal',
+        5000
+    );
+}
+
+function updateCustomerStatusPanel() {
+    const nameEl = document.getElementById('customerNameStatus');
+    const ageEl = document.getElementById('customerAgeStatus');
+    const genderEl = document.getElementById('customerGenderStatus');
+    if (nameEl) nameEl.textContent = customerName || '-';
+    if (ageEl) ageEl.textContent = customerAge || '-';
+    if (genderEl) genderEl.textContent = customerGender || '-';
+}
+
+function _setFieldValidityStyles(el, valid) {
+    if (!el) return;
+    el.style.borderColor = valid ? '#d7dcf5' : '#f44336';
+}
+
+function validateCustomerDetails() {
+    const customerInput = document.getElementById('customerNameInput');
+    const customerAgeInput = document.getElementById('customerAgeInput');
+    const customerGenderInput = document.getElementById('customerGenderInput');
+
+    const name = customerInput ? customerInput.value.trim() : '';
+    const ageRaw = customerAgeInput ? customerAgeInput.value.trim() : '';
+    const gender = customerGenderInput ? customerGenderInput.value.trim() : '';
+    const nameRegex = /^[A-Za-z][A-Za-z\s.'-]{1,59}$/;
+    const ageNum = Number(ageRaw);
+    const ageValid = /^\d{1,3}$/.test(ageRaw) && Number.isInteger(ageNum) && ageNum >= 1 && ageNum <= 120;
+    const genderAllowed = ['Male', 'Female', 'Other', 'Prefer not to say'];
+    const genderValid = genderAllowed.includes(gender);
+    const nameValid = nameRegex.test(name);
+
+    _setFieldValidityStyles(customerInput, nameValid);
+    _setFieldValidityStyles(customerAgeInput, ageValid);
+    _setFieldValidityStyles(customerGenderInput, genderValid);
+
+    if (!nameValid || !ageValid || !genderValid) {
+        const errors = [];
+        if (!nameValid) errors.push('Customer name must be 2-60 characters and contain only letters, spaces, apostrophe, dot, or hyphen.');
+        if (!ageValid) errors.push('Age must be an integer between 1 and 120.');
+        if (!genderValid) errors.push('Please select a valid gender option.');
+        alert(errors.join('\n'));
+        return null;
+    }
+
+    return { name, age: String(ageNum), gender };
 }
 
 function closeLensoPowerModal() {
@@ -1906,6 +2020,15 @@ async function startTest() {
 
     try {
         showLoading(true);
+        const customerDetails = validateCustomerDetails();
+        if (!customerDetails) {
+            if (btn) btn.disabled = false;
+            showLoading(false);
+            return;
+        }
+        customerName = customerDetails.name;
+        customerAge = customerDetails.age;
+        customerGender = customerDetails.gender;
 
         // Generate session ID
         const sessionId = 'session_' + Date.now();
@@ -1931,6 +2054,8 @@ async function startTest() {
         // Update UI
         document.getElementById('welcomeScreen').style.display = 'none';
         document.getElementById('testScreen').style.display = 'block';
+        updateCustomerStatusPanel();
+        runStartupPowerModalFlow();
 
         updateSessionInfo(data);
         displayQuestion(data);
@@ -2870,6 +2995,9 @@ async function signOff() {
                 ar: storedPower.ar || null,
                 lenso: storedPower.lenso || null,
                 operator_name: operatorName || null,
+                customer_name: customerName || null,
+                customer_age: customerAge || null,
+                customer_gender: customerGender || null,
                 qualitative_feedback: qualitativeFeedback || null
             })
         });
@@ -2959,6 +3087,16 @@ function startNewTest() {
     document.getElementById('testScreen').style.display = 'none';
     document.getElementById('welcomeScreen').style.display = 'block';
     document.getElementById('sessionStatus').textContent = 'Not Started';
+    const customerInput = document.getElementById('customerNameInput');
+    if (customerInput) customerInput.value = '';
+    const customerAgeInput = document.getElementById('customerAgeInput');
+    if (customerAgeInput) customerAgeInput.value = '';
+    const customerGenderInput = document.getElementById('customerGenderInput');
+    if (customerGenderInput) customerGenderInput.value = '';
+    customerName = '';
+    customerAge = '';
+    customerGender = '';
+    updateCustomerStatusPanel();
 
     // Reset session state for a fresh start
     sessionState.sessionId = null;
