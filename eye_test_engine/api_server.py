@@ -376,6 +376,7 @@ def end_session(session_id):
     ar = payload.get("ar", None)
     lenso = payload.get("lenso", None)
     operator_name = payload.get("operator_name", "")
+    qualitative_feedback = payload.get("qualitative_feedback", "")
 
     # Get final prescription
     if session.session_history:
@@ -422,6 +423,7 @@ def end_session(session_id):
                 phases_skipped=phases_skipped,
                 duration_per_phase=session.get_duration_per_phase(),
                 operator_name=operator_name,
+                qualitative_feedback=qualitative_feedback,
             )
 
             csv_path = SESSIONS_DIR / f"{session_id}.csv"

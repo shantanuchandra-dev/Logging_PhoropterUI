@@ -1546,6 +1546,14 @@
                         <strong>Validate prescription:</strong> Please verify that the final prescription below matches the phoropter image.
                     </div>
                     <div id="finalPrescription"></div>
+                    <div class="info-section" id="completeFeedbackSection">
+                        <h4>Additional Feedback (Optional)</h4>
+                        <textarea
+                            id="completeQualitativeFeedback"
+                            rows="4"
+                            placeholder="Any qualitative feedback about the eye test flow..."
+                            style="width: 100%; padding: 10px 12px; border: 1.5px solid #d7dcf5; border-radius: 8px; font: inherit; color: #222; background: #fff; resize: vertical;"></textarea>
+                    </div>
                     <div id="completeValidationButtons" class="complete-validation-buttons">
                         <button class="btn btn-primary" id="signOffBtn" onclick="signOff()">Sign-off</button>
                         <button class="btn btn-secondary" id="powerDoesNotMatchBtn" onclick="powerDoesNotMatch()">Power does not match</button>

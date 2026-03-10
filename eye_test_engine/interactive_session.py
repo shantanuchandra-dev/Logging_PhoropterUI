@@ -2414,6 +2414,7 @@ class InteractiveSession:
     def _transition_to_jcc_axis_right(self) -> Dict:
         """Transition to JCC axis refinement for right eye."""
         self.current_phase = "jcc_axis_right"
+        self._track_phase_entry(self.current_phase)
         print(f"\n→ Transitioning to {self.phase_names[self.current_phase]}")
 
         self._reset_jcc_choice_tracking()

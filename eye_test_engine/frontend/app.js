@@ -2769,6 +2769,8 @@ async function completeTest() {
         // Hide test screen, show complete screen
         document.getElementById('testScreen').style.display = 'none';
         document.getElementById('completeScreen').style.display = 'block';
+        const feedbackEl = document.getElementById('completeQualitativeFeedback');
+        if (feedbackEl) feedbackEl.value = '';
 
         // Reset validation UI state
         const validationBtns = document.getElementById('completeValidationButtons');
@@ -2783,7 +2785,10 @@ async function completeTest() {
             const rx = data.final_prescription;
             const rAdd = rx.right_eye.add || 0;
             const lAdd = rx.left_eye.add || 0;
-            const hasAdd = rAdd !== 0 || lAdd !== 0;
+            const formatAdd = (value) => {
+                const n = Number(value || 0);
+                return `${n >= 0 ? '+' : ''}${n.toFixed(2)}`;
+            };
             const prescriptionHtml = `
                 <div class="info-section">
                     <h4>Final Prescription</h4>
@@ -2792,8 +2797,8 @@ async function completeTest() {
                         <span class="info-value">
                             SPH: ${rx.right_eye.sph.toFixed(2)} | 
                             CYL: ${rx.right_eye.cyl.toFixed(2)} | 
-                            AXIS: ${rx.right_eye.axis.toFixed(0)}°${hasAdd ? ` | 
-                            ADD: +${rAdd.toFixed(2)}` : ''}
+                            AXIS: ${rx.right_eye.axis.toFixed(0)}° |
+                            ADD: ${formatAdd(rAdd)}
                         </span>
                     </div>
                     <div class="info-item">
@@ -2801,8 +2806,8 @@ async function completeTest() {
                         <span class="info-value">
                             SPH: ${rx.left_eye.sph.toFixed(2)} | 
                             CYL: ${rx.left_eye.cyl.toFixed(2)} | 
-                            AXIS: ${rx.left_eye.axis.toFixed(0)}°${hasAdd ? ` | 
-                            ADD: +${lAdd.toFixed(2)}` : ''}
+                            AXIS: ${rx.left_eye.axis.toFixed(0)}° |
+                            ADD: ${formatAdd(lAdd)}
                         </span>
                     </div>
                     <div class="info-item">
@@ -2855,6 +2860,8 @@ async function signOff() {
     if (powerBtn) powerBtn.disabled = true;
 
     try {
+        const feedbackEl = document.getElementById('completeQualitativeFeedback');
+        const qualitativeFeedback = feedbackEl ? String(feedbackEl.value || '').trim() : '';
         const response = await fetch(`${CONFIG.backendUrl}/api/session/${sessionState.sessionId}/end`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -2862,7 +2869,8 @@ async function signOff() {
                 store: true,
                 ar: storedPower.ar || null,
                 lenso: storedPower.lenso || null,
-                operator_name: operatorName || null
+                operator_name: operatorName || null,
+                qualitative_feedback: qualitativeFeedback || null
             })
         });
 
@@ -2946,6 +2954,8 @@ async function powerDoesNotMatch() {
 // Start new test – return to welcome screen
 function startNewTest() {
     document.getElementById('completeScreen').style.display = 'none';
+    const feedbackEl = document.getElementById('completeQualitativeFeedback');
+    if (feedbackEl) feedbackEl.value = '';
     document.getElementById('testScreen').style.display = 'none';
     document.getElementById('welcomeScreen').style.display = 'block';
     document.getElementById('sessionStatus').textContent = 'Not Started';

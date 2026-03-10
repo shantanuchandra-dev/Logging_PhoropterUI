@@ -255,6 +255,7 @@ def build_session_metadata(
     phases_skipped: Optional[List[str]] = None,
     duration_per_phase: Optional[Dict[str, float]] = None,
     operator_name: str = "",
+    qualitative_feedback: str = "",
 ) -> dict:
     """Build the session metadata dict from session state.
 
@@ -275,6 +276,7 @@ def build_session_metadata(
         phases_skipped: List of phase IDs that were skipped.
         duration_per_phase: Dict mapping phase_id to seconds spent.
         operator_name: Name of the optometrist conducting the test.
+        qualitative_feedback: Optional free-text session feedback from optometrist.
 
     Returns:
         Metadata dict ready for JSON serialization.
@@ -306,6 +308,7 @@ def build_session_metadata(
         "ar": ar or {},
         "lensometry": lensometry or {},
         "final_prescription": final_rx,
+        "qualitative_feedback": qualitative_feedback or "",
         "phases_completed": phases_completed or [],
         "phases_skipped": phases_skipped or [],
         "quality_metrics": {
