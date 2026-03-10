@@ -1,0 +1,4 @@
+*mock_*
+*test*
+__pycache__/*
+eye_test_engine/__pycache__/*

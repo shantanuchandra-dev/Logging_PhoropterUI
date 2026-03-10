@@ -5,11 +5,11 @@
   "customer_name": "Mock Eye Power User",
   "customer_age": "32",
   "customer_gender": "Male",
-  "session_start_time": "2026-03-10T14:04:35.485995",
-  "session_end_time": "2026-03-10T14:04:35.496400",
+  "session_start_time": "2026-03-10T14:18:06.942519",
+  "session_end_time": "2026-03-10T14:18:06.960013",
   "session_duration_seconds": 0.0,
   "test_completion_status": "completed",
-  "total_interactions": 5,
+  "total_interactions": 6,
   "ar": {},
   "lensometry": {},
   "final_prescription": {
@@ -49,15 +49,16 @@
   ],
   "quality_metrics": {
     "manual_adjustment_count": 1,
-    "qna_interaction_count": 4,
+    "qna_interaction_count": 5,
     "phase_jump_count": 1,
     "jcc_cycles_right": 0,
     "jcc_cycles_left": 0,
     "unable_to_read_count": 0,
     "duration_per_phase": {
-      "distance_vision": 0.005,
+      "distance_vision": 0.006,
       "near_add_right": 0.001,
-      "near_add_left": 0.001
+      "near_add_left": 0.005,
+      "near_add_bino": 0.0
     }
   }
 }

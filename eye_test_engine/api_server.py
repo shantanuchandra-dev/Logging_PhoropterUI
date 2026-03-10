@@ -338,9 +338,15 @@ def sync_power(session_id):
     if 'sph' in right: session.current_row.r_sph = float(right['sph'])
     if 'cyl' in right: session.current_row.r_cyl = float(right['cyl'])
     if 'axis' in right: session.current_row.r_axis = _norm_axis(right['axis'])
+    if 'add' in right: 
+        session.current_row.r_add = float(right['add'])
+        session.add_right = float(right['add'])
     if 'sph' in left: session.current_row.l_sph = float(left['sph'])
     if 'cyl' in left: session.current_row.l_cyl = float(left['cyl'])
     if 'axis' in left: session.current_row.l_axis = _norm_axis(left['axis'])
+    if 'add' in left: 
+        session.current_row.l_add = float(left['add'])
+        session.add_left = float(left['add'])
 
     # Record as a Manual row in session history
     delta = session._compute_change_delta("", "Manual")
