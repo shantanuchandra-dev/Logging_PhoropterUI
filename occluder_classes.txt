@@ -1,4 +1,0 @@
-0:blue_filled
-1:grey_filled
-2:grey_unfilled
-3:refine_filled
