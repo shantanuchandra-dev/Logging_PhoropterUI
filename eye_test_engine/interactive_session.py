@@ -357,8 +357,6 @@ class InteractiveSession:
         if left_eye:
             payload["test_cases"][0]["left_eye"] = left_eye
         
-
-
         # Map occluder and set JCC eye mode for non-JCC phases
         jcc_eye_mode = None
         is_jcc_phase = self.current_phase in ["jcc_axis_right", "jcc_power_right", "jcc_axis_left", "jcc_power_left"]
@@ -382,7 +380,7 @@ class InteractiveSession:
         if jcc_eye_mode and not is_jcc_phase:
             self.jcc_control(jcc_eye_mode)
             print(f"✓ JCC eye mode set: {jcc_eye_mode}")
-
+    
     def set_power_with_prev_state(self, 
                                    prev_r_sph: float, prev_r_cyl: float, prev_r_axis: float,
                                    prev_l_sph: float, prev_l_cyl: float, prev_l_axis: float,
@@ -427,7 +425,14 @@ class InteractiveSession:
         if aux_lens:
             payload["test_cases"][0]["aux_lens"] = aux_lens
 
-
+        # Update internal state
+        self.current_row.r_sph = r_sph
+        self.current_row.r_cyl = r_cyl
+        self.current_row.r_axis = r_axis
+        self.current_row.l_sph = l_sph
+        self.current_row.l_cyl = l_cyl
+        self.current_row.l_axis = l_axis
+        
         self._post_to_phoropter(self.api_endpoint, payload)
         print(f"✓ Power set with prev state: R({r_sph}/{r_cyl}/{r_axis}) L({l_sph}/{l_cyl}/{l_axis})")
         print(f"  Previous state: R({prev_r_sph}/{prev_r_cyl}/{prev_r_axis}) L({prev_l_sph}/{prev_l_cyl}/{prev_l_axis})")

@@ -117,30 +117,6 @@
             transform: translateY(-2px);
         }
 
-        .gender-btn {
-            padding: 10px 0;
-            background: #fff;
-            color: #555;
-            border: 1.5px solid #d7dcf5;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 0.95em;
-            transition: background 0.15s, color 0.15s, border-color 0.15s, transform 0.1s;
-        }
-
-        .gender-btn:hover {
-            border-color: #667eea;
-            color: #667eea;
-            transform: translateY(-1px);
-        }
-
-        .gender-btn.selected {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border-color: transparent;
-        }
-
         .compare-state-btn {
             padding: 8px 16px;
             background: #ff9800;
@@ -367,36 +343,24 @@
             gap: 20px;
             transition: grid-template-columns 0.2s ease;
         }
-
         .main-content.logs-expanded {
             grid-template-columns: 2fr 1fr minmax(320px, 1fr);
         }
-
         .logs-panel-wrapper {
             display: none;
             min-width: 0;
             overflow: hidden;
         }
-
         .main-content.logs-expanded .logs-panel-wrapper {
             display: flex;
             flex-direction: column;
             min-width: 320px;
             animation: logsSlideIn 0.2s ease;
         }
-
         @keyframes logsSlideIn {
-            from {
-                opacity: 0;
-                margin-right: -20px;
-            }
-
-            to {
-                opacity: 1;
-                margin-right: 0;
-            }
+            from { opacity: 0; margin-right: -20px; }
+            to { opacity: 1; margin-right: 0; }
         }
-
         .logs-tab {
             position: fixed;
             right: 0;
@@ -411,17 +375,15 @@
             font-weight: 600;
             border-radius: 12px 0 0 12px;
             cursor: pointer;
-            box-shadow: -2px 0 10px rgba(0, 0, 0, 0.2);
+            box-shadow: -2px 0 10px rgba(0,0,0,0.2);
             z-index: 500;
             border: 1px solid #444;
             border-right: none;
         }
-
         .logs-tab:hover {
             background: linear-gradient(135deg, #3d3d54 0%, #2e2e3e 100%);
             color: white;
         }
-
         .logs-tab.hidden {
             display: none;
         }
@@ -450,7 +412,6 @@
             min-height: 400px;
             max-height: calc(100vh - 180px);
         }
-
         .logs-panel-header {
             padding: 12px 16px;
             background: linear-gradient(135deg, #2d2d44 0%, #1e1e2e 100%);
@@ -462,7 +423,6 @@
             align-items: center;
             justify-content: space-between;
         }
-
         .logs-panel-header button {
             padding: 4px 10px;
             font-size: 0.8em;
@@ -472,17 +432,14 @@
             border-radius: 6px;
             cursor: pointer;
         }
-
         .logs-panel-header button:hover {
             background: #764ba2;
         }
-
         .logs-panel-close {
             padding: 2px 8px;
             font-size: 0.9em;
             margin-left: 8px;
         }
-
         .logs-panel-content {
             flex: 1;
             overflow: auto;
@@ -491,7 +448,6 @@
             font-size: 0.75em;
             line-height: 1.4;
         }
-
         .log-entry {
             margin-bottom: 14px;
             border-radius: 8px;
@@ -499,7 +455,6 @@
             border: 1px solid #333;
             background: #252536;
         }
-
         .log-entry-header {
             padding: 6px 10px;
             background: #333;
@@ -509,34 +464,20 @@
             align-items: center;
             gap: 8px;
         }
-
         .log-entry-method {
             font-weight: 700;
             color: #667eea;
         }
-
         .log-entry-curl {
             padding: 10px 12px;
             white-space: pre-wrap;
             word-break: break-all;
             color: #cdd6f4;
         }
-
-        .log-entry-curl .curl-url {
-            color: #a6e3a1;
-        }
-
-        .log-entry-curl .curl-method {
-            color: #f9e2af;
-        }
-
-        .log-entry-curl .curl-header {
-            color: #89b4fa;
-        }
-
-        .log-entry-curl .curl-body {
-            color: #cba6f7;
-        }
+        .log-entry-curl .curl-url { color: #a6e3a1; }
+        .log-entry-curl .curl-method { color: #f9e2af; }
+        .log-entry-curl .curl-header { color: #89b4fa; }
+        .log-entry-curl .curl-body { color: #cba6f7; }
 
         .phase-badge {
             display: inline-block;
@@ -767,7 +708,6 @@
             display: flex;
             gap: 10px;
             margin-top: 20px;
-            justify-content: flex-end;
         }
 
         .complete-validation-buttons {
@@ -981,7 +921,6 @@
             border-bottom: 1px solid #eee;
             margin-bottom: 8px;
         }
-
         .section-toggle-btn {
             display: inline-flex;
             align-items: center;
@@ -994,50 +933,41 @@
             cursor: pointer;
             color: #333;
         }
-
         .section-toggle-btn:hover {
             background: #e8ecff;
             border-color: #667eea;
         }
-
         .section-toggle-btn .arrow {
             font-size: 0.75em;
         }
-
         .info-section.collapsible .section-body {
             overflow: hidden;
         }
-
         .info-section.collapsible.collapsed .section-body {
             display: none;
         }
-
         /* History and Commands: when collapsed hide entire section (compact row shows toggles) */
         .info-section.collapsible.collapsed.collapse-hides-section {
             display: none;
         }
-
         .info-section.collapsible h4 {
             display: flex;
             align-items: center;
             justify-content: space-between;
             gap: 8px;
         }
-
         .phase-jump-inline {
             display: flex;
             align-items: center;
             gap: 6px;
             margin-left: auto;
         }
-
         .phase-jump-inline label {
             color: #666;
             font-weight: 600;
             font-size: 0.85em;
             white-space: nowrap;
         }
-
         .phase-jump-inline select {
             padding: 4px 8px;
             border: 1px solid #c5cae9;
@@ -1045,7 +975,6 @@
             font-size: 0.85em;
             min-width: 180px;
         }
-
         .phase-jump-inline button {
             padding: 4px 12px;
             font-size: 0.85em;
@@ -1056,11 +985,9 @@
             cursor: pointer;
             font-weight: 600;
         }
-
         .phase-jump-inline button:hover:not(:disabled) {
             opacity: 0.95;
         }
-
         .phase-jump-inline button:disabled {
             opacity: 0.5;
             cursor: not-allowed;
@@ -1298,7 +1225,6 @@
         #arPowerTable .rt-val {
             cursor: default;
         }
-
         #arPowerTable .rt-val::after {
             display: none;
         }
@@ -1320,7 +1246,6 @@
             box-shadow: 0 4px 14px rgba(102, 126, 234, 0.4);
             transition: transform 0.2s, box-shadow 0.2s;
         }
-
         .screenshot-view-btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
@@ -1335,11 +1260,9 @@
             pointer-events: auto;
             margin-top: 10px;
         }
-
         .screenshot-modal-backdrop.active {
             display: block;
         }
-
         .screenshot-modal {
             position: relative;
             left: auto;
@@ -1361,7 +1284,6 @@
             pointer-events: auto;
             resize: vertical;
         }
-
         .screenshot-modal-header {
             display: flex;
             align-items: center;
@@ -1376,22 +1298,19 @@
             flex-shrink: 0;
             touch-action: none;
         }
-
         .screenshot-modal-header button {
             cursor: pointer;
         }
-
         .screenshot-modal-header .screenshot-zoom-controls {
             display: flex;
             align-items: center;
             gap: 6px;
         }
-
         .screenshot-modal-header .screenshot-zoom-btn {
             width: 28px;
             height: 28px;
             border: none;
-            background: rgba(255, 255, 255, 0.25);
+            background: rgba(255,255,255,0.25);
             color: white;
             border-radius: 6px;
             font-size: 1.1em;
@@ -1400,19 +1319,16 @@
             align-items: center;
             justify-content: center;
         }
-
         .screenshot-modal-header .screenshot-zoom-btn:hover {
-            background: rgba(255, 255, 255, 0.4);
+            background: rgba(255,255,255,0.4);
         }
-
         .screenshot-modal-header .screenshot-zoom-label {
             font-size: 0.8em;
             min-width: 36px;
             text-align: center;
         }
-
         .screenshot-modal-close {
-            background: rgba(255, 255, 255, 0.2);
+            background: rgba(255,255,255,0.2);
             border: none;
             color: white;
             width: 32px;
@@ -1426,11 +1342,9 @@
             justify-content: center;
             flex-shrink: 0;
         }
-
         .screenshot-modal-close:hover {
-            background: rgba(255, 255, 255, 0.3);
+            background: rgba(255,255,255,0.3);
         }
-
         .screenshot-modal-body {
             padding: 10px;
             overflow: auto;
@@ -1441,7 +1355,6 @@
             background: #1a1a1a;
             flex: 1;
         }
-
         .screenshot-img-wrap {
             transform-origin: center center;
             display: inline-flex;
@@ -1449,7 +1362,6 @@
             justify-content: center;
             position: relative;
         }
-
         .screenshot-timestamp {
             position: absolute;
             bottom: 8px;
@@ -1462,32 +1374,26 @@
             border-radius: 4px;
             pointer-events: none;
         }
-
         .screenshot-img {
             max-width: 100%;
             max-height: calc(70vh - 130px);
             object-fit: contain;
             display: none;
         }
-
         .screenshot-img.loaded {
             display: block;
         }
-
         .screenshot-loading,
         .screenshot-error {
             color: #999;
             padding: 20px;
         }
-
         .screenshot-error {
             color: #c62828;
         }
-
         .screenshot-resize-handle {
             display: none;
         }
-
         .screenshot-history-bar {
             display: flex;
             align-items: center;
@@ -1497,7 +1403,6 @@
             border-top: 1px solid #e0e0e0;
             flex-shrink: 0;
         }
-
         .screenshot-history-bar .screenshot-nav-btn {
             padding: 6px 12px;
             font-size: 0.85em;
@@ -1507,17 +1412,14 @@
             border-radius: 6px;
             cursor: pointer;
         }
-
         .screenshot-history-bar .screenshot-nav-btn:hover:not(:disabled) {
             background: #667eea;
             color: white;
         }
-
         .screenshot-history-bar .screenshot-nav-btn:disabled {
             opacity: 0.5;
             cursor: not-allowed;
         }
-
         .screenshot-history-bar .screenshot-history-label {
             font-size: 0.9em;
             color: #333;
@@ -1528,24 +1430,20 @@
             .main-content.logs-expanded {
                 grid-template-columns: 1fr;
             }
-
             .main-content.logs-expanded .logs-panel-wrapper {
                 min-width: 0;
             }
         }
-
         @media (max-width: 768px) {
             .logs-tab {
                 padding: 10px 6px;
                 font-size: 0.8em;
             }
         }
-
         /* Password modal for logs */
         .logs-password-modal .modal {
             max-width: 360px;
         }
-
         .logs-password-modal .modal-body input[type="password"] {
             width: 100%;
             padding: 10px 12px;
@@ -1553,14 +1451,12 @@
             border: 2px solid #e0e0e0;
             border-radius: 8px;
         }
-
         .logs-password-modal .modal-body .password-error {
             color: #c62828;
             font-size: 0.9em;
             margin-top: 8px;
             display: none;
         }
-
         .logs-password-modal .modal-body .password-error.visible {
             display: block;
         }
@@ -1597,17 +1493,19 @@
                             Lenso
                         </button>
                     </div>
-                    <div
-                        style="border-left: 2px solid #ddd; padding-left: 12px; display: flex; gap: 6px; align-items: center;">
-                        <label for="phoropterIdInput"
-                            style="color: #666; font-weight: 600; font-size: 0.85em; white-space: nowrap;">Device
-                            ID:</label>
-                        <select id="phoropterIdInput" title="Phoropter device ID used in all API calls"
+                    <div style="border-left: 2px solid #ddd; padding-left: 12px; display: flex; gap: 6px; align-items: center;">
+                        <label for="phoropterIdInput" style="color: #666; font-weight: 600; font-size: 0.85em; white-space: nowrap;">Device ID:</label>
+                        <select
+                            id="phoropterIdInput"
+                            title="Phoropter device ID used in all API calls"
                             style="width: 180px; padding: 4px 8px; border: 1.5px solid #c5cae9; border-radius: 6px; font-size: 0.85em; font-family: monospace; color: #333; background: #f8f9ff; outline: none;"
                             onchange="onDeviceSelectionChanged()">
                             <option value="">Loading devices...</option>
                         </select>
-                        <button id="acquireDeviceBtn" class="btn btn-primary" onclick="acquireSelectedDevice()"
+                        <button
+                            id="acquireDeviceBtn"
+                            class="btn btn-primary"
+                            onclick="acquireSelectedDevice()"
                             style="display:none; padding: 6px 10px; font-size: 0.82em;">
                             Acquire
                         </button>
@@ -1630,31 +1528,32 @@
                     </div>
                     <div class="info-section" style="margin-top: 14px;">
                         <h4>Customer Details (Optional)</h4>
-                        <input id="customerNameInput" type="text" placeholder="Enter customer name" maxlength="80"
+                        <input
+                            id="customerNameInput"
+                            type="text"
+                            placeholder="Enter customer name"
+                            maxlength="80"
                             style="width: 100%; padding: 10px 12px; border: 1.5px solid #d7dcf5; border-radius: 8px; font: inherit; color: #222; background: #fff; margin-bottom: 10px;">
-                        <div style="display: grid; grid-template-columns: 1fr 1.5fr; gap: 15px; margin-top: 10px;">
-                            <div>
-                                <label class="modal-input-label" style="display:block; margin-bottom: 5px;">Age</label>
-                                <input id="customerAgeInput" type="number" min="18" max="120" placeholder="Age"
-                                    style="width: 100%; padding: 10px 12px; border: 1.5px solid #d7dcf5; border-radius: 8px; font: inherit; color: #222; background: #fff;">
-                            </div>
-                            <div>
-                                <label class="modal-input-label"
-                                    style="display:block; margin-bottom: 5px;">Gender</label>
-                                <div style="display: flex; gap: 6px;">
-                                    <button type="button" class="gender-btn" id="genderBtnM" data-value="Male"
-                                        onclick="selectGender('Male')" style="flex:1;">Male</button>
-                                    <button type="button" class="gender-btn" id="genderBtnF" data-value="Female"
-                                        onclick="selectGender('Female')" style="flex:1;">Female</button>
-                                    <button type="button" class="gender-btn" id="genderBtnO" data-value="Other"
-                                        onclick="selectGender('Other')" style="flex:1;">Other</button>
-                                    <input type="hidden" id="customerGenderInput" value="">
-                                </div>
-                            </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                            <input
+                                id="customerAgeInput"
+                                type="number"
+                                min="18"
+                                max="120"
+                                placeholder="Age"
+                                style="width: 100%; padding: 10px 12px; border: 1.5px solid #d7dcf5; border-radius: 8px; font: inherit; color: #222; background: #fff;">
+                            <select
+                                id="customerGenderInput"
+                                style="width: 100%; padding: 10px 12px; border: 1.5px solid #d7dcf5; border-radius: 8px; font: inherit; color: #222; background: #fff;">
+                                <option value="">Gender</option>
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
+                                <option value="Other">Other</option>
+                                <option value="Prefer not to say">Prefer not to say</option>
+                            </select>
                         </div>
                     </div>
-                    <button class="btn btn-primary" id="startTestBtn" onclick="startTest()" disabled>Connecting to
-                        backend...</button>
+                    <button class="btn btn-primary" id="startTestBtn" onclick="startTest()" disabled>Connecting to backend...</button>
                 </div>
 
                 <div id="testScreen" style="display: none;">
@@ -1698,20 +1597,20 @@
                 <div id="completeScreen" style="display: none;">
                     <h2>✅ Test Complete!</h2>
                     <div class="alert alert-info" id="completeValidationPrompt">
-                        <strong>Validate prescription:</strong> Please verify that the final prescription below matches
-                        the phoropter image.
+                        <strong>Validate prescription:</strong> Please verify that the final prescription below matches the phoropter image.
                     </div>
                     <div id="finalPrescription"></div>
                     <div class="info-section" id="completeFeedbackSection">
                         <h4>Additional Feedback (Optional)</h4>
-                        <textarea id="completeQualitativeFeedback" rows="4"
+                        <textarea
+                            id="completeQualitativeFeedback"
+                            rows="4"
                             placeholder="Any qualitative feedback about the eye test flow..."
                             style="width: 100%; padding: 10px 12px; border: 1.5px solid #d7dcf5; border-radius: 8px; font: inherit; color: #222; background: #fff; resize: vertical;"></textarea>
                     </div>
                     <div id="completeValidationButtons" class="complete-validation-buttons">
                         <button class="btn btn-primary" id="signOffBtn" onclick="signOff()">Sign-off</button>
-                        <button class="btn btn-secondary" id="powerDoesNotMatchBtn" onclick="powerDoesNotMatch()">Power
-                            does not match</button>
+                        <button class="btn btn-secondary" id="powerDoesNotMatchBtn" onclick="powerDoesNotMatch()">Power does not match</button>
                     </div>
                     <div id="completeAfterValidation" style="display: none;">
                         <div class="alert alert-success" id="completeResultMessage"></div>
@@ -1724,8 +1623,7 @@
                 <div class="info-section collapsible" id="section-session-status">
                     <h4>
                         Session Status
-                        <button type="button" class="section-toggle-btn" onclick="toggleSection('session-status')"
-                            aria-label="Collapse">
+                        <button type="button" class="section-toggle-btn" onclick="toggleSection('session-status')" aria-label="Collapse">
                             <span class="arrow" id="sessionStatusArrow">▼</span>
                         </button>
                     </h4>
@@ -1762,7 +1660,8 @@
                 <div class="info-section">
                     <h4 style="display:flex; align-items:center; gap:8px;">
                         Current Power
-                        <button id="manualLockBtn" onclick="toggleManualLock()" title="Lock/unlock click controls"
+                        <button id="manualLockBtn" onclick="toggleManualLock()"
+                            title="Lock/unlock click controls"
                             style="background:none; border:none; cursor:pointer; font-size:1.1em; padding:2px 4px; border-radius:4px; line-height:1; color:#667eea;"
                             aria-label="Toggle manual control lock">
                             🔓
@@ -1792,8 +1691,7 @@
                                 <td class="rt-val" id="rt-r-sph" data-param="sph" data-eye="R">0.00</td>
                                 <td class="rt-val" id="rt-r-cyl" data-param="cyl" data-eye="R">0.00</td>
                                 <td class="rt-val" id="rt-r-axis" data-param="axis" data-eye="R">180</td>
-                                <td class="rt-val rt-add-val" id="rt-r-add" data-param="add" data-eye="R"
-                                    style="display:none;">0.00</td>
+                                <td class="rt-val rt-add-val" id="rt-r-add" data-param="add" data-eye="R" style="display:none;">0.00</td>
                             </tr>
                             <!-- Left Eye -->
                             <tr class="rt-row" data-eye="L">
@@ -1801,8 +1699,7 @@
                                 <td class="rt-val" id="rt-l-sph" data-param="sph" data-eye="L">0.00</td>
                                 <td class="rt-val" id="rt-l-cyl" data-param="cyl" data-eye="L">0.00</td>
                                 <td class="rt-val" id="rt-l-axis" data-param="axis" data-eye="L">180</td>
-                                <td class="rt-val rt-add-val" id="rt-l-add" data-param="add" data-eye="L"
-                                    style="display:none;">0.00</td>
+                                <td class="rt-val rt-add-val" id="rt-l-add" data-param="add" data-eye="L" style="display:none;">0.00</td>
                             </tr>
                         </tbody>
                     </table>
@@ -1818,9 +1715,7 @@
                 </div>
 
                 <div class="info-section collapsible" id="arPowerSection" style="display: none;">
-                    <h4>📱 AR Power <button type="button" class="section-toggle-btn" id="arPowerToggleBtn"
-                            onclick="toggleSection('ar')" aria-label="Collapse"><span class="arrow"
-                                id="arArrow">▼</span></button></h4>
+                    <h4>📱 AR Power <button type="button" class="section-toggle-btn" id="arPowerToggleBtn" onclick="toggleSection('ar')" aria-label="Collapse"><span class="arrow" id="arArrow">▼</span></button></h4>
                     <div class="section-body">
                         <table class="refraction-table" id="arPowerTable">
                             <thead>
@@ -1851,12 +1746,10 @@
 
                 <!-- Compact row: toggles + Jump to Phase (always visible when minimized) -->
                 <div class="middle-bottom-row">
-                    <button type="button" class="section-toggle-btn" id="toggleHistoryBtn"
-                        onclick="toggleSection('history')" title="Expand/collapse Test History">
+                    <button type="button" class="section-toggle-btn" id="toggleHistoryBtn" onclick="toggleSection('history')" title="Expand/collapse Test History">
                         <span class="arrow" id="historyArrow">▼</span> Test History
                     </button>
-                    <button type="button" class="section-toggle-btn" id="toggleCommandsBtn"
-                        onclick="toggleSection('commands')" title="Expand/collapse Chart Commands">
+                    <button type="button" class="section-toggle-btn" id="toggleCommandsBtn" onclick="toggleSection('commands')" title="Expand/collapse Chart Commands">
                         <span class="arrow" id="commandsArrow">▼</span> Chart Commands
                     </button>
                     <div class="phase-jump-inline">
@@ -1886,14 +1779,11 @@
                         <div class="screenshot-modal-header" id="screenshotModalHeader">
                             <span>📷 Live phoropter screen</span>
                             <div class="screenshot-zoom-controls">
-                                <button type="button" class="screenshot-zoom-btn" id="screenshotZoomOut"
-                                    title="Zoom out">−</button>
+                                <button type="button" class="screenshot-zoom-btn" id="screenshotZoomOut" title="Zoom out">−</button>
                                 <span class="screenshot-zoom-label" id="screenshotZoomLabel">100%</span>
-                                <button type="button" class="screenshot-zoom-btn" id="screenshotZoomIn"
-                                    title="Zoom in">+</button>
+                                <button type="button" class="screenshot-zoom-btn" id="screenshotZoomIn" title="Zoom in">+</button>
                             </div>
-                            <button type="button" class="screenshot-modal-close" onclick="closeScreenshotModal()"
-                                title="Hide">✕</button>
+                            <button type="button" class="screenshot-modal-close" onclick="closeScreenshotModal()" title="Hide">✕</button>
                         </div>
                         <div class="screenshot-modal-body">
                             <div class="screenshot-img-wrap" id="screenshotImgWrap">
@@ -1901,24 +1791,19 @@
                                 <span class="screenshot-timestamp" id="screenshotTimestamp"></span>
                             </div>
                             <div id="screenshotLoading" class="screenshot-loading">Loading…</div>
-                            <div id="screenshotError" class="screenshot-error" style="display: none;">Failed to load
-                                image</div>
+                            <div id="screenshotError" class="screenshot-error" style="display: none;">Failed to load image</div>
                         </div>
                         <div class="screenshot-history-bar" id="screenshotHistoryBar">
-                            <button type="button" class="screenshot-nav-btn" id="screenshotPrevBtn"
-                                onclick="screenshotShowPrevious()" disabled>← Previous</button>
+                            <button type="button" class="screenshot-nav-btn" id="screenshotPrevBtn" onclick="screenshotShowPrevious()" disabled>← Previous</button>
                             <span class="screenshot-history-label" id="screenshotHistoryLabel">—</span>
-                            <button type="button" class="screenshot-nav-btn" id="screenshotNextBtn"
-                                onclick="screenshotShowNext()" disabled>Next →</button>
-                            <button type="button" class="screenshot-nav-btn" id="screenshotLatestBtn"
-                                onclick="screenshotShowLatest()" disabled>Latest</button>
+                            <button type="button" class="screenshot-nav-btn" id="screenshotNextBtn" onclick="screenshotShowNext()" disabled>Next →</button>
+                            <button type="button" class="screenshot-nav-btn" id="screenshotLatestBtn" onclick="screenshotShowLatest()" disabled>Latest</button>
                         </div>
                     </div>
                 </div>
 
                 <div class="info-section collapsible collapse-hides-section" id="section-history">
-                    <h4>Test History <button type="button" class="section-toggle-btn" onclick="toggleSection('history')"
-                            aria-label="Collapse">▼</button></h4>
+                    <h4>Test History <button type="button" class="section-toggle-btn" onclick="toggleSection('history')" aria-label="Collapse">▼</button></h4>
                     <div class="section-body">
                         <div id="historyLog" class="history-log">
                             <div style="color: #999; text-align: center; padding: 20px;">No events yet</div>
@@ -1927,8 +1812,7 @@
                 </div>
 
                 <div class="info-section collapsible collapse-hides-section command-section" id="section-commands">
-                    <h4>Chart Commands <button type="button" class="section-toggle-btn"
-                            onclick="toggleSection('commands')" aria-label="Collapse">▼</button></h4>
+                    <h4>Chart Commands <button type="button" class="section-toggle-btn" onclick="toggleSection('commands')" aria-label="Collapse">▼</button></h4>
                     <div class="section-body">
                         <div id="directCommands">
                             <!-- Populated by JS -->
@@ -1943,24 +1827,20 @@
                         <span>📡 Request logs (curl)</span>
                         <span>
                             <button type="button" id="clearLogsBtn" onclick="clearRequestLogs()">Clear</button>
-                            <button type="button" class="logs-panel-close" id="logsPanelCloseBtn"
-                                onclick="closeLogsPanel()" title="Minimize logs">✕</button>
+                            <button type="button" class="logs-panel-close" id="logsPanelCloseBtn" onclick="closeLogsPanel()" title="Minimize logs">✕</button>
                         </span>
                     </div>
                     <div class="logs-panel-content" id="requestLogsContent">
-                        <div class="logs-placeholder" id="requestLogsPlaceholder" style="color: #666;">No requests yet.
-                        </div>
+                        <div class="logs-placeholder" id="requestLogsPlaceholder" style="color: #666;">No requests yet.</div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <button type="button" class="logs-tab" id="logsTabBtn" onclick="requestShowLogsPanel()"
-            title="Open request logs">📡 Logs</button>
+        <button type="button" class="logs-tab" id="logsTabBtn" onclick="requestShowLogsPanel()" title="Open request logs">📡 Logs</button>
 
         <!-- Live screenshot button (bottom-left) -->
-        <button type="button" id="screenshotViewBtn" class="screenshot-view-btn" onclick="toggleScreenshotModal()"
-            title="Live phoropter screen">
+        <button type="button" id="screenshotViewBtn" class="screenshot-view-btn" onclick="toggleScreenshotModal()" title="Live phoropter screen">
             📷 Live view
         </button>
 
@@ -2013,7 +1893,6 @@
                         </div>
                     </div>
                 </div>
-
 
                 <div class="modal-actions">
                     <button class="btn btn-secondary" onclick="closeArPowerModal()">Cancel</button>
@@ -2127,8 +2006,7 @@
                 <div class="modal-section">
                     <input type="password" id="logsPasswordInput" placeholder="Password" autocomplete="off"
                         onkeydown="if(event.key==='Enter') submitLogsPassword();">
-                    <div class="password-error" id="logsPasswordError">Incorrect password. Logs access is disabled on
-                        this browser.</div>
+                    <div class="password-error" id="logsPasswordError">Incorrect password. Logs access is disabled on this browser.</div>
                 </div>
                 <div class="modal-actions">
                     <button class="btn btn-secondary" onclick="closeLogsPasswordModal()">Cancel</button>

@@ -102,13 +102,13 @@ function getLogsUnlockUntil() {
 function setLogsUnlockUntil(untilMs) {
     try {
         localStorage.setItem(LOGS_STORAGE_UNTIL, String(untilMs));
-    } catch (_) { }
+    } catch (_) {}
 }
 
 function setLogsAccessDenied() {
     try {
         localStorage.setItem(LOGS_STORAGE_DENIED, 'true');
-    } catch (_) { }
+    } catch (_) {}
 }
 
 function isLogsUnlocked() {
@@ -659,12 +659,12 @@ function toggleSection(sectionId) {
         ? document.getElementById('arPowerSection')
         : sectionId === 'session-status'
             ? document.getElementById('section-session-status')
-            : document.getElementById('section-' + sectionId);
+        : document.getElementById('section-' + sectionId);
     const arrowEl = sectionId === 'history' ? document.getElementById('historyArrow')
         : sectionId === 'commands' ? document.getElementById('commandsArrow')
-            : sectionId === 'ar' ? document.getElementById('arArrow')
-                : sectionId === 'session-status' ? document.getElementById('sessionStatusArrow')
-                    : null;
+        : sectionId === 'ar' ? document.getElementById('arArrow')
+        : sectionId === 'session-status' ? document.getElementById('sessionStatusArrow')
+        : null;
     if (!section || !arrowEl) return;
     section.classList.toggle('collapsed');
     arrowEl.textContent = section.classList.contains('collapsed') ? '▶' : '▼';
@@ -1198,7 +1198,6 @@ async function syncBrokerState(power, occluder) {
         aux_lens: auxLens
     };
 
-
     try {
         await fetch(`${CONFIG.phoropterUrl}/phoropter/${CONFIG.phoropterId}/sync-state`, {
             method: 'POST',
@@ -1215,9 +1214,6 @@ async function syncBrokerState(power, occluder) {
 function openArPowerModal() {
     const modal = document.getElementById('arPowerModal');
     if (modal) {
-        // Reset the PD field so it doesn't carry stale values
-        const pdInput = document.getElementById('arPD');
-        if (pdInput) pdInput.value = '';
         modal.classList.add('active');
     }
 }
@@ -1308,19 +1304,6 @@ function _setFieldValidityStyles(el, valid) {
     el.style.borderColor = valid ? '#d7dcf5' : '#f44336';
 }
 
-function selectGender(value) {
-    // Update hidden input (read by validateCustomerDetails)
-    const hidden = document.getElementById('customerGenderInput');
-    if (hidden) hidden.value = value;
-
-    // Toggle .selected on the three buttons
-    ['M', 'F', 'O'].forEach(id => {
-        const btn = document.getElementById('genderBtn' + id);
-        if (!btn) return;
-        btn.classList.toggle('selected', btn.dataset.value === value);
-    });
-}
-
 function validateCustomerDetails() {
     const customerInput = document.getElementById('customerNameInput');
     const customerAgeInput = document.getElementById('customerAgeInput');
@@ -1397,7 +1380,7 @@ async function fetchScreenshot() {
             try {
                 const parsed = JSON.parse(rawText);
                 base64 = parsed.image || parsed.screenshot || parsed.data || rawText;
-            } catch (_) { }
+            } catch (_) {}
         }
         base64 = base64.replace(/\s+/g, '');
         return base64 && base64.length > 50 ? base64 : null;
@@ -1574,7 +1557,7 @@ function initScreenshotModalDrag() {
     function onPointerUp(e) {
         if (!dragging) return;
         dragging = false;
-        try { header.releasePointerCapture(e.pointerId); } catch (_) { }
+        try { header.releasePointerCapture(e.pointerId); } catch (_) {}
         document.removeEventListener('pointermove', onPointerMove, true);
         document.removeEventListener('pointerup', onPointerUp, true);
         document.removeEventListener('pointercancel', onPointerUp, true);
@@ -1593,7 +1576,7 @@ function initScreenshotModalDrag() {
         modal.style.left = startLeft + 'px';
         modal.style.top = startTop + 'px';
         modal.style.transform = 'none';
-        try { header.setPointerCapture(e.pointerId); } catch (_) { }
+        try { header.setPointerCapture(e.pointerId); } catch (_) {}
         document.addEventListener('pointermove', onPointerMove, true);
         document.addEventListener('pointerup', onPointerUp, true);
         document.addEventListener('pointercancel', onPointerUp, true);
@@ -1721,7 +1704,6 @@ function saveArPower() {
         return;
     }
 
-
     // Store AR power
     storedPower.ar = {
         right: { sph: rightSph, cyl: rightCyl, axis: rightAxis },
@@ -1734,9 +1716,6 @@ function saveArPower() {
     updateArPowerDisplay();
 
     addToHistory('AR power values saved', 'info');
-
-
-
     closeArPowerModal();
 }
 
@@ -2875,7 +2854,6 @@ async function setPower(power, occluder) {
         }]
     };
 
-
     if (isTestDeviceId()) {
         addToHistory(`Test mode power update - Occluder: ${occluder}`, 'info');
         return;
@@ -3281,14 +3259,6 @@ async function jumpToPhase() {
 document.addEventListener('keydown', (e) => {
     // Block intent shortcuts while type mode input is active
     if (_typeModeEditing) return;
-
-    // Block intent shortcuts while AR or Lenso power modal is open
-    const arModal = document.getElementById('arPowerModal');
-    const lensoModal = document.getElementById('lensoPowerModal');
-    if ((arModal && arModal.classList.contains('active')) ||
-        (lensoModal && lensoModal.classList.contains('active'))) {
-        return;
-    }
 
     // Number keys 1-9 to select intents
     if (e.key >= '1' && e.key <= '9') {
