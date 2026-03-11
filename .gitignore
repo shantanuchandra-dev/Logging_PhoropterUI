@@ -2,3 +2,11 @@
 *test*
 __pycache__/*
 eye_test_engine/__pycache__/*
+*.png
+.venv
+node_modules/
+dist/
+.env
+node_modules/
+.env
+server.log
