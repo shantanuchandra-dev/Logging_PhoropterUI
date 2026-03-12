@@ -29,7 +29,6 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --upgrade pip
-          pip install -r requirements.txt
           pip install -r eye_test_engine/requirements.txt
 
       - name: Run unit tests (eye_test_engine)
