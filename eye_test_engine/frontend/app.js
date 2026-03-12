@@ -711,6 +711,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     openScreenshotModal();
 
     updateArPowerDisplay();
+
+    // 5. Block conversation only when AR or Lenso modal is active
+    const blockingModalIds = ['arPowerModal', 'lensoPowerModal'];
+    const syncModalActiveBodyClass = () => {
+        document.body.classList.toggle('modal-active', isBlockingModalActive());
+    };
+    blockingModalIds.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            const obs = new MutationObserver(syncModalActiveBodyClass);
+            obs.observe(el, { attributes: true, attributeFilter: ['class'] });
+        }
+    });
+    syncModalActiveBodyClass();
 });
 
 // ── Optometrist Name Cache (Dynamic TTL) ─────────────
@@ -1210,6 +1224,15 @@ async function syncBrokerState(power, occluder) {
 }
 
 // ── Modals & Flow ─────────────────────────────────────
+
+// Only AR and Lenso modals block the conversation (screenshot/optometrist/logs do not)
+function isBlockingModalActive() {
+    const ids = ['arPowerModal', 'lensoPowerModal'];
+    return ids.some(id => {
+        const el = document.getElementById(id);
+        return el && el.classList.contains('active');
+    });
+}
 
 function openArPowerModal() {
     const modal = document.getElementById('arPowerModal');
@@ -2111,7 +2134,7 @@ async function startTest() {
 
 // Submit Intent Response
 async function submitIntent(intent) {
-    if (sessionState.intentsLocked || _phoropterBusy) {
+    if (sessionState.intentsLocked || _phoropterBusy || isBlockingModalActive()) {
         return;
     }
     try {
@@ -3257,8 +3280,8 @@ async function jumpToPhase() {
 
 // Keyboard shortcuts
 document.addEventListener('keydown', (e) => {
-    // Block intent shortcuts while type mode input is active
-    if (_typeModeEditing) return;
+    // Block intent shortcuts while type mode input is active or any modal is open
+    if (_typeModeEditing || isBlockingModalActive()) return;
 
     // Number keys 1-9 to select intents
     if (e.key >= '1' && e.key <= '9') {
