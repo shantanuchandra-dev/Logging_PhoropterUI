@@ -221,6 +221,10 @@ let storedPower = {
 
 let currentAppliedPower = 'none';  // 'none', 'ar', or 'lenso'
 
+// PD (Pupillary Distance) in mm; defaults to 64.0 after system reset
+const PD_DEFAULT = 64;
+let currentPd = PD_DEFAULT;
+
 let _configReady = false;
 
 let operatorName = '';  // cached optometrist name
@@ -608,6 +612,8 @@ async function _tryRestoreSession() {
         sessionState.responseCount = saved.responseCount || data.total_rows || 0;
         storedPower = saved.storedPower || { ar: null, lenso: null };
         currentAppliedPower = saved.currentAppliedPower || 'none';
+        if (storedPower.ar?.pd != null) currentPd = storedPower.ar.pd;
+        updatePdDisplay();
 
         // Restore memory state
         if (saved.memoryState) {
@@ -1237,6 +1243,8 @@ function isBlockingModalActive() {
 function openArPowerModal() {
     const modal = document.getElementById('arPowerModal');
     if (modal) {
+        const pdEl = document.getElementById('arPd');
+        if (pdEl) pdEl.value = String(currentPd);
         modal.classList.add('active');
     }
 }
@@ -1711,6 +1719,11 @@ function updateArPowerDisplay() {
     section.style.display = 'block';
 }
 
+function updatePdDisplay() {
+    const el = document.getElementById('pdDisplay');
+    if (el) el.textContent = Number.isInteger(currentPd) ? `${currentPd}.0` : String(currentPd);
+}
+
 function saveArPower() {
     const rightSph = parseArValue(document.getElementById('arRightSph').value, null);
     const rightCyl = parseArValue(document.getElementById('arRightCyl').value, null);
@@ -1728,11 +1741,40 @@ function saveArPower() {
         return;
     }
 
+    // Parse PD (optional; default 64.0)
+    const pdRaw = document.getElementById('arPd')?.value?.trim();
+    const pd = pdRaw !== '' ? parseFloat(pdRaw) : PD_DEFAULT;
+    const pdValid = typeof pd === 'number' && !isNaN(pd) && pd >= 50 && pd <= 80;
+
     // Store AR power
     storedPower.ar = {
         right: { sph: rightSph, cyl: rightCyl, axis: rightAxis },
-        left: { sph: leftSph, cyl: leftCyl, axis: leftAxis }
+        left: { sph: leftSph, cyl: leftCyl, axis: leftAxis },
+        pd: pdValid ? pd : PD_DEFAULT
     };
+
+    const savedPd = storedPower.ar.pd;
+    currentPd = savedPd;
+    updatePdDisplay();
+
+    // If PD differs from default 64.0, trigger run-tests with test_pd_auto
+    if (Math.abs(savedPd - PD_DEFAULT) > 0.001 && !isTestDeviceId()) {
+        (async () => {
+            try {
+                await fetch(`${CONFIG.phoropterUrl}/phoropter/${CONFIG.phoropterId}/run-tests`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        test_cases: [{ case_id: 'test_pd_auto', pd: savedPd }]
+                    })
+                });
+                addToHistory(`PD set to ${savedPd} mm`, 'info');
+            } catch (err) {
+                console.error('Error setting PD:', err);
+                addToHistory('Warning: Could not set PD on phoropter', 'warning');
+            }
+        })();
+    }
 
     // Enable AR button and show AR section above Current Power
     document.getElementById('applyArBtn').disabled = false;
@@ -2766,7 +2808,9 @@ async function resetPhoropter() {
         });
 
         if (response.ok) {
-            addToHistory('Phoropter reset to 0/0/180', 'success');
+            currentPd = PD_DEFAULT;
+            updatePdDisplay();
+            addToHistory('Phoropter reset to 0/0/180, PD to 64.0', 'success');
         }
         refreshScreenshotIfModalOpen();
     } catch (error) {
