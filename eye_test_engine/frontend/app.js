@@ -1334,7 +1334,8 @@ function validateCustomerDetails() {
 
     const name = customerInput ? customerInput.value.trim() : '';
     const ageRaw = customerAgeInput ? customerAgeInput.value.trim() : '';
-    const gender = customerGenderInput ? customerGenderInput.value.trim() : '';
+    const genderChecked = document.querySelector('input[name="customerGender"]:checked');
+    const gender = genderChecked ? genderChecked.value : '';
     const nameRegex = /^[A-Za-z][A-Za-z\s.'-]{1,59}$/;
     const ageNum = Number(ageRaw);
     const ageValid = /^\d{1,3}$/.test(ageRaw) && Number.isInteger(ageNum) && ageNum >= 1 && ageNum <= 120;
@@ -3141,8 +3142,7 @@ function startNewTest() {
     if (customerInput) customerInput.value = '';
     const customerAgeInput = document.getElementById('customerAgeInput');
     if (customerAgeInput) customerAgeInput.value = '';
-    const customerGenderInput = document.getElementById('customerGenderInput');
-    if (customerGenderInput) customerGenderInput.value = '';
+    document.querySelectorAll('input[name="customerGender"]').forEach(r => { r.checked = false; });
     customerName = '';
     customerAge = '';
     customerGender = '';

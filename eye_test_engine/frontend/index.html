@@ -863,6 +863,19 @@
             font-family: 'Courier New', monospace;
         }
 
+        .gender-radio-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            font: inherit;
+            color: #222;
+        }
+
+        .gender-radio-label input {
+            cursor: pointer;
+        }
+
         .status-indicator {
             display: inline-block;
             width: 10px;
@@ -1542,7 +1555,7 @@
                             placeholder="Enter customer name"
                             maxlength="80"
                             style="width: 100%; padding: 10px 12px; border: 1.5px solid #d7dcf5; border-radius: 8px; font: inherit; color: #222; background: #fff; margin-bottom: 10px;">
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-items: start;">
                             <input
                                 id="customerAgeInput"
                                 type="number"
@@ -1550,15 +1563,13 @@
                                 max="120"
                                 placeholder="Age"
                                 style="width: 100%; padding: 10px 12px; border: 1.5px solid #d7dcf5; border-radius: 8px; font: inherit; color: #222; background: #fff;">
-                            <select
-                                id="customerGenderInput"
-                                style="width: 100%; padding: 10px 12px; border: 1.5px solid #d7dcf5; border-radius: 8px; font: inherit; color: #222; background: #fff;">
-                                <option value="">Gender</option>
-                                <option value="Male">Male</option>
-                                <option value="Female">Female</option>
-                                <option value="Other">Other</option>
-                                <option value="Prefer not to say">Prefer not to say</option>
-                            </select>
+                            <div id="customerGenderInput" style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; padding: 10px 12px; border: 1.5px solid #d7dcf5; border-radius: 8px; background: #fff;">
+                                <span class="gender-label" style="font-size: 0.9em; color: #666; font-weight: 500;">Gender</span>
+                                <label class="gender-radio-label"><input type="radio" name="customerGender" value="Male"> Male</label>
+                                <label class="gender-radio-label"><input type="radio" name="customerGender" value="Female"> Female</label>
+                                <label class="gender-radio-label"><input type="radio" name="customerGender" value="Other"> Other</label>
+                                <label class="gender-radio-label"><input type="radio" name="customerGender" value="Prefer not to say"> Prefer not to say</label>
+                            </div>
                         </div>
                     </div>
                     <button class="btn btn-primary" id="startTestBtn" onclick="startTest()" disabled>Connecting to backend...</button>
