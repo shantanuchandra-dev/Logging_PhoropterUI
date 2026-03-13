@@ -1,5 +1,3 @@
-*mock_*
-*test*
 __pycache__/*
 eye_test_engine/__pycache__/*
 *.png
@@ -10,3 +8,6 @@ dist/
 node_modules/
 .env
 server.log
+*.pyc
+*.json
+*.csv
