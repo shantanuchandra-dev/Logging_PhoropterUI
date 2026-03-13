@@ -1,4 +1,4 @@
-# 📡 Phoropter API Reference (Preprod)
+# Phoropter API Reference (Preprod)
 
 This document provides complete `curl` commands for controlling the TOPCON phoropter remotely via the preprod broker.
 
@@ -7,7 +7,7 @@ This document provides complete `curl` commands for controlling the TOPCON phoro
 
 ---
 
-## 🔒 Device Management (Multi-Brain)
+## Device Management (Multi-Brain)
 
 Before sending any phoropter commands, a Brain UI must **discover** available devices and **acquire** exclusive access.
 
@@ -20,27 +20,27 @@ A `brain_id` is a **unique identifier** for each Brain UI (client application) t
 3. **Keep the lock alive** via periodic heartbeats (auto-releases after 60s of silence)
 4. **Reject** other brains from taking over your device
 
-**Naming Convention:** Use any unique string — e.g. `brain_01`, `clinic_delhi_01`, `dr_sharma`.
+**Naming Convention:** Use any unique string -- e.g. `brain_01`, `clinic_delhi_01`, `dr_sharma`.
 
 **Lifecycle Flow:**
 ```
 Brain UI starts
-   │
-   ▼
-GET /devices          ← find available TOPCONs
-   │
-   ▼
-POST /acquire         ← lock device with your brain_id
-   │
-   ▼
-POST /heartbeat       ← send every 15s to keep lock alive
-   │
-   ▼
-POST /run-tests       ← send phoropter commands (only owner can)
-POST /reset           
-   │
-   ▼
-POST /release         ← done → unlock device for others
+   |
+   v
+GET /devices          <- find available TOPCONs
+   |
+   v
+POST /acquire         <- lock device with your brain_id
+   |
+   v
+POST /heartbeat       <- send every 15s to keep lock alive
+   |
+   v
+POST /run-tests       <- send phoropter commands (only owner can)
+POST /reset
+   |
+   v
+POST /release         <- done -> unlock device for others
 ```
 
 #### Complete Example (End-to-End)
@@ -134,7 +134,6 @@ curl https://rajasthan-royals.preprod.lenskart.com/events?limit=20
 
 Use this command to set the initial prescription values on the TOPCON from Auto-Refractor (AR) or Lensometer (Lenso) readings. This physically moves the phoropter to the specified values.
 
-> [!IMPORTANT]
 > **Always call `/reset` first** before preloading values to ensure the phoropter starts from a known 0/0/180 state.
 
 ```bash
@@ -218,9 +217,9 @@ curl -X POST https://rajasthan-royals.preprod.lenskart.com/phoropter/{Phoropter-
 | **prev_right_eye** / **prev_left_eye** | (Optional) Previous eye values - used as starting point for click calculations |
 
 > **Note:** `aux_lens` values are mapped to JCC commands:
-> - `"AuxLensL"` → JCC R mode (tests Right eye, occludes Left)
-> - `"AuxLensR"` → JCC L mode (tests Left eye, occludes Right)
-> - `"BINO"` → JCC BINO mode (binocular testing)
+> - `"AuxLensL"` -> JCC R mode (tests Right eye, occludes Left)
+> - `"AuxLensR"` -> JCC L mode (tests Left eye, occludes Right)
+> - `"BINO"` -> JCC BINO mode (binocular testing)
 
 ---
 
@@ -520,11 +519,11 @@ curl -X POST https://rajasthan-royals.preprod.lenskart.com/phoropter/{Phoropter-
 #### Technical Flow: How it works
 This command uses a **request-response relay** to bridge the Brain (Web) and the Agent (Windows):
 
-1. **Request (Brain → Broker)**: Brain sends a standard HTTP POST to the broker. The broker keeps this connection open (on "hold").
-2. **Relay (Broker → Agent)**: Broker sends a WebSocket message to the Windows Agent with `action: "screenshot"`.
+1. **Request (Brain -> Broker)**: Brain sends a standard HTTP POST to the broker. The broker keeps this connection open (on "hold").
+2. **Relay (Broker -> Agent)**: Broker sends a WebSocket message to the Windows Agent with `action: "screenshot"`.
 3. **Capture (Agent)**: The agent uses `pyautogui` to grab the screen, converts it to a **JPEG** (70% quality for speed), and encodes it to a **Base64 string**.
-4. **Result (Agent → Broker)**: Agent sends the string back via WebSocket.
-5. **Delivery (Broker → Brain)**: The broker returns the **raw string** directly as the response body.
+4. **Result (Agent -> Broker)**: Agent sends the string back via WebSocket.
+5. **Delivery (Broker -> Brain)**: The broker returns the **raw string** directly as the response body.
 
 **Frontend Usage (JavaScript):**
 ```javascript

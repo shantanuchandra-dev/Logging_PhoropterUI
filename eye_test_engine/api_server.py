@@ -1,22 +1,24 @@
 #!/usr/bin/env python3
-"""
-Simple Flask API server for interactive eye test sessions.
-"""
+"""Flask API server for Eye Test Engine v2."""
 import os
+import sys
 from pathlib import Path
 from typing import Optional
 
-# Load .env from the same directory as this file (or current working directory)
+# Ensure package dir is on path
+_pkg_dir = str(Path(__file__).resolve().parent)
+if _pkg_dir not in sys.path:
+    sys.path.insert(0, _pkg_dir)
+
 try:
     from dotenv import load_dotenv
     _env_path = Path(__file__).resolve().parent / ".env"
     load_dotenv(_env_path)
-    load_dotenv()  # also load from cwd
+    load_dotenv()
 except ImportError:
     pass
 
 from datetime import datetime
-
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 import json
@@ -24,14 +26,13 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
-from interactive_session import InteractiveSession
+from session_orchestrator import SessionOrchestrator
 
-# Load io/outputs.py directly to avoid clash with Python's built-in io module
+# Load io modules via importlib to avoid stdlib clash
 import importlib.util as _ilu
+
 _spec = _ilu.spec_from_file_location(
-    "io_outputs",
-    str(Path(__file__).resolve().parent / "io" / "outputs.py"),
-)
+    "io_outputs", str(Path(__file__).resolve().parent / "io" / "outputs.py"))
 _outputs = _ilu.module_from_spec(_spec)
 _spec.loader.exec_module(_outputs)
 write_session_csv = _outputs.write_session_csv
@@ -41,44 +42,49 @@ append_to_combined_metadata = _outputs.append_to_combined_metadata
 build_session_metadata = _outputs.build_session_metadata
 session_csv_string = _outputs.session_csv_string
 
-# Optional: upload session data to Supabase Storage
 _remote_spec = _ilu.spec_from_file_location(
-    "remote_storage",
-    str(Path(__file__).resolve().parent / "io" / "remote_storage.py"),
-)
+    "remote_storage", str(Path(__file__).resolve().parent / "io" / "remote_storage.py"))
 _remote = _ilu.module_from_spec(_remote_spec)
 _remote_spec.loader.exec_module(_remote)
 upload_session_remote = _remote.upload_session
 
+_dash_spec = _ilu.spec_from_file_location(
+    "dashboard_data", str(Path(__file__).resolve().parent / "io" / "dashboard_data.py"))
+_dashboard = _ilu.module_from_spec(_dash_spec)
+_dash_spec.loader.exec_module(_dashboard)
+
 app = Flask(__name__)
 CORS(app)
 
-# Global session storage (in production, use proper session management)
-sessions = {}
+sessions = {}  # session_id -> SessionOrchestrator
 
-# Allow overriding the target broker URL via environment variable
 PHOROPTER_BASE_URL = os.environ.get("PHOROPTER_BASE_URL", "https://rajasthan-royals.preprod.lenskart.com")
+CALIBRATION_PATH = str(Path(__file__).resolve().parent / "config" / "calibration.csv")
 
-# On Vercel, use /tmp (ephemeral); otherwise use local logs/
-_IS_VERCEL = bool(__import__("os").environ.get("VERCEL"))
+_IS_VERCEL = bool(os.environ.get("VERCEL"))
 LOGS_DIR = Path("/tmp/eye_test_logs") if _IS_VERCEL else Path(__file__).parent / "logs"
 SESSIONS_DIR = LOGS_DIR / "sessions"
 COMBINED_LOG_PATH = LOGS_DIR / "combined_log.csv"
 COMBINED_META_PATH = LOGS_DIR / "combined_metadata.csv"
 SESSIONS_DIR.mkdir(parents=True, exist_ok=True)
 
+# Dashboard config (in-memory, matches v1)
+_dashboard_config = {
+    "tests_enabled": True,
+    "daily_limit": None,
+    "daily_limit_scope": "global",
+    "per_phoropter_enabled": {},
+}
+
 
 def _log_api_command(action: str, payload: dict) -> None:
-    """Log incoming API commands for debugging."""
     print(f"[API] {action}: {json.dumps(payload, ensure_ascii=False)}")
 
 
 def _request_payload() -> dict:
-    """Read JSON payload for standard and beacon requests."""
     payload = request.get_json(silent=True)
     if isinstance(payload, dict):
         return payload
-
     raw = request.get_data(as_text=True) or ""
     if raw:
         try:
@@ -90,20 +96,19 @@ def _request_payload() -> dict:
     return {}
 
 
-def _proxy_request(method: str, path: str, payload: Optional[dict] = None, query: Optional[dict] = None):
-    """Forward a request to broker API and return flask response tuple."""
+def _proxy_request(method: str, path: str, payload: Optional[dict] = None, query: Optional[dict] = None, extra_headers: Optional[dict] = None):
     url = f"{PHOROPTER_BASE_URL}{path}"
     if query:
-        cleaned_query = {k: v for k, v in query.items() if v is not None and v != ""}
-        if cleaned_query:
-            url = f"{url}?{urllib.parse.urlencode(cleaned_query)}"
-
+        cleaned = {k: v for k, v in query.items() if v is not None and v != ""}
+        if cleaned:
+            url = f"{url}?{urllib.parse.urlencode(cleaned)}"
     data = None
     headers = {}
     if payload is not None:
         data = json.dumps(payload).encode("utf-8")
         headers["Content-Type"] = "application/json"
-
+    if extra_headers:
+        headers.update(extra_headers)
     req = urllib.request.Request(url=url, data=data, method=method.upper(), headers=headers)
     try:
         with urllib.request.urlopen(req, timeout=12) as resp:
@@ -129,241 +134,211 @@ def _proxy_request(method: str, path: str, payload: Optional[dict] = None, query
         return jsonify({"error": str(e)}), 502
 
 
+# ── Config ──────────────────────────────────────────
 @app.route('/api/config', methods=['GET'])
 def get_config():
-    """Return runtime configuration for the frontend."""
     backend_url = os.environ.get("BACKEND_URL", "")
-    print(f"[CONFIG] Serving config: backend_url='{backend_url}', phoropter='{PHOROPTER_BASE_URL}'")
     return jsonify({
         "backend_url": backend_url,
         "phoropter_base_url": PHOROPTER_BASE_URL
     })
 
 
+# ── Device Management ───────────────────────────────
 @app.route('/api/devices', methods=['GET'])
 def list_devices():
-    """List devices from phoropter broker."""
     include_all = request.args.get("all")
     return _proxy_request("GET", "/devices", query={"all": include_all})
 
-
 @app.route('/api/devices/<device_id>', methods=['GET'])
 def get_device(device_id):
-    """Get single device details."""
     return _proxy_request("GET", f"/devices/{device_id}")
-
 
 @app.route('/api/devices/<device_id>/acquire', methods=['POST'])
 def acquire_device(device_id):
-    """Acquire device lock for a brain."""
     payload = _request_payload()
     _log_api_command(f"/api/devices/{device_id}/acquire", payload)
     return _proxy_request("POST", f"/devices/{device_id}/acquire", payload=payload)
 
-
 @app.route('/api/devices/<device_id>/release', methods=['POST'])
 def release_device(device_id):
-    """Release device lock for a brain."""
     payload = _request_payload()
-    _log_api_command(f"/api/devices/{device_id}/release", payload)
     return _proxy_request("POST", f"/devices/{device_id}/release", payload=payload)
-
 
 @app.route('/api/devices/<device_id>/heartbeat', methods=['POST'])
 def heartbeat_device(device_id):
-    """Send heartbeat for active brain lock."""
     payload = _request_payload()
-    _log_api_command(f"/api/devices/{device_id}/heartbeat", payload)
     return _proxy_request("POST", f"/devices/{device_id}/heartbeat", payload=payload)
-
 
 @app.route('/api/brains', methods=['GET'])
 def list_brains():
-    """List active brains from broker."""
     return _proxy_request("GET", "/brains")
-
 
 @app.route('/api/events', methods=['GET'])
 def list_events():
-    """List broker events/audit logs."""
     limit = request.args.get("limit", "20")
     return _proxy_request("GET", "/events", query={"limit": limit})
 
-
 @app.route('/api/phoropter/<device_id>/sync-state', methods=['POST'])
 def sync_phoropter_state(device_id):
-    """Sync broker internal state without physical clicks."""
     payload = _request_payload()
-    _log_api_command(f"/api/phoropter/{device_id}/sync-state", payload)
     return _proxy_request("POST", f"/phoropter/{device_id}/sync-state", payload=payload)
 
+@app.route('/api/phoropter/<device_id>/reset', methods=['POST'])
+def reset_phoropter(device_id):
+    return _proxy_request("POST", f"/phoropter/{device_id}/reset")
 
-@app.route('/api/session/start', methods=['POST'])
-def start_session():
-    """Start a new eye test session."""
+@app.route('/api/phoropter/<device_id>/pinhole', methods=['POST'])
+def set_pinhole(device_id):
+    return _proxy_request("POST", f"/phoropter/{device_id}/pinhole")
+
+@app.route('/api/phoropter/<device_id>/screenshot', methods=['POST'])
+def take_screenshot(device_id):
+    # Forward x-brain-id header if present in the incoming request
+    extra_headers = {}
+    brain_id = request.headers.get('x-brain-id')
+    if brain_id:
+        extra_headers['x-brain-id'] = brain_id
+    return _proxy_request("POST", f"/phoropter/{device_id}/screenshot", extra_headers=extra_headers)
+
+
+# ── Session Management ──────────────────────────────
+@app.route('/api/session/intake', methods=['POST'])
+def session_intake():
+    """Start a new session with patient intake data."""
     payload = request.json or {}
-    _log_api_command("/api/session/start", payload)
-    session_id = payload.get('session_id', 'default')
-    phoropter_id = payload.get('phoropter_id', 'phoropter-1')
-    
-    # Create new session with the specified phoropter device ID and URL
-    session = InteractiveSession(base_url=PHOROPTER_BASE_URL, phoropter_id=phoropter_id)
+    _log_api_command("/api/session/intake", payload)
+
+    session_id = payload.get("session_id", f"session_{int(datetime.now().timestamp() * 1000)}")
+    phoropter_id = payload.get("phoropter_id", "phoropter-1")
+    patient_data = payload.get("patient", {})
+    patient_data["visit_id"] = session_id
+
+    session = SessionOrchestrator(
+        base_url=PHOROPTER_BASE_URL,
+        phoropter_id=phoropter_id,
+        calibration_path=CALIBRATION_PATH,
+    )
     sessions[session_id] = session
-    
-    # Start distance vision phase
-    state = session.start_distance_vision()
-    
+
+    try:
+        state = session.initialize(patient_data)
+    except Exception as e:
+        del sessions[session_id]
+        return jsonify({"error": f"Failed to initialize: {str(e)}"}), 400
+
     return jsonify({
         "session_id": session_id,
         "status": "started",
-        **state
+        **state,
     })
 
 
 @app.route('/api/session/<session_id>/respond', methods=['POST'])
 def respond(session_id):
-    """Process patient response and get next question."""
+    """Process patient response."""
     if session_id not in sessions:
         return jsonify({"error": "Session not found"}), 404
-    
+
     session = sessions[session_id]
     payload = request.json or {}
     _log_api_command(f"/api/session/{session_id}/respond", payload)
-    intent = payload.get('intent')
-    
-    if not intent:
-        return jsonify({"error": "Intent required"}), 400
-    
-    # Process response
-    next_state = session.process_response(intent)
-    
+    response_value = payload.get("response") or payload.get("intent", "")
+
+    if not response_value:
+        return jsonify({"error": "response required"}), 400
+
+    next_state = session.process_response(response_value)
+
     return jsonify({
         "session_id": session_id,
         "status": "active",
-        **next_state
+        **next_state,
     })
 
 
 @app.route('/api/session/<session_id>/status', methods=['GET'])
 def get_status(session_id):
-    """Get full current session state (used to restore UI after refresh)."""
+    """Get full current session state."""
     if session_id not in sessions:
         return jsonify({"error": "Session not found"}), 404
-    
     session = sessions[session_id]
     state = session._build_response()
-    
     return jsonify({
         "session_id": session_id,
         "status": "active",
         "total_rows": len(session.session_history),
-        **state
+        **state,
     })
 
 
-@app.route('/api/session/<session_id>/jump', methods=['POST'])
-def jump_to_phase(session_id):
-    """Jump directly to a specific phase."""
+@app.route('/api/session/<session_id>/derived-variables', methods=['GET'])
+def get_derived_variables(session_id):
+    """Get derived variables and working variables for debug panel."""
     if session_id not in sessions:
         return jsonify({"error": "Session not found"}), 404
-    
     session = sessions[session_id]
-    payload = request.json or {}
-    _log_api_command(f"/api/session/{session_id}/jump", payload)
-    target_phase = payload.get('phase')
-    
-    if not target_phase:
-        return jsonify({"error": "Phase required"}), 400
-    
-    # Setup the target phase
-    try:
-        # _setup_phase now returns a response dict with all necessary state
-        state = session._setup_phase(target_phase)
-        
-        return jsonify({
-            "session_id": session_id,
-            "status": "active",
-            **state
-        })
-    except Exception as e:
-        return jsonify({"error": str(e)}), 400
-
-
-@app.route('/api/session/<session_id>/switch-chart', methods=['POST'])
-def switch_chart(session_id):
-    """Switch to a different chart during refraction phase."""
-    if session_id not in sessions:
-        return jsonify({"error": "Session not found"}), 404
-    
-    session = sessions[session_id]
-    payload = request.json or {}
-    _log_api_command(f"/api/session/{session_id}/switch-chart", payload)
-    chart_index = payload.get('chart_index')
-    
-    if chart_index is None:
-        return jsonify({"error": "chart_index required"}), 400
-    
-    # Switch chart
-    try:
-        state = session.switch_chart(chart_index)
-        
-        return jsonify({
-            "session_id": session_id,
-            "status": "active",
-            **state
-        })
-    except ValueError as e:
-        return jsonify({"error": str(e)}), 400
-    except Exception as e:
-        return jsonify({"error": f"Failed to switch chart: {str(e)}"}), 500
+    return jsonify(session.get_derived_variables_display())
 
 
 @app.route('/api/session/<session_id>/sync-power', methods=['POST'])
 def sync_power(session_id):
-    """Sync manual power changes from frontend to backend session state."""
+    """Sync manual power changes."""
     if session_id not in sessions:
         return jsonify({"error": "Session not found"}), 404
-        
     session = sessions[session_id]
     payload = request.json or {}
-    _log_api_command(f"/api/session/{session_id}/sync-power", payload)
-    
-    right = payload.get('right', {})
-    left = payload.get('left', {})
-    
-    # Update internal state (current_row). Axis 0° = 180°; normalize 0 to 180.
-    def _norm_axis(v):
-        x = float(v)
-        return 180.0 if x == 0 or x == 180 else x
-    if 'sph' in right: session.current_row.r_sph = float(right['sph'])
-    if 'cyl' in right: session.current_row.r_cyl = float(right['cyl'])
-    if 'axis' in right: session.current_row.r_axis = _norm_axis(right['axis'])
-    if 'add' in right: 
-        session.current_row.r_add = float(right['add'])
-        session.add_right = float(right['add'])
-    if 'sph' in left: session.current_row.l_sph = float(left['sph'])
-    if 'cyl' in left: session.current_row.l_cyl = float(left['cyl'])
-    if 'axis' in left: session.current_row.l_axis = _norm_axis(left['axis'])
-    if 'add' in left: 
-        session.current_row.l_add = float(left['add'])
-        session.add_left = float(left['add'])
+    session.sync_power(payload.get("right", {}), payload.get("left", {}))
+    return jsonify({"session_id": session_id, "status": "success"})
 
-    # Record as a Manual row in session history
-    delta = session._compute_change_delta("", "Manual")
-    session._stamp_row(session.current_row, "Manual", delta)
-    session.session_history.append(session.current_row)
-    session.current_row = session._copy_row_state()
-    
+
+@app.route('/api/session/<session_id>/send-power', methods=['POST'])
+def send_power(session_id):
+    """Re-send phoropter commands for the current FSM row.
+
+    Used after a phoropter reset to push the session's current power
+    values to the physical device before the operator starts responding.
+
+    Because the phoropter was just reset to 0/0/180, we must reset the
+    session's prev-state tracking to zeros so that _send_phoropter_commands()
+    computes the correct deltas (from 0/0/180 → target power).
+    """
+    if session_id not in sessions:
+        return jsonify({"error": "Session not found"}), 404
+    session = sessions[session_id]
+    _log_api_command(f"/api/session/{session_id}/send-power", {})
+    target_re = None
+    target_le = None
+    phoropter_ok = False
+    if session.current_row is not None:
+        # Reset prev-state to zeros (matching the physical device after reset)
+        session._prev_re = {"sph": 0.0, "cyl": 0.0, "axis": 180.0}
+        session._prev_le = {"sph": 0.0, "cyl": 0.0, "axis": 180.0}
+        session._prev_aux_lens = "BINO"
+        session._prev_add_r = 0.0
+        session._prev_add_l = 0.0
+        row = session.current_row
+        target_re = {"sph": row.re_sph or 0.0, "cyl": row.re_cyl or 0.0, "axis": row.re_axis or 180.0}
+        target_le = {"sph": row.le_sph or 0.0, "cyl": row.le_cyl or 0.0, "axis": row.le_axis or 180.0}
+        print(f"[send-power] Sending: prev={{0,0,180}} → RE={target_re}, LE={target_le}")
+        session._send_phoropter_commands(session.current_row)
+        print(f"[send-power] Done. prev_re now={session._prev_re}, prev_le now={session._prev_le}")
+        phoropter_ok = True
+    else:
+        print(f"[send-power] WARNING: current_row is None, nothing to send")
+    state = session._build_response()
     return jsonify({
         "session_id": session_id,
-        "status": "success"
+        "status": "sent" if phoropter_ok else "no_row",
+        "target_re": target_re,
+        "target_le": target_le,
+        **state
     })
-
 
 
 @app.route('/api/session/<session_id>/end', methods=['POST'])
 def end_session(session_id):
-    """End session. If store=True (default), write CSV logs. Returns final prescription."""
+    """End session and write logs."""
     if session_id not in sessions:
         return jsonify({"error": "Session not found"}), 404
 
@@ -374,49 +349,29 @@ def end_session(session_id):
     if isinstance(store, str):
         store = store.lower() in ("true", "1", "yes")
 
-    remote_status = None  # set when Supabase upload is enabled
     session = sessions[session_id]
     session.session_end_time = datetime.now()
 
-    # AR, Lensometry, and operator name sent from frontend
-    ar = payload.get("ar", None)
-    lenso = payload.get("lenso", None)
+    ar = payload.get("ar")
+    lenso = payload.get("lenso")
     operator_name = payload.get("operator_name", "")
     customer_name = payload.get("customer_name", "")
     customer_age = payload.get("customer_age", "")
     customer_gender = payload.get("customer_gender", "")
     qualitative_feedback = payload.get("qualitative_feedback", "")
 
-    # Get final prescription
+    # Final prescription
+    final_rx = {}
     if session.session_history:
         last_row = session.session_history[-1]
         final_rx = {
-            "right_eye": {
-                "sph": last_row.r_sph,
-                "cyl": last_row.r_cyl,
-                "axis": last_row.r_axis,
-                "add": last_row.r_add,
-            },
-            "left_eye": {
-                "sph": last_row.l_sph,
-                "cyl": last_row.l_cyl,
-                "axis": last_row.l_axis,
-                "add": last_row.l_add,
-            }
+            "right_eye": {"sph": last_row.r_sph, "cyl": last_row.r_cyl, "axis": last_row.r_axis, "add": last_row.r_add},
+            "left_eye": {"sph": last_row.l_sph, "cyl": last_row.l_cyl, "axis": last_row.l_axis, "add": last_row.l_add},
         }
-    else:
-        final_rx = {}
 
+    remote_status = None
     if store:
-        # Determine all phases in the protocol to find skipped ones
-        all_phase_ids = list(session.phase_names.keys())
-        visited_phase_ids = set(session._phases_visited or [])
-        history_phase_ids = {row.phase_id for row in session.session_history if row.phase_id}
-        covered_phase_ids = visited_phase_ids | history_phase_ids
-        phases_completed = [p for p in all_phase_ids if p in covered_phase_ids]
-        phases_skipped = [p for p in all_phase_ids if p not in covered_phase_ids]
-
-        # Build and write session metadata + CSV
+        phases_completed = list(session._phases_visited)
         try:
             metadata = build_session_metadata(
                 session_id=session_id,
@@ -425,14 +380,9 @@ def end_session(session_id):
                 session_end_time=session.session_end_time,
                 completion_status="completed",
                 rows=session.session_history,
-                ar=ar,
-                lensometry=lenso,
+                ar=ar, lensometry=lenso,
                 phase_jump_count=session._phase_jump_count,
-                unable_to_read_count=session.unable_read_count,
-                jcc_cycles_right=session.jcc_cycle_count,
-                jcc_cycles_left=getattr(session, "jcc_cycle_count", 0),
                 phases_completed=phases_completed,
-                phases_skipped=phases_skipped,
                 duration_per_phase=session.get_duration_per_phase(),
                 operator_name=operator_name,
                 customer_name=customer_name,
@@ -440,97 +390,144 @@ def end_session(session_id):
                 customer_gender=customer_gender,
                 qualitative_feedback=qualitative_feedback,
             )
-
             csv_path = SESSIONS_DIR / f"{session_id}.csv"
             meta_path = SESSIONS_DIR / f"{session_id}_metadata.json"
-
             write_session_csv(session.session_history, csv_path)
             write_session_metadata(metadata, meta_path)
             append_to_combined_log(session.session_history, session_id, COMBINED_LOG_PATH)
             append_to_combined_metadata(metadata, COMBINED_META_PATH)
 
-            # Optional: upload to Supabase Storage when REMOTE_STORAGE=supabase
             if os.environ.get("REMOTE_STORAGE", "").strip().lower() == "supabase":
                 csv_content = session_csv_string(session.session_history)
                 err = upload_session_remote(session_id, csv_content, metadata)
                 if err:
-                    print(f"[REMOTE_STORAGE] Upload failed for {session_id}: {err}")
-                    remote_status = {"saved": False, "backend": os.environ.get("REMOTE_STORAGE"), "error": err}
+                    remote_status = {"saved": False, "error": err}
                 else:
-                    print(f"[REMOTE_STORAGE] Uploaded session {session_id} to {os.environ.get('REMOTE_STORAGE')}")
-                    remote_status = {"saved": True, "backend": os.environ.get("REMOTE_STORAGE")}
-
-            print(f"[LOG] Session {session_id}: CSV → {csv_path}, Meta → {meta_path}")
+                    remote_status = {"saved": True}
         except Exception as e:
-            print(f"[LOG ERROR] Failed to write session logs: {e}")
+            print(f"[LOG ERROR] {e}")
 
-    # Clean up session only when storing (or when store=True)
     if store:
         del sessions[session_id]
-    else:
-        # Keep session for later sign-off; session_end_time already set
-        pass
 
-    response_data = {
+    resp = {
         "session_id": session_id,
         "status": "ended",
         "total_rows": len(session.session_history),
-        "final_prescription": final_rx
+        "final_prescription": final_rx,
     }
-    if store and remote_status is not None:
-        response_data["remote_storage"] = remote_status
-    return jsonify(response_data)
+    if remote_status:
+        resp["remote_storage"] = remote_status
+    return jsonify(resp)
 
 
 @app.route('/api/session/<session_id>/discard', methods=['POST'])
 def discard_session(session_id):
-    """Discard session without writing CSV. Use when prescription does not match image."""
     if session_id not in sessions:
         return jsonify({"error": "Session not found"}), 404
-
-    _log_api_command(f"/api/session/{session_id}/discard", {})
     del sessions[session_id]
     return jsonify({"session_id": session_id, "status": "discarded"})
 
 
-# Serve frontend (for Vercel deployment)
-_FRONTEND_DIR = Path(__file__).parent / "frontend"
+# ── Dashboard ───────────────────────────────────────
+@app.route('/api/dashboard/config', methods=['GET'])
+def dashboard_config_get():
+    return jsonify(_dashboard_config)
 
+@app.route('/api/dashboard/config', methods=['PUT'])
+def dashboard_config_put():
+    payload = request.json or {}
+    for key in ("tests_enabled", "daily_limit", "daily_limit_scope", "per_phoropter_enabled"):
+        if key in payload:
+            _dashboard_config[key] = payload[key]
+    return jsonify(_dashboard_config)
+
+@app.route('/api/dashboard/stats', methods=['GET'])
+def dashboard_stats():
+    source = request.args.get("source", "local")
+    if source != "local":
+        return jsonify({"error": "Only local source supported in v2", "total_sessions": 0, "recent_sessions": []})
+    from_date = request.args.get("from")
+    to_date = request.args.get("to")
+    operator = request.args.get("operator")
+    phoropter = request.args.get("phoropter")
+    from datetime import date as _date
+    rows = _dashboard.load_metadata_rows(COMBINED_META_PATH)
+    fd = _date.fromisoformat(from_date) if from_date else None
+    td = _date.fromisoformat(to_date) if to_date else None
+    filtered = _dashboard.filter_rows(rows, from_date=fd, to_date=td, operator=operator, phoropter=phoropter)
+    by_day = {}
+    for r in filtered:
+        d = (r.get("Start_Time") or "")[:10]
+        if d:
+            by_day[d] = by_day.get(d, 0) + 1
+    recent = filtered[-20:]
+    recent_out = []
+    for r in recent:
+        recent_out.append({
+            "session_id": r.get("Session_ID", ""),
+            "start_time": r.get("Start_Time", ""),
+            "operator": r.get("Operator_Name", ""),
+            "phoropter": r.get("Phoropter_ID", ""),
+            "completion_status": r.get("Completion_Status", ""),
+            "duration_seconds": r.get("Duration_Seconds", ""),
+        })
+    return jsonify({
+        "total_sessions": len(filtered),
+        "active_sessions_count": len(sessions),
+        "by_day": by_day,
+        "recent_sessions": recent_out,
+    })
+
+@app.route('/api/dashboard/rr', methods=['GET'])
+def dashboard_rr():
+    rows = _dashboard.load_metadata_rows(COMBINED_META_PATH)
+    return jsonify(_dashboard.get_rr_aggregates(rows))
+
+@app.route('/api/dashboard/export', methods=['GET'])
+def dashboard_export():
+    rows = _dashboard.load_metadata_rows(COMBINED_META_PATH)
+    import io as _io
+    import csv as _csv
+    cols = _dashboard.export_metadata_columns()
+    buf = _io.StringIO()
+    w = _csv.DictWriter(buf, fieldnames=cols, extrasaction="ignore")
+    w.writeheader()
+    for r in rows:
+        w.writerow(r)
+    from flask import Response
+    return Response(buf.getvalue(), mimetype="text/csv",
+                    headers={"Content-Disposition": "attachment; filename=metadata_export.csv"})
+
+
+# ── Frontend ────────────────────────────────────────
+_FRONTEND_DIR = Path(__file__).parent / "frontend"
 
 @app.route("/")
 def serve_index():
     return send_from_directory(_FRONTEND_DIR, "index.html")
 
-
 @app.route("/<path:path>")
 def serve_frontend(path):
-    """Serve static frontend files (app.js, favicon.svg, etc.)."""
     if path.startswith("api/"):
         return jsonify({"error": "Not found"}), 404
     return send_from_directory(_FRONTEND_DIR, path)
 
 
 if __name__ == '__main__':
-    print("Starting Eye Test API Server...")
-    print("Available endpoints:")
-    print("  GET  /api/devices")
-    print("  GET  /api/devices/<id>")
-    print("  POST /api/devices/<id>/acquire")
-    print("  POST /api/devices/<id>/heartbeat")
-    print("  POST /api/devices/<id>/release")
-    print("  GET  /api/brains")
-    print("  GET  /api/events")
-    print("  POST /api/phoropter/<id>/sync-state")
-    print("  POST /api/session/start")
+    print("Starting Eye Test Engine v2 API Server...")
+    print("Endpoints:")
+    print("  POST /api/session/intake")
     print("  POST /api/session/<id>/respond")
-    print("  POST /api/session/<id>/jump")
-    print("  POST /api/session/<id>/switch-chart")
-    print("  POST /api/session/<id>/sync-power")
     print("  GET  /api/session/<id>/status")
+    print("  GET  /api/session/<id>/derived-variables")
+    print("  POST /api/session/<id>/sync-power")
     print("  POST /api/session/<id>/end")
     print("  POST /api/session/<id>/discard")
+    print("  GET  /api/devices")
+    print("  POST /api/devices/<id>/acquire|release|heartbeat")
+    print("  POST /api/phoropter/<id>/reset|pinhole|screenshot|sync-state")
     host = os.environ.get('HOST', '0.0.0.0')
     port = int(os.environ.get('PORT', 5050))
     debug = os.environ.get('FLASK_ENV') == 'development'
-    
     app.run(host=host, port=port, debug=debug)
