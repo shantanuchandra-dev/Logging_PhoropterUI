@@ -224,7 +224,7 @@ def _score_with_sentence_transformers(transcript: str, options: List[str]) -> Op
     return None
 
 
-def transcript_to_intent(transcript: str, options: List[str]) -> Optional[Tuple[str, float]]:
+def transcript_to_intent(transcript: str, options: List[str], **kwargs) -> Optional[Tuple[str, float]]:
     """
     Map transcript to the best matching option from the current session.
     Uses sentence_transformers for semantic matching when available; otherwise keyword-based scoring.

@@ -443,6 +443,61 @@
             color: #333;
         }
 
+        /* ── Voice Log (between phases and history) ──── */
+        .voice-log-title {
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: #0d47a1;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin: 0.5rem 0 0.3rem 0.2rem;
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+        #voiceLogContent {
+            max-height: 200px;
+            overflow-y: auto;
+            font-size: 0.72rem;
+            border-top: 1px solid #eee;
+            border-bottom: 1px solid #eee;
+            padding: 0.25rem 0;
+        }
+        .voice-log-entry {
+            padding: 3px 0.35rem;
+            border-bottom: 1px solid #f5f5f5;
+            line-height: 1.35;
+        }
+        .voice-log-entry:last-child { border-bottom: none; }
+        .voice-log-transcript {
+            color: #333;
+            font-style: italic;
+        }
+        .voice-log-intent {
+            display: inline-block;
+            background: #e3f2fd;
+            color: #0d47a1;
+            font-weight: 600;
+            font-size: 0.65rem;
+            padding: 1px 5px;
+            border-radius: 3px;
+            margin-left: 0.25rem;
+        }
+        .voice-log-intent.no-match {
+            background: #fff3e0;
+            color: #e65100;
+        }
+        .voice-log-time {
+            color: #bbb;
+            font-size: 0.65rem;
+        }
+        .voice-log-empty {
+            color: #ccc;
+            font-size: 0.68rem;
+            padding: 0.5rem 0.35rem;
+            font-style: italic;
+        }
+
         /* ── History (collapsed in sidebar) ─────────── */
         .history-toggle {
             font-size: 0.7rem;
@@ -763,6 +818,13 @@
         <div class="sidebar">
             <div class="sidebar-title">Progress</div>
             <div id="phaseProgress"></div>
+
+            <!-- Voice Log -->
+            <div class="voice-log-title">Voice Log</div>
+            <div id="voiceLogContent">
+                <div class="voice-log-empty">No voice input yet</div>
+            </div>
+
             <div class="sidebar-footer">
                 <div class="history-toggle" onclick="toggleHistory()">
                     <span id="historyArrow" class="arrow">&#x25B6;</span>

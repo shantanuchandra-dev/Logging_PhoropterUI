@@ -28,6 +28,9 @@ def _reduce_noise_on_file(path: str) -> bool:
     """
     if not _noisereduce_available:
         return False
+    # Only process WAV files — skip WebM, MP3, etc. to avoid scipy.io.wavfile errors
+    if not path.lower().endswith(".wav"):
+        return False
     try:
         import numpy as np
         from scipy.io import wavfile
@@ -196,8 +199,22 @@ class DeepgramNovaSTT:
         try:
             with open(path, "rb") as f:
                 audio_bytes = f.read()
+            # Determine mimetype from file extension so Deepgram can decode
+            # non-WAV formats (e.g. WebM/opus from browser MediaRecorder)
+            ext = os.path.splitext(path)[1].lower()
+            _mime_map = {
+                ".wav": "audio/wav",
+                ".webm": "audio/webm",
+                ".mp3": "audio/mpeg",
+                ".ogg": "audio/ogg",
+                ".mp4": "audio/mp4",
+                ".m4a": "audio/mp4",
+                ".flac": "audio/flac",
+            }
+            mimetype = _mime_map.get(ext, "audio/wav")
+            payload = {"buffer": audio_bytes, "mimetype": mimetype}
             response = self.client.listen.v1.media.transcribe_file(
-                request=audio_bytes,
+                request=payload,
                 model=self._model,
                 language="en",
                 smart_format=self._smart_format,

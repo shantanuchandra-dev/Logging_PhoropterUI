@@ -1370,6 +1370,7 @@ async function sendVoiceToBackend(blob) {
                 ? `Heard: "${data.transcript}". Could not match — asking again.`
                 : (data.error || 'Voice recognition failed — asking again.');
             addToHistory(msg, 'warning');
+            addToVoiceLog(data.transcript || '', data.intent || '', false);
             sessionState.intentsLocked = false;
             sessionState.voiceRetryCount = (sessionState.voiceRetryCount || 0) + 1;
             _setPhoropterBusy(false);
@@ -1385,6 +1386,7 @@ async function sendVoiceToBackend(blob) {
         sessionState.voiceRetryCount = 0;
         sessionState.responseCount++;
         addToHistory(`Voice: "${data.transcript || ''}" → ${data.intent || 'intent'}`, 'info');
+        addToVoiceLog(data.transcript || '', data.intent || 'intent', true);
 
         if (data.is_terminal) {
             if (data.terminal_state === 'ESCALATE') {
@@ -1851,6 +1853,26 @@ function updateStatusIndicator(active) {
         el.className = active ? 'active' : '';
         el.title = active ? 'Session Active' : 'No Active Session';
     }
+}
+
+function addToVoiceLog(transcript, intent, matched) {
+    const container = document.getElementById('voiceLogContent');
+    if (!container) return;
+    // Remove empty placeholder
+    const empty = container.querySelector('.voice-log-empty');
+    if (empty) empty.remove();
+
+    const entry = document.createElement('div');
+    entry.className = 'voice-log-entry';
+    const time = new Date().toLocaleTimeString(undefined, { hour12: false });
+    const intentClass = matched ? 'voice-log-intent' : 'voice-log-intent no-match';
+    const intentLabel = matched ? intent : (intent || 'no match');
+    entry.innerHTML =
+        `<span class="voice-log-time">${time}</span> ` +
+        `<span class="voice-log-transcript">"${transcript || '...'}"</span> ` +
+        `<span class="${intentClass}">${intentLabel}</span>`;
+    container.appendChild(entry);
+    container.scrollTop = container.scrollHeight;
 }
 
 function addToHistory(text, type) {
