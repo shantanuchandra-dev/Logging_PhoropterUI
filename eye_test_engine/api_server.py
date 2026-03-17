@@ -382,14 +382,38 @@ def respond_with_audio(session_id):
     if not result:
         transcript_display = transcript or "(no speech detected)"
         print(f"[API] respond-with-audio 400: could not match speech to option; transcript={transcript_display!r}, options={options}")
+        # Include chart_letters in error response for frontend voice log
+        err_chart_letters = None
+        chart_param = state.get("chart_param")
+        if chart_param:
+            try:
+                from chart_reading import CHART_LETTERS_MAP
+                letters_val = CHART_LETTERS_MAP.get(str(chart_param).strip())
+                if letters_val is not None:
+                    err_chart_letters = "".join(letters_val) if isinstance(letters_val, list) else letters_val
+            except Exception:
+                pass
         return jsonify({
             "error": "Could not match speech to an option",
             "transcript": transcript_display,
             "options": options,
+            "chart_letters": err_chart_letters,
         }), 400
 
     intent, confidence = result
     next_state = session.process_response(intent)
+
+    # Include chart_letters for chart-reading phases so frontend can show expected vs spoken
+    chart_letters = None
+    chart_param = state.get("chart_param")
+    if chart_param:
+        try:
+            from chart_reading import CHART_LETTERS_MAP
+            letters_val = CHART_LETTERS_MAP.get(str(chart_param).strip())
+            if letters_val is not None:
+                chart_letters = "".join(letters_val) if isinstance(letters_val, list) else letters_val
+        except Exception:
+            pass
 
     return jsonify({
         "session_id": session_id,
@@ -397,6 +421,7 @@ def respond_with_audio(session_id):
         "transcript": transcript,
         "intent": intent,
         "confidence": round(confidence, 2),
+        "chart_letters": chart_letters,
         **next_state,
     })
 

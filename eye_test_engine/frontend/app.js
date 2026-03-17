@@ -1376,7 +1376,7 @@ async function sendVoiceToBackend(blob) {
                 ? `Heard: "${data.transcript}". Could not match — asking again.`
                 : (data.error || 'Voice recognition failed — asking again.');
             addToHistory(msg, 'warning');
-            addToVoiceLog(data.transcript || '', data.intent || '', false);
+            addToVoiceLog(data.transcript || '', data.intent || '', false, data.chart_letters);
             sessionState.intentsLocked = false;
             sessionState.voiceRetryCount = (sessionState.voiceRetryCount || 0) + 1;
             _setPhoropterBusy(false);
@@ -1392,7 +1392,7 @@ async function sendVoiceToBackend(blob) {
         sessionState.voiceRetryCount = 0;
         sessionState.responseCount++;
         addToHistory(`Voice: "${data.transcript || ''}" → ${data.intent || 'intent'}`, 'info');
-        addToVoiceLog(data.transcript || '', data.intent || 'intent', true);
+        addToVoiceLog(data.transcript || '', data.intent || 'intent', true, data.chart_letters);
 
         if (data.is_terminal) {
             if (data.terminal_state === 'ESCALATE') {
@@ -1861,7 +1861,7 @@ function updateStatusIndicator(active) {
     }
 }
 
-function addToVoiceLog(transcript, intent, matched) {
+function addToVoiceLog(transcript, intent, matched, chartLetters) {
     const container = document.getElementById('voiceLogContent');
     if (!container) return;
     // Remove empty placeholder
@@ -1873,10 +1873,19 @@ function addToVoiceLog(transcript, intent, matched) {
     const time = new Date().toLocaleTimeString(undefined, { hour12: false });
     const intentClass = matched ? 'voice-log-intent' : 'voice-log-intent no-match';
     const intentLabel = matched ? intent : (intent || 'no match');
-    entry.innerHTML =
+    let html =
         `<span class="voice-log-time">${time}</span> ` +
         `<span class="voice-log-transcript">"${transcript || '...'}"</span> ` +
         `<span class="${intentClass}">${intentLabel}</span>`;
+    // Show chart reading details: expected vs spoken letters
+    if (chartLetters) {
+        const spoken = (transcript || '').replace(/[^a-zA-Z]/g, '').toUpperCase();
+        html += `<div class="voice-log-chart">` +
+            `<span class="voice-log-chart-label">Expected:</span> <span class="voice-log-chart-expected">${chartLetters}</span>` +
+            ` <span class="voice-log-chart-label">Spoken:</span> <span class="voice-log-chart-spoken">${spoken || '—'}</span>` +
+            `</div>`;
+    }
+    entry.innerHTML = html;
     container.appendChild(entry);
     container.scrollTop = container.scrollHeight;
 }

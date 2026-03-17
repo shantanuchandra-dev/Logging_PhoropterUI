@@ -209,11 +209,46 @@ def _score_with_sentence_transformers(transcript: str, options: List[str]) -> Op
 def transcript_to_intent(transcript: str, options: List[str], **kwargs) -> Optional[Tuple[str, float]]:
     """
     Map transcript to the best matching option from the current session.
-    Uses sentence_transformers for semantic matching when available; otherwise keyword-based scoring.
+    For chart-reading phases (Distance Baseline, Coarse Sphere RE/LE), uses
+    ChartReadingDetector to compare spoken letters against expected chart letters.
+    For other phases, uses sentence_transformers for semantic matching when available;
+    otherwise keyword-based scoring.
     Returns (matched_option_string, confidence) or None if no good match.
     """
     if not transcript or not options:
         return None
+
+    phase_name = kwargs.get("phase_name", "")
+    chart_param = kwargs.get("chart_param", "")
+
+    # Chart-reading phases: use ChartReadingDetector when chart_param is available
+    _CHART_READING_PHASES = [
+        "distance baseline", "coarse sphere", "spherical refinement", "distance vision",
+    ]
+    is_chart_phase = phase_name and any(
+        p in phase_name.lower() for p in _CHART_READING_PHASES
+    )
+
+    if is_chart_phase and chart_param:
+        try:
+            from chart_reading import ChartReadingDetector, CHART_LETTERS_MAP
+            letters_val = CHART_LETTERS_MAP.get(str(chart_param).strip())
+            if letters_val is not None:
+                chart_letters = "".join(letters_val) if isinstance(letters_val, list) else letters_val
+                detector = ChartReadingDetector()
+                intent = detector.get_chart_intend(options, transcript, chart_letters)
+                if intent and intent in options:
+                    print(f"[INTENT] chart reading: transcript={transcript!r}, chart_letters={chart_letters!r}, intent={intent}")
+                    return (intent, 1.0)
+                elif intent:
+                    # Intent mapped but not in options — find closest option match
+                    for opt in options:
+                        if opt.upper() == intent.upper():
+                            print(f"[INTENT] chart reading: transcript={transcript!r}, chart_letters={chart_letters!r}, intent={opt}")
+                            return (opt, 1.0)
+        except Exception as e:
+            print(f"[INTENT] chart reading fallback to keyword matching: {e}")
+
     # Fix common STT mishearings
     transcript = re.sub(r"\bbloody\b", "blurry", transcript, flags=re.IGNORECASE)
     transcript = re.sub(r"\bdo\b", "two", transcript, flags=re.IGNORECASE)
