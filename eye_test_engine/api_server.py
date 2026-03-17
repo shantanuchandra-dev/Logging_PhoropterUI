@@ -18,8 +18,11 @@ try:
 except ImportError:
     pass
 
+import asyncio
+import base64
+import tempfile
 from datetime import datetime
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify, send_from_directory, Response
 from flask_cors import CORS
 import json
 import urllib.error
@@ -27,6 +30,7 @@ import urllib.parse
 import urllib.request
 
 from session_orchestrator import SessionOrchestrator
+from audio_intent import audio_to_transcript, transcript_to_intent, speech_to_text_available
 
 # Load io modules via importlib to avoid stdlib clash
 import importlib.util as _ilu
@@ -144,6 +148,49 @@ def get_config():
     })
 
 
+# ── Text-to-speech (edge-tts) ────────────────────────
+def _tts_generate_sync(text: str, voice: str = "en-US-JennyNeural"):
+    """Generate TTS audio bytes using edge-tts (runs async in loop)."""
+    try:
+        import edge_tts
+    except ImportError:
+        return None
+
+    async def _run():
+        communicate = edge_tts.Communicate(text, voice)
+        fd, path = tempfile.mkstemp(suffix=".mp3")
+        try:
+            os.close(fd)
+            await communicate.save(path)
+            with open(path, "rb") as f:
+                return f.read()
+        finally:
+            try:
+                os.unlink(path)
+            except Exception:
+                pass
+
+    try:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        return loop.run_until_complete(_run())
+    except Exception:
+        return None
+
+
+@app.route('/api/tts', methods=['GET'])
+def tts():
+    """Return TTS audio (MP3) for the given text. Query params: text, voice (optional)."""
+    text = request.args.get("text", "").strip()
+    if not text:
+        return jsonify({"error": "Missing 'text' query parameter"}), 400
+    voice = request.args.get("voice", "en-US-JennyNeural")
+    audio_bytes = _tts_generate_sync(text, voice)
+    if audio_bytes is None:
+        return jsonify({"error": "TTS failed (install edge-tts?)"}), 503
+    return Response(audio_bytes, mimetype="audio/mpeg")
+
+
 # ── Device Management ───────────────────────────────
 @app.route('/api/devices', methods=['GET'])
 def list_devices():
@@ -257,28 +304,83 @@ def respond(session_id):
     })
 
 
-@app.route('/api/session/<session_id>/jump', methods=['POST'])
-def jump_to_phase(session_id):
-    """Jump to a specific FSM phase."""
+@app.route('/api/session/<session_id>/respond-with-audio', methods=['POST'])
+def respond_with_audio(session_id):
+    """Process patient response from spoken audio: STT then map transcript to current intents."""
     if session_id not in sessions:
         return jsonify({"error": "Session not found"}), 404
 
     session = sessions[session_id]
-    payload = request.json or {}
-    _log_api_command(f"/api/session/{session_id}/jump", payload)
-    target_state = payload.get("state", "")
+    state = session._build_response()
+    if state.get("error"):
+        msg = state["error"]
+        print(f"[API] respond-with-audio 400: session state error: {msg}")
+        return jsonify({"error": msg}), 400
 
-    if not target_state:
-        return jsonify({"error": "state required"}), 400
+    options = state.get("options") or []
+    if not options:
+        print("[API] respond-with-audio 400: no response options for current state")
+        return jsonify({"error": "No response options for current state"}), 400
 
-    result = session.jump_to_phase(target_state)
-    if "error" in result:
-        return jsonify(result), 400
+    # Get audio: multipart file or JSON base64 (audio is NOT saved to disk here; only in-memory)
+    audio_data = None
+    content_type = "audio/wav"
+    if request.files and "audio" in request.files:
+        f = request.files["audio"]
+        audio_data = f.read()
+        content_type = f.content_type or "audio/wav"
+        print(f"[API] respond-with-audio: received multipart 'audio', {len(audio_data) if audio_data else 0} bytes, content_type={content_type}")
+    elif request.is_json and request.json:
+        b64 = request.json.get("audio_base64")
+        if b64:
+            try:
+                audio_data = base64.b64decode(b64)
+            except Exception as e:
+                print(f"[API] respond-with-audio 400: invalid audio_base64: {e}")
+                return jsonify({"error": f"Invalid audio_base64: {e}"}), 400
+            content_type = request.json.get("audio_content_type", "audio/wav")
+            print(f"[API] respond-with-audio: received JSON audio_base64, {len(audio_data)} bytes")
+    else:
+        # Log why we didn't get audio (helps debug "audio not received")
+        print(f"[API] respond-with-audio: no audio source — request.content_type={request.content_type!r}, request.files keys={list(request.files.keys()) if request.files else []}, is_json={request.is_json}")
+
+    if not audio_data:
+        print("[API] respond-with-audio 400: missing audio (multipart 'audio' or JSON 'audio_base64')")
+        return jsonify({"error": "audio required (multipart 'audio' or JSON 'audio_base64')"}), 400
+
+    if not speech_to_text_available():
+        return jsonify({
+            "error": "Speech-to-text not available. Install speech_models dependencies (e.g. whisper, openai, deepgram-sdk) and pydub",
+            "options": options,
+        }), 503
+
+    _log_api_command(f"/api/session/{session_id}/respond-with-audio", {"options": options})
+
+    try:
+        transcript = audio_to_transcript(audio_data, content_type)
+    except Exception as e:
+        return jsonify({"error": f"Speech recognition failed: {e}", "options": options}), 500
+    result = transcript_to_intent(transcript, options) if transcript else None
+
+    if not result:
+        transcript_display = transcript or "(no speech detected)"
+        print(f"[API] respond-with-audio 400: could not match speech to option; transcript={transcript_display!r}, options={options}")
+        return jsonify({
+            "error": "Could not match speech to an option",
+            "transcript": transcript_display,
+            "options": options,
+        }), 400
+
+    intent, confidence = result
+    next_state = session.process_response(intent)
 
     return jsonify({
         "session_id": session_id,
         "status": "active",
-        **result,
+        "transcript": transcript,
+        "intent": intent,
+        "confidence": round(confidence, 2),
+        **next_state,
     })
 
 

@@ -238,6 +238,7 @@ let sessionState = {
     currentChart: null,
     intentsLocked: false,
     responseCount: 0,
+    voiceRetryCount: 0,
     history: [],
     lastResponse: null,
 };
@@ -498,6 +499,7 @@ async function _tryRestoreSession() {
         const data = await statusResp.json();
         sessionState.sessionId = saved.sessionId;
         sessionState.responseCount = saved.responseCount || data.total_rows || 0;
+        sessionState.voiceRetryCount = 0;
 
         // Restore patient name in top bar
         const patientName = localStorage.getItem('patientName');
@@ -943,6 +945,7 @@ async function checkIntakeRedirect() {
     const sid = params.get('session');
     if (sid) {
         sessionState.sessionId = sid;
+        sessionState.voiceRetryCount = 0;
 
         // Show patient name in top bar if available
         const patientName = localStorage.getItem('patientName');
@@ -1087,6 +1090,8 @@ async function submitResponse(responseValue) {
         if (!response.ok) throw new Error('Failed to submit response');
         const data = await response.json();
 
+        sessionState.voiceRetryCount = 0;
+
         // Check terminal states
         if (data.is_terminal) {
             if (data.terminal_state === 'ESCALATE') {
@@ -1096,6 +1101,10 @@ async function submitResponse(responseValue) {
             }
             return;
         }
+
+        // Clear busy state before showing next question so speakQuestion + startListeningForAnswer run
+        _setPhoropterBusy(false);
+        showLoading(false);
 
         updateSessionInfo(data);
         displayQuestion(data);
@@ -1114,15 +1123,245 @@ async function submitResponse(responseValue) {
     }
 }
 
-// ── Display Question and Response Buttons ───────────────────────────────
-function displayQuestion(data) {
-    // Cancel any pending auto-flip from previous question
-    cancelAutoFlip();
+// ── TTS: speak question then listen for answer (5 sec, then auto-send) ───────
+const LISTEN_DURATION_MS = 5000;
+let _voiceStream = null;
+let _voiceRecorder = null;
+let _voiceChunks = [];
+let _ttsAudio = null;
+let _voiceSubmitOnStop = false;
+let _voiceListenTimer = null;
+let _voiceCountdownInterval = null;
 
+function stopListeningForAnswer(submitRecording = false) {
+    _voiceSubmitOnStop = submitRecording;
+    if (_voiceListenTimer != null) {
+        clearTimeout(_voiceListenTimer);
+        _voiceListenTimer = null;
+    }
+    if (_voiceCountdownInterval != null) {
+        clearInterval(_voiceCountdownInterval);
+        _voiceCountdownInterval = null;
+    }
+    if (_ttsAudio) {
+        _ttsAudio.pause();
+        _ttsAudio = null;
+    }
+    if (_voiceRecorder && _voiceRecorder.state === 'recording') {
+        _voiceRecorder.stop();
+    }
+    if (_voiceStream) {
+        _voiceStream.getTracks().forEach((t) => t.stop());
+        _voiceStream = null;
+    }
+    _voiceRecorder = null;
+    const area = document.getElementById('answerArea');
+    if (area) area.style.display = 'none';
+}
+
+async function speakQuestion(questionText) {
+    if (!questionText || !sessionState.sessionId || sessionState.intentsLocked || _phoropterBusy) return;
+    const url = `${CONFIG.backendUrl}/api/tts?text=${encodeURIComponent(questionText)}`;
+    try {
+        const resp = await fetch(url);
+        if (!resp.ok) {
+            console.warn('TTS failed, continuing without speech');
+            startListeningForAnswer();
+            return;
+        }
+        const blob = await resp.blob();
+        const audioUrl = URL.createObjectURL(blob);
+        _ttsAudio = new Audio(audioUrl);
+        _ttsAudio.onended = () => {
+            URL.revokeObjectURL(audioUrl);
+            _ttsAudio = null;
+            startListeningForAnswer();
+        };
+        _ttsAudio.onerror = () => {
+            URL.revokeObjectURL(audioUrl);
+            _ttsAudio = null;
+            startListeningForAnswer();
+        };
+        _ttsAudio.play().catch(() => startListeningForAnswer());
+    } catch (e) {
+        console.warn('TTS error:', e);
+        startListeningForAnswer();
+    }
+}
+
+async function startListeningForAnswer() {
+    if (sessionState.intentsLocked || _phoropterBusy || !sessionState.sessionId) return;
+    const area = document.getElementById('answerArea');
+    const statusEl = document.getElementById('answerStatusText');
+    if (!area || !statusEl) return;
+
+    try {
+        _voiceStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        _voiceRecorder = new MediaRecorder(_voiceStream);
+        _voiceChunks = [];
+
+        _voiceRecorder.ondataavailable = (e) => { if (e.data.size) _voiceChunks.push(e.data); };
+        _voiceRecorder.onstop = () => {
+            const mimeType = _voiceRecorder ? _voiceRecorder.mimeType || 'audio/webm' : 'audio/webm';
+            const shouldSubmit = _voiceSubmitOnStop;
+            if (_voiceStream) {
+                _voiceStream.getTracks().forEach((t) => t.stop());
+                _voiceStream = null;
+            }
+            _voiceRecorder = null;
+            const chunks = _voiceChunks.slice();
+            _voiceChunks = [];
+            const a = document.getElementById('answerArea');
+            if (a) a.style.display = 'none';
+            if (shouldSubmit) {
+                const blob = new Blob(chunks, { type: mimeType });
+                if (blob.size > 0) {
+                    sendVoiceToBackend(blob);
+                }
+            }
+        };
+
+        _voiceRecorder.start();
+        area.style.display = 'flex';
+
+        const durationSec = Math.ceil(LISTEN_DURATION_MS / 1000);
+        let remaining = durationSec;
+        if (statusEl) statusEl.textContent = `Listening... (${remaining} sec)`;
+        _voiceCountdownInterval = setInterval(() => {
+            remaining -= 1;
+            if (statusEl) statusEl.textContent = remaining > 0 ? `Listening... (${remaining} sec)` : 'Sending...';
+        }, 1000);
+
+        _voiceListenTimer = setTimeout(() => {
+            _voiceListenTimer = null;
+            if (_voiceCountdownInterval) {
+                clearInterval(_voiceCountdownInterval);
+                _voiceCountdownInterval = null;
+            }
+            if (_voiceRecorder && _voiceRecorder.state === 'recording') {
+                stopListeningForAnswer(true);
+            }
+        }, LISTEN_DURATION_MS);
+    } catch (err) {
+        console.error('Microphone access failed:', err);
+        alert('Microphone access is required. Please allow and try again.');
+    }
+}
+
+async function sendVoiceToBackend(blob) {
+    if (sessionState.intentsLocked || _phoropterBusy) return;
+    try {
+        showLoading(true);
+        sessionState.intentsLocked = true;
+        _setPhoropterBusy(true);
+
+        const intentButtonsContainer = document.getElementById('intentButtons');
+        intentButtonsContainer.innerHTML = '<div class="alert alert-info">Processing speech...</div>';
+
+        const form = new FormData();
+        form.append('audio', blob, 'audio.webm');
+
+        const response = await fetch(`${CONFIG.backendUrl}/api/session/${sessionState.sessionId}/respond-with-audio`, {
+            method: 'POST',
+            body: form
+        });
+
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+            const msg = data.transcript
+                ? `Heard: "${data.transcript}". Could not match — asking again.`
+                : (data.error || 'Voice recognition failed — asking again.');
+            addToHistory(msg, 'warning');
+            sessionState.intentsLocked = false;
+            sessionState.voiceRetryCount = (sessionState.voiceRetryCount || 0) + 1;
+            _setPhoropterBusy(false);
+            showLoading(false);
+            if (sessionState.voiceRetryCount < 3) {
+                await askQuestionAgain({ politePrompt: true });
+            } else {
+                await askQuestionAgain({ buttonsOnly: true });
+            }
+            return;
+        }
+
+        sessionState.voiceRetryCount = 0;
+        sessionState.responseCount++;
+        addToHistory(`Voice: "${data.transcript || ''}" → ${data.intent || 'intent'}`, 'info');
+
+        if (data.is_terminal) {
+            if (data.terminal_state === 'ESCALATE') {
+                handleEscalation(data);
+            } else {
+                await completeTest(data);
+            }
+            return;
+        }
+
+        // Clear busy state before showing next question so speakQuestion + startListeningForAnswer run for the next step
+        _setPhoropterBusy(false);
+        showLoading(false);
+
+        updateSessionInfo(data);
+        displayQuestion(data);
+        updatePhaseProgress(data.state);
+        _saveSessionToStorage();
+        refreshDerivedVariables();
+    } catch (error) {
+        console.error('Voice submit error:', error);
+        sessionState.intentsLocked = false;
+        sessionState.voiceRetryCount = (sessionState.voiceRetryCount || 0) + 1;
+        _setPhoropterBusy(false);
+        showLoading(false);
+        if (sessionState.voiceRetryCount < 3) {
+            await askQuestionAgain({ politePrompt: true });
+        } else {
+            await askQuestionAgain({ buttonsOnly: true });
+        }
+    } finally {
+        _setPhoropterBusy(false);
+        showLoading(false);
+        refreshScreenshotIfModalOpen();
+    }
+}
+
+function displayQuestionFromState() {
+    if (!sessionState.sessionId) return;
+    fetch(`${CONFIG.backendUrl}/api/session/${sessionState.sessionId}/status`)
+        .then((r) => r.ok ? r.json() : null)
+        .then((data) => { if (data && data.options) displayQuestion(data); })
+        .catch(() => {});
+}
+
+/** Fetch current session state and re-ask the question. Options: { politePrompt: true } = speak "Could you say that again clearly?" + question then listen; { buttonsOnly: true } = show question + buttons only (no TTS/listen). */
+async function askQuestionAgain(options = {}) {
+    if (!sessionState.sessionId) return;
+    try {
+        const response = await fetch(`${CONFIG.backendUrl}/api/session/${sessionState.sessionId}/status`);
+        if (!response.ok) return;
+        const data = await response.json();
+        if (!data.options || !data.question) return;
+        if (options.buttonsOnly) {
+            displayQuestion(data, { startVoice: false });
+        } else if (options.politePrompt) {
+            displayQuestion(data, { promptPrefix: 'Could you say that again clearly?' });
+        } else {
+            displayQuestion(data);
+        }
+    } catch (e) {
+        console.warn('askQuestionAgain failed:', e);
+    }
+}
+
+// ── Display Question and Response Buttons ───────────────────────────────
+// displayOptions: { startVoice: true } = speak question and start listening; { promptPrefix: '...' } = speak prefix + question then listen.
+function displayQuestion(data, displayOptions = {}) {
     const phaseBadge = document.getElementById('phaseBadge');
     const questionText = document.getElementById('questionText');
     const intentButtons = document.getElementById('intentButtons');
     const eyeIndicator = document.getElementById('eyeIndicator');
+    const startVoice = displayOptions.startVoice !== false;
+    const promptPrefix = displayOptions.promptPrefix;
 
     if (phaseBadge) phaseBadge.textContent = data.phase_name || data.state || 'Unknown';
     if (questionText) questionText.textContent = data.question || 'Waiting for response...';
@@ -1158,7 +1397,7 @@ function displayQuestion(data) {
         return;
     }
 
-    // Build response buttons (normal path + Flip 2 path)
+    // Build response buttons (normal path + Flip 2 path); optionally speak question via TTS then auto-start listening for answer
     if (intentButtons) {
         intentButtons.innerHTML = '';
         sessionState.intentsLocked = false;
@@ -1171,11 +1410,17 @@ function displayQuestion(data) {
             button.style.borderLeft = `4px solid ${color}`;
             const displayText = labels[opt] || opt.replace(/_/g, ' ');
             button.textContent = `${index + 1}. ${displayText}`;
-            button.onclick = () => submitResponse(opt);  // sends original value
-            // Keyboard shortcut
+            button.onclick = () => {
+                stopListeningForAnswer(false);
+                submitResponse(opt);  // sends original value
+            };
             button.dataset.shortcut = String(index + 1);
             intentButtons.appendChild(button);
         });
+        if (startVoice && data.question && options.length > 0) {
+            const textToSpeak = promptPrefix ? `${promptPrefix} ${data.question}` : data.question;
+            speakQuestion(textToSpeak);
+        }
     }
 
     // Update step info

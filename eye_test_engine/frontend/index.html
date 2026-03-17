@@ -310,6 +310,20 @@
             color: #bbb;
             font-weight: 400;
         }
+        .answer-area {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-top: 0.75rem;
+            flex-wrap: wrap;
+        }
+        .answer-status {
+            font-size: 0.9rem;
+            color: #1565c0;
+        }
+        .intent-buttons-wrap {
+            margin-top: 0.5rem;
+        }
 
         /* ── Power Table (compact) ──────────────────── */
         .power-card {
@@ -783,7 +797,10 @@
                         <span id="stepInfo">-</span>
                     </div>
                     <div id="questionText">Waiting for session...</div>
-                    <div id="intentButtons"></div>
+                    <div id="answerArea" class="answer-area" style="display:none;">
+                        <span id="answerStatusText" class="answer-status">Listening...</span>
+                    </div>
+                    <div id="intentButtons" class="intent-buttons-wrap"></div>
                 </div>
 
                 <!-- Inline status bar -->
