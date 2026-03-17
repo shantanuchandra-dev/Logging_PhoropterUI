@@ -2992,13 +2992,17 @@ async function completeTest() {
         const feedbackEl = document.getElementById('completeQualitativeFeedback');
         if (feedbackEl) feedbackEl.value = '';
 
-        // Reset validation UI state
+        // Reset validation UI state and ensure Sign-off buttons are enabled
         const validationBtns = document.getElementById('completeValidationButtons');
         const afterValidation = document.getElementById('completeAfterValidation');
         const validationPrompt = document.getElementById('completeValidationPrompt');
+        const signOffBtn = document.getElementById('signOffBtn');
+        const powerBtn = document.getElementById('powerDoesNotMatchBtn');
         if (validationBtns) validationBtns.style.display = 'flex';
         if (afterValidation) afterValidation.style.display = 'none';
         if (validationPrompt) validationPrompt.style.display = 'block';
+        if (signOffBtn) signOffBtn.disabled = false;
+        if (powerBtn) powerBtn.disabled = false;
 
         // Display final prescription
         if (data.final_prescription) {
@@ -3073,13 +3077,22 @@ async function completeTest() {
 }
 
 // Sign-off: store CSV and release phoropter
+const SIGN_OFF_FETCH_TIMEOUT_MS = 60000;
+
 async function signOff() {
     const signOffBtn = document.getElementById('signOffBtn');
     const powerBtn = document.getElementById('powerDoesNotMatchBtn');
     if (signOffBtn) signOffBtn.disabled = true;
     if (powerBtn) powerBtn.disabled = true;
 
+    const reenableButtons = () => {
+        if (signOffBtn) signOffBtn.disabled = false;
+        if (powerBtn) powerBtn.disabled = false;
+    };
+
     try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), SIGN_OFF_FETCH_TIMEOUT_MS);
         const feedbackEl = document.getElementById('completeQualitativeFeedback');
         const qualitativeFeedback = feedbackEl ? String(feedbackEl.value || '').trim() : '';
         const response = await fetch(`${CONFIG.backendUrl}/api/session/${sessionState.sessionId}/end`, {
@@ -3094,8 +3107,10 @@ async function signOff() {
                 customer_age: customerAge || null,
                 customer_gender: customerGender || null,
                 qualitative_feedback: qualitativeFeedback || null
-            })
+            }),
+            signal: controller.signal
         });
+        clearTimeout(timeoutId);
 
         if (!response.ok) {
             throw new Error('Failed to store session');
@@ -3125,11 +3140,10 @@ async function signOff() {
         addToHistory('Prescription signed off – data stored', 'success');
     } catch (error) {
         console.error('Sign-off error:', error);
-        alert('Failed to store data. Please try again.');
-        if (signOffBtn) signOffBtn.disabled = false;
-        if (powerBtn) powerBtn.disabled = false;
-        return;
+        const msg = error?.name === 'AbortError' ? 'Request timed out. Please try again.' : 'Failed to store data. Please try again.';
+        alert(msg);
     } finally {
+        reenableButtons();
         _clearSessionStorage();
         await releaseDevice();
     }
@@ -3142,12 +3156,21 @@ async function powerDoesNotMatch() {
     if (signOffBtn) signOffBtn.disabled = true;
     if (powerBtn) powerBtn.disabled = true;
 
+    const reenableButtons = () => {
+        if (signOffBtn) signOffBtn.disabled = false;
+        if (powerBtn) powerBtn.disabled = false;
+    };
+
     try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), SIGN_OFF_FETCH_TIMEOUT_MS);
         const response = await fetch(`${CONFIG.backendUrl}/api/session/${sessionState.sessionId}/discard`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({})
+            body: JSON.stringify({}),
+            signal: controller.signal
         });
+        clearTimeout(timeoutId);
 
         if (!response.ok) {
             throw new Error('Failed to discard session');
@@ -3164,11 +3187,10 @@ async function powerDoesNotMatch() {
         addToHistory('Prescription did not match – session discarded', 'info');
     } catch (error) {
         console.error('Discard error:', error);
-        alert('Failed to discard. Please try again.');
-        if (signOffBtn) signOffBtn.disabled = false;
-        if (powerBtn) powerBtn.disabled = false;
-        return;
+        const msg = error?.name === 'AbortError' ? 'Request timed out. Please try again.' : 'Failed to discard. Please try again.';
+        alert(msg);
     } finally {
+        reenableButtons();
         _clearSessionStorage();
         await releaseDevice();
     }
