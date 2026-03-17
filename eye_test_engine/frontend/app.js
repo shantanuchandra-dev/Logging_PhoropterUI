@@ -241,6 +241,7 @@ let sessionState = {
     voiceRetryCount: 0,
     history: [],
     lastResponse: null,
+    liveViewReceived: false,
 };
 
 let _deviceAcquired = false;
@@ -508,9 +509,9 @@ async function _tryRestoreSession() {
             if (label) { label.textContent = '— ' + patientName; label.style.display = 'inline'; }
         }
 
+        sessionState.liveViewReceived = false;
         showTestScreen();
         updateSessionInfo(data);
-        displayQuestion(data);
         updateStatusIndicator(true);
         updatePhaseProgress(data.state);
 
@@ -522,6 +523,12 @@ async function _tryRestoreSession() {
             if (acqBtn) acqBtn.style.display = 'none';
         }
 
+        // Wait for first live view so phoropter is set before we ask the first question
+        addToHistory('Waiting for phoropter live view...', 'info');
+        await ensureFirstLiveViewReceived();
+        addToHistory('Phoropter ready', 'success');
+
+        displayQuestion(data);
         addToHistory('Session restored after refresh', 'info');
         return true;
     } catch (err) {
@@ -892,6 +899,7 @@ function setScreenshotImage(base64) {
     const err = document.getElementById('screenshotError');
     if (!img || !loading || !err) return;
     if (base64) {
+        sessionState.liveViewReceived = true;
         _screenshotHistory.push({ base64, ts: Date.now() });
         if (_screenshotHistory.length > 50) _screenshotHistory = _screenshotHistory.slice(-50);
         _screenshotHistoryIndex = _screenshotHistory.length - 1;
@@ -905,6 +913,24 @@ function setScreenshotImage(base64) {
         img.classList.remove('loaded');
         loading.style.display = 'none';
         err.style.display = 'block';
+    }
+}
+
+const FIRST_LIVE_VIEW_MAX_WAIT_MS = 15000;
+const FIRST_LIVE_VIEW_POLL_MS = 2000;
+
+/** Resolve when the first phoropter live view has been received (or timeout). Ensures phoropter is set before we ask the first question. */
+async function ensureFirstLiveViewReceived() {
+    if (sessionState.liveViewReceived) return;
+    if (isTestDeviceId()) return;
+    const deadline = Date.now() + FIRST_LIVE_VIEW_MAX_WAIT_MS;
+    while (Date.now() < deadline) {
+        const base64 = await fetchScreenshot();
+        if (base64 && base64.length > 50) {
+            sessionState.liveViewReceived = true;
+            return;
+        }
+        await new Promise((r) => setTimeout(r, FIRST_LIVE_VIEW_POLL_MS));
     }
 }
 
@@ -991,9 +1017,9 @@ async function fetchSessionStatus(sessionId) {
         if (!resp.ok) throw new Error('Session not found');
         const data = await resp.json();
 
+        sessionState.liveViewReceived = false;
         showTestScreen();
         updateSessionInfo(data);
-        displayQuestion(data);
         updateStatusIndicator(true);
         updatePhaseProgress(data.state);
         addToHistory('Session started from intake', 'success');
@@ -1056,9 +1082,13 @@ async function fetchSessionStatus(sessionId) {
             }
         }
 
-        // Open live view after reset+power so screenshot shows the correct state
-        openScreenshotModal();
+        // Wait for first live view so phoropter is set before we ask the first question
+        addToHistory('Waiting for phoropter live view...', 'info');
+        await ensureFirstLiveViewReceived();
+        addToHistory('Phoropter ready', 'success');
 
+        openScreenshotModal();
+        displayQuestion(data);
     } catch (err) {
         console.error('Failed to load session:', err);
         alert('Session not found. Please start from the intake form.');
@@ -1125,6 +1155,64 @@ async function submitResponse(responseValue) {
 
 // ── TTS: speak question then listen for answer (5 sec, then auto-send) ───────
 const LISTEN_DURATION_MS = 5000;
+const BEEP_DURATION_MS = 800;
+const BEEP_FREQUENCY_HZ = 880;
+const START_LISTENING_PROMPT = 'Please start reading after the beep.';
+
+/** Speak a phrase via TTS and resolve when playback ends. */
+async function speakPhraseAndWait(text) {
+    if (!text || !sessionState.sessionId) return;
+    const baseUrl = CONFIG.backendUrl || (typeof window !== 'undefined' ? window.location.origin : '');
+    const url = `${baseUrl}/api/tts?text=${encodeURIComponent(text)}`;
+    try {
+        const resp = await fetch(url);
+        if (!resp.ok) return;
+        const blob = await resp.blob();
+        const audioUrl = URL.createObjectURL(blob);
+        const audio = new Audio(audioUrl);
+        return new Promise((resolve) => {
+            audio.onended = () => {
+                URL.revokeObjectURL(audioUrl);
+                resolve();
+            };
+            audio.onerror = () => {
+                URL.revokeObjectURL(audioUrl);
+                resolve();
+            };
+            audio.play().catch(resolve);
+        });
+    } catch (e) {
+        return;
+    }
+}
+
+/** Play a short beep and resolve when done. Used to cue patient to start speaking. */
+function playStartListeningBeep() {
+    return new Promise((resolve) => {
+        try {
+            const Ctx = window.AudioContext || window.webkitAudioContext;
+            if (!Ctx) {
+                resolve();
+                return;
+            }
+            const ctx = new Ctx();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.frequency.value = BEEP_FREQUENCY_HZ;
+            osc.type = 'sine';
+            gain.gain.setValueAtTime(0.2, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + BEEP_DURATION_MS / 1000);
+            osc.start(ctx.currentTime);
+            osc.stop(ctx.currentTime + BEEP_DURATION_MS / 1000);
+            setTimeout(resolve, BEEP_DURATION_MS + 50);
+        } catch (e) {
+            resolve();
+        }
+    });
+}
+
 let _voiceStream = null;
 let _voiceRecorder = null;
 let _voiceChunks = [];
@@ -1196,6 +1284,12 @@ async function startListeningForAnswer() {
     if (!area || !statusEl) return;
 
     try {
+        // Speak prompt, then beep, so patient starts speaking only after we're recording
+        area.style.display = 'flex';
+        statusEl.textContent = START_LISTENING_PROMPT;
+        await speakPhraseAndWait(START_LISTENING_PROMPT);
+        await playStartListeningBeep();
+
         _voiceStream = await navigator.mediaDevices.getUserMedia({ audio: true });
         _voiceRecorder = new MediaRecorder(_voiceStream);
         _voiceChunks = [];
@@ -1222,9 +1316,11 @@ async function startListeningForAnswer() {
         };
 
         _voiceRecorder.start();
-        area.style.display = 'flex';
 
-        const durationSec = Math.ceil(LISTEN_DURATION_MS / 1000);
+        const durationMs = (sessionState.listenSeconds != null && sessionState.listenSeconds > 0)
+            ? Math.round(sessionState.listenSeconds * 1000)
+            : LISTEN_DURATION_MS;
+        const durationSec = Math.ceil(durationMs / 1000);
         let remaining = durationSec;
         if (statusEl) statusEl.textContent = `Listening... (${remaining} sec)`;
         _voiceCountdownInterval = setInterval(() => {
@@ -1241,9 +1337,10 @@ async function startListeningForAnswer() {
             if (_voiceRecorder && _voiceRecorder.state === 'recording') {
                 stopListeningForAnswer(true);
             }
-        }, LISTEN_DURATION_MS);
+        }, durationMs);
     } catch (err) {
         console.error('Microphone access failed:', err);
+        area.style.display = 'none';
         alert('Microphone access is required. Please allow and try again.');
     }
 }
@@ -1354,7 +1451,7 @@ async function askQuestionAgain(options = {}) {
 }
 
 // ── Display Question and Response Buttons ───────────────────────────────
-// displayOptions: { startVoice: true } = speak question and start listening; { promptPrefix: '...' } = speak prefix + question then listen.
+// displayOptions: { startVoice: true } = speak question and start listening; { promptPrefix: '...' } = speak prefix + question then listen; { questionVoiceOverride: '...' } = speak this instead of data.question (e.g. JCC Flip 2).
 function displayQuestion(data, displayOptions = {}) {
     const phaseBadge = document.getElementById('phaseBadge');
     const questionText = document.getElementById('questionText');
@@ -1362,6 +1459,7 @@ function displayQuestion(data, displayOptions = {}) {
     const eyeIndicator = document.getElementById('eyeIndicator');
     const startVoice = displayOptions.startVoice !== false;
     const promptPrefix = displayOptions.promptPrefix;
+    const questionVoiceOverride = displayOptions.questionVoiceOverride;
 
     if (phaseBadge) phaseBadge.textContent = data.phase_name || data.state || 'Unknown';
     if (questionText) questionText.textContent = data.question || 'Waiting for response...';
@@ -1375,7 +1473,7 @@ function displayQuestion(data, displayOptions = {}) {
         else { eyeIndicator.textContent = ''; eyeIndicator.className = 'eye-indicator'; }
     }
 
-    // ── JCC Auto-Flip: Flip 1 countdown ─────────────────────────
+    // ── JCC Auto-Flip: coordinated sequence speak → flip 1 → wait → speak → flip 2 → speak ─────────────────
     if (data.auto_flip && data.jcc_flip === 'flip1') {
         if (intentButtons) {
             const waitSec = data.flip_wait_seconds || 2;
@@ -1383,11 +1481,11 @@ function displayQuestion(data, displayOptions = {}) {
                 <div class="alert alert-warning" style="text-align:center;padding:12px;">
                     <div style="font-size:1.1em;font-weight:600;">Observe Flip 1</div>
                     <div id="flipCountdown" style="margin-top:8px;font-size:1.3em;color:#e65100;">
-                        Flip 2 in ${waitSec}s...
+                        —
                     </div>
                 </div>`;
             sessionState.intentsLocked = true;
-            handleAutoFlip(waitSec);
+            runJCCFlipSequence(data.question, waitSec, startVoice);
         }
         // Update step info even during flip 1
         if (data.step_info) {
@@ -1417,11 +1515,17 @@ function displayQuestion(data, displayOptions = {}) {
             button.dataset.shortcut = String(index + 1);
             intentButtons.appendChild(button);
         });
-        if (startVoice && data.question && options.length > 0) {
-            const textToSpeak = promptPrefix ? `${promptPrefix} ${data.question}` : data.question;
+        if (startVoice && (data.question || questionVoiceOverride) && options.length > 0) {
+            const base = questionVoiceOverride != null ? questionVoiceOverride : data.question;
+            const textToSpeak = promptPrefix ? `${promptPrefix} ${base}` : base;
             speakQuestion(textToSpeak);
         }
     }
+
+    // Listen duration for voice: chart-reading phases send listen_seconds from backend
+    sessionState.listenSeconds = (data.listen_seconds != null && data.listen_seconds > 0)
+        ? data.listen_seconds
+        : null;
 
     // Update step info
     if (data.step_info) {
@@ -1432,25 +1536,39 @@ function displayQuestion(data, displayOptions = {}) {
     }
 }
 
-// ── JCC Auto-Flip Handler ───────────────────────────────────────────────
-async function handleAutoFlip(waitSeconds) {
+// ── JCC Auto-Flip: coordinated voice and phoropter sequence ─────────────
+// 1. Speak "This is Flip 1"  2. Flip to 1 (phoropter)  3. Wait 2s  4. Speak "And this is Flip 2"  5. Flip to 2 (phoropter)  6. Speak "Which one is better?" and show buttons
+async function runJCCFlipSequence(flip1Question, waitSeconds, startVoice) {
     _autoFlipAborted = false;
+    const waitSec = Math.max(1, waitSeconds || 2);
 
-    // Countdown display
-    for (let i = waitSeconds; i > 0; i--) {
-        if (_autoFlipAborted) return;
-        const cd = document.getElementById('flipCountdown');
-        if (cd) cd.textContent = `Flip 2 in ${i}s...`;
-        await new Promise(r => setTimeout(r, 1000));
-    }
-    if (_autoFlipAborted) return;
-
-    // Update UI to show transitioning
-    const cd = document.getElementById('flipCountdown');
-    if (cd) cd.textContent = 'Showing Flip 2...';
-
-    // Send AUTO_FLIP to backend
     try {
+        // 1. Speak "JCC Axis (Right Eye) — This is Flip 1"
+        if (startVoice && flip1Question) {
+            await speakPhraseAndWait(flip1Question);
+        }
+        if (_autoFlipAborted) return;
+
+        // 2. Flip to 1 (phoropter)
+        await fetch(`${CONFIG.backendUrl}/api/session/${sessionState.sessionId}/jcc-flip-to-1`, { method: 'POST' });
+        if (_autoFlipAborted) return;
+
+        // 3. Wait 2 seconds (countdown)
+        for (let i = waitSec; i > 0; i--) {
+            if (_autoFlipAborted) return;
+            const cd = document.getElementById('flipCountdown');
+            if (cd) cd.textContent = `Flip 2 in ${i}s...`;
+            await new Promise(r => setTimeout(r, 1000));
+        }
+        if (_autoFlipAborted) return;
+
+        // 4. Speak "And this is Flip 2"
+        if (startVoice) {
+            await speakPhraseAndWait('And this is Flip 2.');
+        }
+        if (_autoFlipAborted) return;
+
+        // 5. Flip to 2 (phoropter)
         const response = await fetch(`${CONFIG.backendUrl}/api/session/${sessionState.sessionId}/respond`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -1458,19 +1576,19 @@ async function handleAutoFlip(waitSeconds) {
         });
         if (!response.ok) throw new Error('Auto-flip failed');
         const data = await response.json();
-
         if (_autoFlipAborted) return;
 
+        // 6. Speak "Which one is better?" and show buttons
         addToHistory('JCC Flip 1 \u2192 Flip 2', 'info');
         updateSessionInfo(data);
-        displayQuestion(data);
+        displayQuestion(data, { questionVoiceOverride: 'Which one is better?' });
         if (data.step_info) {
             const stepEl = document.getElementById('stepInfo');
             if (stepEl) stepEl.textContent = `Step ${data.step_info.step || 0} | Phase step ${data.step_info.phase_step_count || 0}`;
         }
     } catch (err) {
-        console.error('Auto-flip error:', err);
-        addToHistory('Auto-flip failed', 'error');
+        console.error('JCC flip sequence error:', err);
+        addToHistory('JCC flip failed', 'error');
         sessionState.intentsLocked = false;
     }
 }

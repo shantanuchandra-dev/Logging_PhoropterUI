@@ -1,5 +1,21 @@
-from typing import List
+from typing import List, Union
 import re
+
+# Listen duration for Coarse Sphere / Distance Vision (chart reading) phases
+COARSE_SPHERE_LISTEN_SECONDS = 10
+COARSE_SPHERE_SECONDS_PER_LETTER = 1.2
+COARSE_SPHERE_MIN_SECONDS = 5
+COARSE_SPHERE_MAX_SECONDS = 25
+
+
+def listen_seconds(chart_letters: Union[str, List[str], None]) -> float:
+    """Compute listen duration for Coarse Sphere based on number of letters in the chart line."""
+    if not chart_letters:
+        return COARSE_SPHERE_LISTEN_SECONDS
+    n = len(chart_letters) if isinstance(chart_letters, str) else sum(len(s) for s in chart_letters)
+    sec = COARSE_SPHERE_MIN_SECONDS + COARSE_SPHERE_SECONDS_PER_LETTER * n
+    return min(COARSE_SPHERE_MAX_SECONDS, max(COARSE_SPHERE_MIN_SECONDS, sec))
+
 
 CHART_LETTERS_MAP = {
     "400": ["E"],

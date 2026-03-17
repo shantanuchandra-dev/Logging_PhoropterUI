@@ -159,7 +159,7 @@ class RefractionFSMEngine:
             row.chart_type = "SNELLEN_FEET"
             row.response_type = "READABILITY"
             row.eye = "BIN"
-            row.question = "Look at the letters on the screen. Are they clear to read, a little blurry, or can you not read them?"
+            row.question = "Can you read out all the letters shown on the charts, starting from the top line?"
             row.opt_1, row.opt_2, row.opt_3 = "READABLE", "NOT_READABLE", "BLURRY"
 
         elif state == "B":
@@ -169,7 +169,7 @@ class RefractionFSMEngine:
             row.chart_type = "SNELLEN_FEET"
             row.response_type = "READABILITY"
             row.eye = "RE"
-            row.question = "Looking at the letters again, are they clear, slightly blurry, or not readable?"
+            row.question = "Can you read out all the letters shown on the charts, starting from the top line?"
             row.opt_1, row.opt_2, row.opt_3 = "READABLE", "NOT_READABLE", "BLURRY"
 
         elif state == "D":
@@ -179,7 +179,7 @@ class RefractionFSMEngine:
             row.chart_type = "SNELLEN_FEET"
             row.response_type = "READABILITY"
             row.eye = "LE"
-            row.question = "Looking at the letters now, are they clear, a bit blurry, or not readable?"
+            row.question = "Can you read out all the letters shown on the charts, starting from the top line?"
             row.opt_1, row.opt_2, row.opt_3 = "READABLE", "NOT_READABLE", "BLURRY"
 
         elif state == "E":

@@ -304,6 +304,18 @@ def respond(session_id):
     })
 
 
+@app.route('/api/session/<session_id>/jcc-flip-to-1', methods=['POST'])
+def jcc_flip_to_1(session_id):
+    """Send JCC chart to phoropter (Flip 1). Call after speaking 'This is Flip 1'."""
+    if session_id not in sessions:
+        return jsonify({"error": "Session not found"}), 404
+    session = sessions[session_id]
+    result = session.send_jcc_flip_to_1()
+    if not result.get("ok"):
+        return jsonify({"error": result.get("error", "Not in JCC state")}), 400
+    return jsonify({"session_id": session_id, "status": "ok"})
+
+
 @app.route('/api/session/<session_id>/respond-with-audio', methods=['POST'])
 def respond_with_audio(session_id):
     """Process patient response from spoken audio: STT then map transcript to current intents."""
@@ -360,7 +372,12 @@ def respond_with_audio(session_id):
         transcript = audio_to_transcript(audio_data, content_type)
     except Exception as e:
         return jsonify({"error": f"Speech recognition failed: {e}", "options": options}), 500
-    result = transcript_to_intent(transcript, options) if transcript else None
+    result = transcript_to_intent(
+        transcript,
+        options,
+        phase_name=state.get("phase_name"),
+        chart_param=state.get("chart_param"),
+    ) if transcript else None
 
     if not result:
         transcript_display = transcript or "(no speech detected)"

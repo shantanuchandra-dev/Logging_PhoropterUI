@@ -227,17 +227,18 @@ class SessionOrchestrator:
         # ── Send phoropter commands + JCC Flip 1 positioning ──────
         same_jcc = (not state_changed
                     and self.current_row.state in self.JCC_STATES)
+        # When entering JCC state, skip sending the JCC chart here so the frontend
+        # can speak "This is Flip 1" first, then call jcc-flip-to-1 to flip phoropter.
+        entering_jcc = state_changed and self.current_row.state in self.JCC_STATES
+        skip_chart = same_jcc or entering_jcc
 
-        # When staying in the same JCC state, skip re-sending the chart
-        # (it's already displayed; re-clicking would reset flip position)
-        self._send_phoropter_commands(self.current_row,
-                                      skip_jcc_chart=same_jcc)
+        self._send_phoropter_commands(self.current_row, skip_jcc_chart=skip_chart)
 
         if self.current_row.state in self.JCC_STATES:
             if state_changed:
-                # Chart click or power_axis_switch resets to Flip 1 automatically
+                # Chart will be sent when frontend calls jcc-flip-to-1 after speaking
                 print(f"[JCC] Entered {self.current_row.state} from {prev_state}: "
-                      f"Flip 1 auto (chart/switch)")
+                      f"chart deferred until jcc-flip-to-1")
             else:
                 # Same JCC state: power adjusted, need explicit handle for Flip 1
                 self._send_jcc_command("handle")
@@ -551,6 +552,18 @@ class SessionOrchestrator:
             if val:
                 options.append(val)
 
+        # Listen duration for chart-reading phases (A, B, D): based on chart line length
+        listen_sec = None
+        if state in ("A", "B", "D") and row.chart_param:
+            try:
+                from chart_reading import CHART_LETTERS_MAP, listen_seconds as _listen_seconds
+                letters_val = CHART_LETTERS_MAP.get(str(row.chart_param).strip())
+                if letters_val is not None:
+                    chart_letters = "".join(letters_val) if isinstance(letters_val, list) else letters_val
+                    listen_sec = _listen_seconds(chart_letters)
+            except Exception:
+                pass
+
         response = {
             "state": state,
             "phase_name": phase_name,
@@ -586,6 +599,8 @@ class SessionOrchestrator:
             "is_terminal": terminal,
             "total_rows": len(self.session_history),
         }
+        if listen_sec is not None:
+            response["listen_seconds"] = listen_sec
 
         if terminal:
             response["terminal_state"] = row.next_state
@@ -599,7 +614,7 @@ class SessionOrchestrator:
             # Override question for Flip 1
             jcc_type = "Axis" if state in ("E", "H") else "Power"
             eye = "Right Eye" if state in ("E", "F") else "Left Eye"
-            response["question"] = f"JCC {jcc_type} ({eye}) — Focus on the dot chart. This is Flip 1."
+            response["question"] = f"JCC {jcc_type} ({eye}) — This is Flip 1."
             # Clear options: no response buttons during Flip 1
             response["options"] = []
         elif state in self.JCC_STATES and self._jcc_flip_state == "flip2" and not terminal:
@@ -823,6 +838,14 @@ class SessionOrchestrator:
         """Send JCC command to phoropter."""
         payload = {"test_cases": [{"jcc": action}]}
         self._post_to_phoropter(self.api_endpoint, payload)
+
+    def send_jcc_flip_to_1(self) -> dict:
+        """Send JCC chart to phoropter so it displays Flip 1. Called after frontend speaks 'This is Flip 1'."""
+        if self.current_row is None or self.current_row.state not in self.JCC_STATES:
+            return {"ok": False, "error": "Not in JCC state"}
+        self._send_chart_command("Chart1", ["chart_19"])
+        print("[JCC] Sent chart for Flip 1 (jcc-flip-to-1)")
+        return {"ok": True}
 
     def _post_to_phoropter(self, url: str, payload: dict) -> dict:
         """Send JSON POST to phoropter broker. Returns response info."""

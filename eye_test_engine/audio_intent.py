@@ -221,10 +221,36 @@ def _score_with_sentence_transformers(transcript: str, options: List[str]) -> Op
     return None
 
 
-def transcript_to_intent(transcript: str, options: List[str]) -> Optional[Tuple[str, float]]:
+def _is_chart_reading_phase(phase_name: Optional[str]) -> bool:
+    """True when phase is spherical refinement or distance vision (Snellen chart reading)."""
+    if not phase_name:
+        return False
+    p = (phase_name or "").lower()
+    return "sphere" in p or "coarse sphere" in p or "distance baseline" in p or "distance vision" in p
+
+
+def _chart_intent_to_option(chart_intent: str, options: List[str]) -> Optional[str]:
+    """Map chart reading intent (READABLE/BLURRY/NOT_READABLE) to an option from the session."""
+    if not chart_intent or not options:
+        return None
+    want = chart_intent.upper().replace(" ", "_")
+    for opt in options:
+        if (opt or "").upper().replace(" ", "_") == want:
+            return opt
+    return None
+
+
+def transcript_to_intent(
+    transcript: str,
+    options: List[str],
+    *,
+    phase_name: Optional[str] = None,
+    chart_param: Optional[str] = None,
+) -> Optional[Tuple[str, float]]:
     """
     Map transcript to the best matching option from the current session.
-    Uses sentence_transformers for semantic matching when available; otherwise keyword-based scoring.
+    For spherical refinement or distance vision phases, uses chart_reading.get_chart_intend.
+    Otherwise uses sentence_transformers for semantic matching when available; else keyword-based scoring.
     Returns (matched_option_string, confidence) or None if no good match.
     """
     if not transcript or not options:
@@ -235,6 +261,22 @@ def transcript_to_intent(transcript: str, options: List[str]) -> Optional[Tuple[
     t = _normalize(transcript)
     if not t:
         return None
+
+    # Spherical refinement or distance vision: use chart reading intent
+    if _is_chart_reading_phase(phase_name) and chart_param:
+        try:
+            from chart_reading import CHART_LETTERS_MAP, ChartReadingDetector
+
+            letters_val = CHART_LETTERS_MAP.get(str(chart_param).strip())
+            if letters_val is not None:
+                chart_letters = "".join(letters_val) if isinstance(letters_val, list) else letters_val
+                detector = ChartReadingDetector()
+                chart_intent = detector.get_chart_intend(options, transcript, chart_letters)
+                matched = _chart_intent_to_option(chart_intent, options)
+                if matched is not None:
+                    return (matched, 0.9)
+        except Exception:
+            pass  # fall through to normal matching
 
     # Map "Yes" / "No" to Readable / Not Readable when those options are present
     if t == "yes" and "READABLE" in options:
@@ -262,28 +304,6 @@ def transcript_to_intent(transcript: str, options: List[str]) -> Optional[Tuple[
 def speech_to_text_available() -> bool:
     """True if a speech model from speech_models is available and STT can run."""
     return _HAS_SPEECH_MODELS
-
-
-def _play_audio_file(path: str) -> None:
-    """Play audio file at path in a subprocess (macOS: afplay, Linux: aplay). Copies to temp so caller can delete original."""
-    copy_path = None
-    try:
-        if sys.platform == "darwin":
-            copy_path = path + ".play.wav"
-            shutil.copy2(path, copy_path)
-            subprocess.run(["afplay", copy_path], capture_output=True, timeout=60)
-        elif sys.platform.startswith("linux"):
-            copy_path = path + ".play.wav"
-            shutil.copy2(path, copy_path)
-            subprocess.run(["aplay", "-q", copy_path], capture_output=True, timeout=60)
-    except Exception as e:
-        print(f"[STT] play_audio_file failed: {e}")
-    finally:
-        if copy_path and os.path.exists(copy_path):
-            try:
-                os.unlink(copy_path)
-            except Exception:
-                pass
 
 
 def audio_to_transcript(audio_data: bytes, content_type: str = "") -> str:
