@@ -856,6 +856,10 @@
             }
             loadDevices();
 
+            // Pre-fill Operator from Optometrist modal (same name when duration was set)
+            const cachedOptometrist = localStorage.getItem('optometristName');
+            if (cachedOptometrist && $('operatorName')) $('operatorName').value = cachedOptometrist;
+
             // ── Client IP (for brain_id) ────────────────────
             let _clientIp = null;
             async function getClientIp() {
@@ -906,40 +910,55 @@
                 }
             };
 
-            // ── Quick fill ───────────────────────────────
+            // ── Quick fill (randomized) ───────────────────
+            function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+            function randInt(lo, hi) { return lo + Math.floor(Math.random() * (hi - lo + 1)); }
+            function randStep(lo, hi, step) {
+                const n = Math.round((hi - lo) / step) + 1;
+                return Math.round((lo + step * Math.floor(Math.random() * n)) * 100) / 100;
+            }
             window.quickFill = function () {
-                $('age').value = 45;
-                $('occupation').value = 'IT Professional';
-                $('screenTimeHours').value = 8;
-                $('drivingHours').value = 1;
-                $('primaryReason').value = 'Blurred distance vision';
-                document.querySelectorAll('.symptom-chk').forEach(c => c.checked = false);
-                document.querySelectorAll('.symptom-chk').forEach(c => {
-                    if (c.value === 'Glare/halos' || c.value === 'Night driving difficulty') c.checked = true;
-                });
-                $('satisfaction').value = 'Not satisfied';
-                $('wearType').value = 'Single vision';
-                $('distanceTarget').value = '6/6 target';
-                $('priority').value = 'Standard';
-                $('nearPriority').value = 'Medium';
-                $('lastEyeTestMonths').value = 24;
-                $('rxChangeLarge').checked = false;
-                $('fluctuatingVision').checked = false;
-                $('diabetes').checked = false;
-                $('priorSurgery').value = 'None';
-                $('keratoconus').checked = false;
-                $('amblyopia').checked = false;
-                $('infection').checked = false;
-                $('optomReview').checked = false;
-                // AR
-                $('arRSph').value = -2.50; $('arRCyl').value = -0.75; $('arRAxis').value = 180;
-                $('arLSph').value = -3.00; $('arLCyl').value = -0.50; $('arLAxis').value = 175;
+                const quickFillNames = ['Shan_test', 'Sakshi_test', 'Nitin_test', 'Chirayu_test'];
+                $('patientName').value = pick(quickFillNames);
+                $('age').value = randInt(18, 75);
+                $('occupation').value = pick(['IT Professional', 'Teacher', 'Driver', 'Student', 'Retired', 'Engineer', 'Designer', 'Nurse']);
+                $('screenTimeHours').value = randStep(0, 14, 0.5);
+                $('drivingHours').value = randStep(0, 4, 0.5);
+                $('primaryReason').value = pick(['Blurred distance vision', 'Blurred near vision', 'Headaches', 'Routine check', 'New glasses']);
+                const symptomChks = document.querySelectorAll('.symptom-chk');
+                symptomChks.forEach(c => { c.checked = Math.random() < 0.4; });
+                $('satisfaction').value = pick(['Satisfied', 'Not satisfied', 'No current Rx']);
+                $('wearType').value = pick(['Single vision', 'Progressive', 'Bifocal', 'None']);
+                $('distanceTarget').value = pick(['6/6 target', 'Accept 6/9 if needed']);
+                $('priority').value = pick(['Standard', 'Comfort-first']);
+                $('nearPriority').value = pick(['High', 'Medium', 'Low']);
+                $('lastEyeTestMonths').value = pick([0, 6, 12, 18, 24, 36, 48, 60]);
+                $('rxChangeLarge').checked = Math.random() < 0.3;
+                $('fluctuatingVision').checked = Math.random() < 0.2;
+                $('diabetes').checked = Math.random() < 0.15;
+                $('priorSurgery').value = pick(['None', 'Cataract', 'LASIK', 'Other']);
+                $('keratoconus').checked = Math.random() < 0.05;
+                $('amblyopia').checked = Math.random() < 0.05;
+                $('infection').checked = Math.random() < 0.05;
+                $('optomReview').checked = Math.random() < 0.2;
+                // AR (within form ranges)
+                $('arRSph').value = randStep(-8, 2, 0.25);
+                $('arRCyl').value = randStep(-3, 0, 0.25);
+                $('arRAxis').value = randInt(0, 180) || 180;
+                $('arLSph').value = randStep(-8, 2, 0.25);
+                $('arLCyl').value = randStep(-3, 0, 0.25);
+                $('arLAxis').value = randInt(0, 180) || 180;
                 // Lensometry
-                $('lnRSph').value = -2.25; $('lnRCyl').value = -0.50; $('lnRAxis').value = 180;
-                $('lnLSph').value = -2.75; $('lnLCyl').value = -0.50; $('lnLAxis').value = 170;
-                $('lnAddR').value = 1.50; $('lnAddL').value = 1.50;
+                $('lnRSph').value = randStep(-8, 2, 0.25);
+                $('lnRCyl').value = randStep(-2.5, 0, 0.25);
+                $('lnRAxis').value = randInt(0, 180) || 180;
+                $('lnLSph').value = randStep(-8, 2, 0.25);
+                $('lnLCyl').value = randStep(-2.5, 0, 0.25);
+                $('lnLAxis').value = randInt(0, 180) || 180;
+                $('lnAddR').value = randStep(0, 2.5, 0.25);
+                $('lnAddL').value = randStep(0, 2.5, 0.25);
 
-                toast('Demo data filled', 'info', 2000);
+                toast('Demo data filled (randomized)', 'info', 2000);
             };
 
             // ── Reset ────────────────────────────────────
