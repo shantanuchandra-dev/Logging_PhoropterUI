@@ -1290,7 +1290,13 @@ async function startListeningForAnswer() {
         await speakPhraseAndWait(START_LISTENING_PROMPT);
         await playStartListeningBeep();
 
-        _voiceStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        _voiceStream = await navigator.mediaDevices.getUserMedia({
+            audio: {
+                echoCancellation: true,
+                noiseSuppression: true,
+                autoGainControl: true,
+            }
+        });
         _voiceRecorder = new MediaRecorder(_voiceStream);
         _voiceChunks = [];
 

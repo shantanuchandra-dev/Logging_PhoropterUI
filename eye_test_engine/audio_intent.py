@@ -26,36 +26,18 @@ _SPEECH_MODEL_NAME = os.environ.get("SPEECH_MODEL", "whisper").strip().lower()
 _speech_model_instance: Optional[object] = None
 
 def _get_speech_model() -> Optional[object]:
-    _speech_model_instance = DeepgramNovaSTT()
-    return _speech_model_instance 
-        
-# def _get_speech_model() -> Optional[object]:
-#     """Return the configured speech model instance (from speech_models). Cached per process."""
-#     global _speech_model_instance
-#     if _speech_model_instance is not None:
-#         return _speech_model_instance
-#     if not _HAS_SPEECH_MODELS:
-#         return None
-#     try:
-#         from speech_models import WhisperModel as SMWhisper
-#         from speech_models import OpenAISTT
-#         from speech_models import DeepgramNovaSTT
-
-#         if _SPEECH_MODEL_NAME == "openai":
-#             _speech_model_instance = OpenAISTT()
-#         elif _SPEECH_MODEL_NAME == "deepgram":
-#             _speech_model_instance = DeepgramNovaSTT()
-#         else:
-#             # "whisper" or any other value: use local Whisper
-#             no_speech_max = float(os.environ.get("WHISPER_NO_SPEECH_PROB_MAX", "0.5"))
-#             _speech_model_instance = SMWhisper(
-#                 model_size=os.environ.get("WHISPER_MODEL", "base"),
-#                 device=os.environ.get("WHISPER_DEVICE", "cpu"),
-#                 no_speech_prob_max=no_speech_max,
-#             )
-#         return _speech_model_instance
-#     except Exception:
-#         return None
+    """Return the configured speech model instance (from speech_models). Cached per process."""
+    global _speech_model_instance
+    if _speech_model_instance is not None:
+        return _speech_model_instance
+    if not _HAS_SPEECH_MODELS:
+        return None
+    try:
+        _speech_model_instance = DeepgramNovaSTT()
+        return _speech_model_instance
+    except Exception as e:
+        print(f"[STT] failed to create DeepgramNovaSTT: {e}")
+        return None
 
 
 try:

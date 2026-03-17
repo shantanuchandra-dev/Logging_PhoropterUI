@@ -193,43 +193,69 @@ class DeepgramNovaSTT:
     def transcribe_audio_file(self, path: str) -> Optional[str]:
         """
         Transcribe an audio file using Deepgram Nova-3 API (listen.v1.media).
+        Converts non-WAV files to WAV via ffmpeg if available, for reliable transcription.
         Returns cleaned text, or None if empty or on error.
         """
-        _reduce_noise_on_file(path)
+        import subprocess, tempfile
+        # Convert non-WAV to WAV using ffmpeg for reliable Deepgram ingestion
+        use_path = path
+        tmp_wav = None
+        if not path.lower().endswith(".wav"):
+            try:
+                tmp_wav = tempfile.NamedTemporaryFile(suffix=".wav", delete=False)
+                tmp_wav.close()
+                result = subprocess.run(
+                    ["ffmpeg", "-y", "-i", path, "-ac", "1", "-ar", "16000", "-f", "wav", tmp_wav.name],
+                    capture_output=True, timeout=30,
+                )
+                if result.returncode == 0:
+                    use_path = tmp_wav.name
+                    print(f"[STT] converted {path} -> WAV ({os.path.getsize(tmp_wav.name)} bytes)")
+                else:
+                    print(f"[STT] ffmpeg conversion failed (rc={result.returncode}): {result.stderr[:200]}")
+                    tmp_wav = None  # keep original path
+            except FileNotFoundError:
+                print("[STT] ffmpeg not found; sending raw audio to Deepgram")
+                tmp_wav = None
+            except Exception as e:
+                print(f"[STT] ffmpeg conversion error: {e}")
+                tmp_wav = None
+
+        _reduce_noise_on_file(use_path)
         try:
-            with open(path, "rb") as f:
+            with open(use_path, "rb") as f:
                 audio_bytes = f.read()
-            # Determine mimetype from file extension so Deepgram can decode
-            # non-WAV formats (e.g. WebM/opus from browser MediaRecorder)
-            ext = os.path.splitext(path)[1].lower()
-            _mime_map = {
-                ".wav": "audio/wav",
-                ".webm": "audio/webm",
-                ".mp3": "audio/mpeg",
-                ".ogg": "audio/ogg",
-                ".mp4": "audio/mp4",
-                ".m4a": "audio/mp4",
-                ".flac": "audio/flac",
-            }
-            mimetype = _mime_map.get(ext, "audio/wav")
-            payload = {"buffer": audio_bytes, "mimetype": mimetype}
+            print(f"[STT] Deepgram: sending {len(audio_bytes)} bytes from {use_path}")
             response = self.client.listen.v1.media.transcribe_file(
-                request=payload,
+                request=audio_bytes,
                 model=self._model,
                 language="en",
                 smart_format=self._smart_format,
+                punctuate=True,
             )
             # response is ListenV1Response: results.channels[0].alternatives[0].transcript
             results = getattr(response, "results", None)
             if not results:
+                print(f"[STT] Deepgram: no results in response: {response}")
                 return None
             channels = getattr(results, "channels", None) or []
             if not channels:
+                print(f"[STT] Deepgram: no channels in results: {results}")
                 return None
             alternatives = getattr(channels[0], "alternatives", None) or []
             if not alternatives:
+                print(f"[STT] Deepgram: no alternatives in channel: {channels[0]}")
                 return None
             text = (getattr(alternatives[0], "transcript", None) or "").strip()
+            confidence = getattr(alternatives[0], "confidence", None)
+            print(f"[STT] Deepgram: transcript={text!r}, confidence={confidence}")
             return text if text else None
-        except Exception:
+        except Exception as e:
+            print(f"[STT] Deepgram transcribe_file error: {e}")
             return None
+        finally:
+            if tmp_wav and os.path.exists(tmp_wav.name):
+                try:
+                    os.unlink(tmp_wav.name)
+                except Exception:
+                    pass
