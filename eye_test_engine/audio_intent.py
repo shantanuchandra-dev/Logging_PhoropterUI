@@ -233,6 +233,24 @@ def transcript_to_intent(transcript: str, options: List[str], **kwargs) -> Optio
         try:
             from chart_reading import ChartReadingDetector, CHART_LETTERS_MAP
             letters_val = CHART_LETTERS_MAP.get(str(chart_param).strip())
+
+            t = _normalize(transcript)
+            if not t:
+                return None
+
+            # Map "Yes" / "No" to Readable / Not Readable when those options are present
+            if  "yes" in t and "READABLE" in options:
+                return ("READABLE", 1.0)
+            if "no" in t and "NOT_READABLE" in options:
+                return ("NOT_READABLE", 1.0)
+
+            initial_check_options = ['Can Read', "Can't Read"]
+            result = _score_with_sentence_transformers(transcript, initial_check_options)
+            if result and result[0] in initial_check_options:
+                if result[0] == 'Can Read':
+                    return ('READABLE', 1.0)
+                else:
+                    return ('NOT_READABLE', 1.0)
             if letters_val is not None:
                 chart_letters = "".join(letters_val) if isinstance(letters_val, list) else letters_val
                 detector = ChartReadingDetector()
@@ -262,10 +280,35 @@ def transcript_to_intent(transcript: str, options: List[str], **kwargs) -> Optio
     if t == "no" and "NOT_READABLE" in options:
         return ("NOT_READABLE", 1.0)
 
+    target_ok_option_value = next(
+            (o for o in options if o and str(o).strip().lower() == "target_ok"), None
+        )
+
+    equal_option_value = next(
+            (o for o in options if o and str(o).strip().lower() == "equal"), None
+        )
+    same_option_value = next(
+            (o for o in options if o and str(o).strip().lower() == "same"), None
+        )
+    if equal_option_value is not None:
+        options = options + ["SAME"]
+    if same_option_value is not None:
+        options = options + ["EQUAL"]
+    if target_ok_option_value is not None:
+        options = options + ["CLEAR"]
+        options = options + ["COMFORTABLE"]
+        options = options + ["THAT'S CLEAR"]
+
     result = _score_with_sentence_transformers(transcript, options)
     if result is not None:
+        if result[0] == "SAME" and equal_option_value is not None:
+            return ("EQUAL", result[1])
+        if result[0] == "EQUAL" and same_option_value is not None:
+            return ("SAME", result[1])
+        if target_ok_option_value and result[0] in ["CLEAR", "COMFORTABLE", "THAT'S CLEAR"]:
+            return ("TARGET_OK", result[1])
         return result
-
+    
     best_option = None
     best_score = 0.0
     for i, opt in enumerate(options):
@@ -275,6 +318,7 @@ def transcript_to_intent(transcript: str, options: List[str], **kwargs) -> Optio
             best_option = opt
 
     if best_option and best_score >= 0.5:
+         # Both "Same" and "Equal" go to the engine as the equal option value
         return (best_option, best_score)
     return None
 

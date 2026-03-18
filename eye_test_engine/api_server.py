@@ -426,6 +426,29 @@ def respond_with_audio(session_id):
     })
 
 
+@app.route('/api/session/<session_id>/jump', methods=['POST'])
+def jump_phase(session_id):
+    """Jump to a specific phase."""
+    if session_id not in sessions:
+        return jsonify({"error": "Session not found"}), 404
+    session = sessions[session_id]
+    payload = request.json or {}
+    _log_api_command(f"/api/session/{session_id}/jump", payload)
+    target_state = payload.get("state")
+    if not target_state:
+        return jsonify({"error": "state required"}), 400
+    
+    next_state = session.jump_to_phase(target_state)
+    if next_state.get("error"):
+        return jsonify({"error": next_state["error"]}), 400
+
+    return jsonify({
+        "session_id": session_id,
+        "status": "active",
+        **next_state,
+    })
+
+
 @app.route('/api/session/<session_id>/status', methods=['GET'])
 def get_status(session_id):
     """Get full current session state."""

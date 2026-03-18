@@ -87,10 +87,10 @@ function getLogsUnlockUntil() {
     try { const v = localStorage.getItem(LOGS_STORAGE_UNTIL); return v ? parseInt(v, 10) : 0; } catch (_) { return 0; }
 }
 function setLogsUnlockUntil(untilMs) {
-    try { localStorage.setItem(LOGS_STORAGE_UNTIL, String(untilMs)); } catch (_) {}
+    try { localStorage.setItem(LOGS_STORAGE_UNTIL, String(untilMs)); } catch (_) { }
 }
 function setLogsAccessDenied() {
-    try { localStorage.setItem(LOGS_STORAGE_DENIED, 'true'); } catch (_) {}
+    try { localStorage.setItem(LOGS_STORAGE_DENIED, 'true'); } catch (_) { }
 }
 function isLogsUnlocked() {
     if (isLogsAccessDenied()) return false;
@@ -242,6 +242,7 @@ let sessionState = {
     history: [],
     lastResponse: null,
     liveViewReceived: false,
+    startListeningPromptSpoken: false,
 };
 
 let _deviceAcquired = false;
@@ -250,7 +251,7 @@ let operatorName = '';
 let _cachedClientIp = null;
 
 // ── Phase progress tracker ──────────────────────────────────────────────
-const FSM_STATES_ORDER = ['A','B','E','F','G','D','H','I','J','K','P','Q','R','END'];
+const FSM_STATES_ORDER = ['A', 'B', 'E', 'F', 'G', 'D', 'H', 'I', 'J', 'K', 'P', 'Q', 'R', 'END'];
 const FSM_STATE_NAMES = {
     'A': 'Distance Baseline',
     'B': 'Coarse Sphere RE',
@@ -464,12 +465,13 @@ function _saveSessionToStorage() {
             responseCount: sessionState.responseCount,
             deviceAcquired: _deviceAcquired,
             deviceId: CONFIG.phoropterId,
+            startListeningPromptSpoken: sessionState.startListeningPromptSpoken,
         }));
     } catch (e) { console.warn('sessionStorage write failed:', e); }
 }
 
 function _clearSessionStorage() {
-    try { sessionStorage.removeItem(SESSION_STORAGE_KEY); } catch (_) {}
+    try { sessionStorage.removeItem(SESSION_STORAGE_KEY); } catch (_) { }
 }
 
 async function _tryRestoreSession() {
@@ -501,6 +503,7 @@ async function _tryRestoreSession() {
         sessionState.sessionId = saved.sessionId;
         sessionState.responseCount = saved.responseCount || data.total_rows || 0;
         sessionState.voiceRetryCount = 0;
+        sessionState.startListeningPromptSpoken = saved.startListeningPromptSpoken || false;
 
         // Restore patient name in top bar
         const patientName = localStorage.getItem('patientName');
@@ -885,7 +888,7 @@ async function fetchScreenshot() {
         let base64 = rawText.trim();
         if (base64.startsWith('"') && base64.endsWith('"')) base64 = base64.slice(1, -1);
         if (base64.startsWith('{')) {
-            try { const parsed = JSON.parse(rawText); base64 = parsed.image || parsed.screenshot || parsed.data || parsed.raw || rawText; } catch (_) {}
+            try { const parsed = JSON.parse(rawText); base64 = parsed.image || parsed.screenshot || parsed.data || parsed.raw || rawText; } catch (_) { }
         }
         base64 = base64.replace(/\s+/g, '');
         return base64 && base64.length > 50 ? base64 : null;
@@ -972,6 +975,7 @@ async function checkIntakeRedirect() {
     if (sid) {
         sessionState.sessionId = sid;
         sessionState.voiceRetryCount = 0;
+        sessionState.startListeningPromptSpoken = false;
 
         // Show patient name in top bar if available
         const patientName = localStorage.getItem('patientName');
@@ -1286,8 +1290,12 @@ async function startListeningForAnswer() {
     try {
         // Speak prompt, then beep, so patient starts speaking only after we're recording
         area.style.display = 'flex';
-        statusEl.textContent = START_LISTENING_PROMPT;
-        await speakPhraseAndWait(START_LISTENING_PROMPT);
+        statusEl.textContent = 'Listening...';
+        if (!sessionState.startListeningPromptSpoken) {
+            statusEl.textContent = START_LISTENING_PROMPT;
+            await speakPhraseAndWait(START_LISTENING_PROMPT);
+            sessionState.startListeningPromptSpoken = true;
+        }
         await playStartListeningBeep();
 
         _voiceStream = await navigator.mediaDevices.getUserMedia({
@@ -1435,7 +1443,7 @@ function displayQuestionFromState() {
     fetch(`${CONFIG.backendUrl}/api/session/${sessionState.sessionId}/status`)
         .then((r) => r.ok ? r.json() : null)
         .then((data) => { if (data && data.options) displayQuestion(data); })
-        .catch(() => {});
+        .catch(() => { });
 }
 
 /** Fetch current session state and re-ask the question. Options: { politePrompt: true } = speak "Could you say that again clearly?" + question then listen; { buttonsOnly: true } = show question + buttons only (no TTS/listen). */
@@ -1446,6 +1454,25 @@ async function askQuestionAgain(options = {}) {
         if (!response.ok) return;
         const data = await response.json();
         if (!data.options || !data.question) return;
+
+        // Special handling for JCC retry: reset to flip 1 and replay the sequence
+        if (data.jcc_flip === 'flip2' && !options.buttonsOnly) {
+            // Revert state to trigger the auto-flip sequence from flip 1
+            data.auto_flip = true;
+            data.jcc_flip = 'flip1';
+
+            // Reconstruct the flip 1 question
+            // e.g. "JCC Axis (Right Eye) — This is Flip 2. Which was better?" -> "JCC Axis (Right Eye) — This is Flip 1."
+            let baseQuestion = data.question.replace('This is Flip 2. Which was better?', 'This is Flip 1.');
+            if (options.politePrompt) {
+                data.question = `I didn't get hear you, let me repeat the question again ${baseQuestion}`;
+            } else {
+                data.question = baseQuestion;
+            }
+            displayQuestion(data);
+            return;
+        }
+
         if (options.buttonsOnly) {
             displayQuestion(data, { startVoice: false });
         } else if (options.politePrompt) {
@@ -1764,8 +1791,8 @@ async function completeTest(data) {
             <div style="margin-top:12px;">
                 <table style="width:100%;border-collapse:collapse;text-align:center;">
                     <tr style="font-weight:600;"><td></td><td>SPH</td><td>CYL</td><td>AXIS</td><td>ADD</td></tr>
-                    <tr><td style="font-weight:600;">RE</td><td>${r.sph?.toFixed(2)}</td><td>${r.cyl?.toFixed(2)}</td><td>${Math.round(r.axis||180)}\u00b0</td><td>${(r.add||0).toFixed(2)}</td></tr>
-                    <tr><td style="font-weight:600;">LE</td><td>${l.sph?.toFixed(2)}</td><td>${l.cyl?.toFixed(2)}</td><td>${Math.round(l.axis||180)}\u00b0</td><td>${(l.add||0).toFixed(2)}</td></tr>
+                    <tr><td style="font-weight:600;">RE</td><td>${r.sph?.toFixed(2)}</td><td>${r.cyl?.toFixed(2)}</td><td>${Math.round(r.axis || 180)}\u00b0</td><td>${(r.add || 0).toFixed(2)}</td></tr>
+                    <tr><td style="font-weight:600;">LE</td><td>${l.sph?.toFixed(2)}</td><td>${l.cyl?.toFixed(2)}</td><td>${Math.round(l.axis || 180)}\u00b0</td><td>${(l.add || 0).toFixed(2)}</td></tr>
                 </table>
             </div>
         `;
