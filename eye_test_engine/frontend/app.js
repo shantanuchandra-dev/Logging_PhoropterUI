@@ -1291,11 +1291,6 @@ async function startListeningForAnswer() {
         // Speak prompt, then beep, so patient starts speaking only after we're recording
         area.style.display = 'flex';
         statusEl.textContent = 'Listening...';
-        if (!sessionState.startListeningPromptSpoken) {
-            statusEl.textContent = START_LISTENING_PROMPT;
-            await speakPhraseAndWait(START_LISTENING_PROMPT);
-            sessionState.startListeningPromptSpoken = true;
-        }
         await playStartListeningBeep();
 
         _voiceStream = await navigator.mediaDevices.getUserMedia({
@@ -1552,7 +1547,11 @@ function displayQuestion(data, displayOptions = {}) {
         });
         if (startVoice && (data.question || questionVoiceOverride) && options.length > 0) {
             const base = questionVoiceOverride != null ? questionVoiceOverride : data.question;
-            const textToSpeak = promptPrefix ? `${promptPrefix} ${base}` : base;
+            let textToSpeak = promptPrefix ? `${promptPrefix} ${base}` : base;
+            if (!sessionState.startListeningPromptSpoken) {
+                textToSpeak += ` ${START_LISTENING_PROMPT}`;
+                sessionState.startListeningPromptSpoken = true;
+            }
             speakQuestion(textToSpeak);
         }
     }
