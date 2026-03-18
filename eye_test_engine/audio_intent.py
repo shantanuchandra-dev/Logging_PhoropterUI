@@ -243,12 +243,15 @@ def transcript_to_intent(transcript: str, options: List[str], **kwargs) -> Optio
                 return ("READABLE", 1.0)
             if "no" in t and "NOT_READABLE" in options:
                 return ("NOT_READABLE", 1.0)
+            
 
-            initial_check_options = ['Can Read', "Can't Read", "It's clear"]
+            initial_check_options = ['Can Read', "Can't Read", "It's clear", "blurry"]
             result = _score_with_sentence_transformers(transcript, initial_check_options)
             if result and result[0] in initial_check_options:
                 if result[0] in['Can Read',"It's clear"]:
                     return ('READABLE', 1.0)
+                elif result[0] == 'blurry':
+                    return ('BLURRY', 1.0)
                 else:
                     return ('NOT_READABLE', 1.0)
             if letters_val is not None:
