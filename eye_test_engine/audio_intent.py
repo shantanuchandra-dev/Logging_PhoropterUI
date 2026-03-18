@@ -295,8 +295,12 @@ def transcript_to_intent(transcript: str, options: List[str], **kwargs) -> Optio
         )
     if equal_option_value is not None:
         options = options + ["SAME"]
+        options = options + ["BOTH BETTER"] 
+
     if same_option_value is not None:
         options = options + ["EQUAL"]
+        options = options + ["BOTH BETTER"] 
+
     if target_ok_option_value is not None:
         options = options + ["CLEAR"]
         options = options + ["COMFORTABLE"]
@@ -304,9 +308,9 @@ def transcript_to_intent(transcript: str, options: List[str], **kwargs) -> Optio
 
     result = _score_with_sentence_transformers(transcript, options)
     if result is not None:
-        if result[0] == "SAME" and equal_option_value is not None:
+        if result[0] in ["SAME", "BOTH BETTER"] and equal_option_value is not None:
             return ("EQUAL", result[1])
-        if result[0] == "EQUAL" and same_option_value is not None:
+        if result[0] in ["EQUAL", "BOTH BETTER"] and same_option_value is not None:
             return ("SAME", result[1])
         if target_ok_option_value and result[0] in ["CLEAR", "COMFORTABLE", "THAT'S CLEAR"]:
             return ("TARGET_OK", result[1])
